@@ -3,6 +3,8 @@ import CodeEditor from '@uiw/react-textarea-code-editor';
 import ReactLoading from 'react-loading';
 import rehypePrism from 'rehype-prism-plus';
 import rehypeRewrite from 'rehype-rewrite';
+import ReactTextareaAutocomplete from "@webscopeio/react-textarea-autocomplete";
+import "@webscopeio/react-textarea-autocomplete/style.css";
 import { Version, KeywordTree, KeywordNode } from '../types';
 import axios from 'axios';
 
@@ -34,13 +36,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   currentVersionId,
   setVersions,
   versions,
-  extractKeywords
+  extractKeywords,
 }) => {
   const [html, setHtml] = useState(code.html);
   const [css, setCss] = useState(code.css);
   const [js, setJs] = useState(code.js);
   const [activeTab, setActiveTab] = useState('html');
-  const [hoveredElement, setHoveredElement] = useState<{ keyword: string, basicPrompt: string } | null>(null);
+  const [hoveredElement, setHoveredElement] = useState<{ keyword: string; basicPrompt: string } | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
   const version = currentVersionId !== null ? versions.find(version => version.id === currentVersionId) : null;
@@ -440,95 +442,101 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const renderEditor = (language: string, value: string, setValue: React.Dispatch<React.SetStateAction<string>>) => {
-    const codeLines = value.split('\n');
-    return (
-      <div style={{ height: '600px', width: '400px', overflow: 'auto' }}>
-        <CodeEditor
-          value={value}
-          language={language}
-          placeholder={`Enter ${language.toUpperCase()} here`}
-          onChange={(e) => setValue(e.target.value)}
-          padding={15}
-          ref={editorRef}
-          rehypePlugins={[
-            [rehypePrism, { ignoreMissing: true }] as any,
-            [
-              rehypeRewrite,
-              {
-                rewrite: (node, index, parent) => {
-                  if (node.properties?.className?.includes('code-line')) {
-                    if (highlightEnabled) {
-                      highlightCodeLines(node, piecesToHighlightLevel1, piecesToHighlightLevel2, codeLines, index);
-                    }
+  // const handleWordDoubleClick = (keywordText: string) => {
+  //   console.log('double clicked')
+  //   const basicPrompt = 'basic prompt text here'; // Replace with actual logic to get the basic prompt
+  //   setHoveredElement({ keyword: keywordText, basicPrompt });
+  // };
 
-                    // Add hover logic
-                    if (node.properties?.className?.includes('keyword')) {
-                      node.properties.onMouseEnter = () => {
-                        const keywordText = getFullText(node).trim();
-                        // Check if the keyword matches a Generate object
-                        const generateObject = versions.find(version => version.id === currentVersionId)?.generateObjects.find(obj => obj.keyword === keywordText);
-                        if (generateObject) {
-                          setHoveredElement({ keyword: keywordText, basicPrompt: generateObject.basicPrompt });
-                        }
-                      };
-                      node.properties.onMouseLeave = () => {
-                        setHoveredElement(null);
-                      };
-                    }
-                  }
-                }
-              }
-            ] as any
-          ]}
-          style={{
+  const handleCodeDoubleClick = (event: React.MouseEvent) => {
+    console.log('double clicked')
+    const selection = window.getSelection();
+    if (selection) {
+      console.log()
+      const word = selection.toString().trim();
+      if (word) {
+        // onDoubleClick(word); // Notify the double-clicked word
+        console.log(word)
+      }
+    }
+  };
+
+
+  const AutocompleteItem = ({ entity: { text, onClick } }) => (
+    <div style={{ padding: '5px' }}>
+      <button onClick={onClick}>{text}</button>
+    </div>
+  );
+
+  const handleAutocomplete = (token: string, option: string) => {
+    const currentValue = js;
+    const cursorPosition = editorRef.current?.selectionStart || 0;
+    const textBeforeCursor = currentValue.slice(0, cursorPosition);
+    const textAfterCursor = currentValue.slice(cursorPosition);
+    const newText = textBeforeCursor + option + textAfterCursor;
+    setJs(newText);
+  };
+
+  const CodeEditorWithAutocomplete = () => (
+    <ReactTextareaAutocomplete
+      className="my-textarea"
+      loadingComponent={() => <span>Loading...</span>}
+      style={{
+        fontSize: 15,
+        lineHeight: '20px',
+        padding: 5,
+        minHeight: '600px',
+        width: '100%',
+        backgroundColor: '#f5f5f5',
+        fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+      }}
+      containerStyle={{
+        marginTop: 20,
+        width: '100%',
+        height: '100%',
+      }}
+      minChar={0}
+      trigger={{
+        '#': {
+          dataProvider: token => {
+            return [
+              { text: 'Option 1', onClick: () => handleAutocomplete(token, 'Option 1') },
+              { text: 'Option 2', onClick: () => handleAutocomplete(token, 'Option 2') },
+              { text: 'Option 3', onClick: () => handleAutocomplete(token, 'Option 3') },
+            ];
+          },
+          component: AutocompleteItem,
+          output: (item, trigger) => item.text
+        }
+      }}
+      // onChange={(e) => setJs(e.target.value)}
+      value={js}
+      textAreaComponent={{
+        component: CodeEditor,
+        ref: 'ref',
+        props: {
+          language: "js",
+          padding: 15,
+          style: {
             fontSize: 15,
             backgroundColor: '#f5f5f5',
             fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-          }}
-        />
-      </div>
-    );
-  };
-
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'html':
-        return renderEditor('html', html, setHtml);
-      case 'css':
-        return renderEditor('css', css, setCss);
-      case 'js':
-        return renderEditor('javascript', js, setJs);
-      default:
-        return null;
-    }
-  };
+          }
+        }
+      }}
+      innerRef={(textarea) => {
+        if (textarea) {
+          editorRef.current = textarea;
+        }
+      }}
+    />
+  );
 
   return (
     <div className="code-editor">
       {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
-      <div className="tabs">
-        <button
-          className={activeTab === 'html' ? 'active' : ''}
-          onClick={() => setActiveTab('html')}
-        >
-          HTML
-        </button>
-        <button
-          className={activeTab === 'css' ? 'active' : ''}
-          onClick={() => setActiveTab('css')}
-        >
-          CSS
-        </button>
-        <button
-          className={activeTab === 'js' ? 'active' : ''}
-          onClick={() => setActiveTab('js')}
-        >
-          JS
-        </button>
-      </div>
-      <div style={{ height: '100%' }}>
-        {renderActiveTab()}
+      <div style={{ height: '600px', width: '400px', overflow: 'auto' }}>
+        <CodeEditorWithAutocomplete />
       </div>
       <div className="button-group">
         <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>Run</button>
@@ -549,7 +557,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         </button>
       </div>
       {hoveredElement && (
-        <div className="hovered-element">
+        <div className="hovered-element-widget">
           <p>{hoveredElement.basicPrompt}</p>
           <button>^</button>
           <button>r</button>

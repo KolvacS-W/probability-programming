@@ -402,6 +402,7 @@ myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');` },
     });
   };
 
+
   return (
     <div className="App">
       <div className="editor-section">
