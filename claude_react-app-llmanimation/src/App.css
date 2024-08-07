@@ -332,6 +332,30 @@ textarea {
   overflow-y: auto; /* Enable vertical scrollbar */
 }
 
+.autocomplete-widget {
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.autocomplete-options {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.autocomplete-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.autocomplete-option:hover {
+  background-color: #f0f0f0;
+}
 
 
 

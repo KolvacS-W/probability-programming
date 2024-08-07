@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CodeEditor from '@uiw/react-textarea-code-editor';
 import ReactLoading from 'react-loading';
-import rehypePrism from 'rehype-prism-plus';
-import rehypeRewrite from 'rehype-rewrite';
-import ReactTextareaAutocomplete from "@webscopeio/react-textarea-autocomplete";
-import "@webscopeio/react-textarea-autocomplete/style.css";
-import { Version, KeywordTree, KeywordNode } from '../types';
+import { Version, KeywordTree } from '../types';
 import axios from 'axios';
 
 interface CodeEditorProps {
@@ -22,9 +18,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://5c75-34-44-206-208.ngrok-free.app';
-const ngrok_url_sonnet = ngrok_url+'/api/message';
-const ngrok_url_haiku = ngrok_url+'/api/message-haiku';
+const claudeApiUrl = 'https://api.claude.ai/your_endpoint';
 
 const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   code,
@@ -43,7 +37,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [js, setJs] = useState(code.js);
   const [activeTab, setActiveTab] = useState('html');
   const [hoveredElement, setHoveredElement] = useState<{ keyword: string; basicPrompt: string } | null>(null);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
+  const [hintKeywords, setHintKeywords] = useState('');
+  const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
+  const widgetRef = useRef<HTMLDivElement | null>(null);
 
   const version = currentVersionId !== null ? versions.find(version => version.id === currentVersionId) : null;
   const loading = version ? version.loading : false;
@@ -62,6 +61,19 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       updateHighlightPieces(currentVersionId);
     }
   }, [keywordTree, wordselected, highlightEnabled, currentVersionId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        setShowAutocomplete(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const saveVersionToHistory = (currentVersionId: string) => {
     setVersions(prevVersions => {
@@ -167,9 +179,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const updatedVersions = prevVersions.map(version =>
         version.id === versionId
           ? {
-              ...version,
-              keywordTree: updatedKeywordTree
-            }
+            ...version,
+            keywordTree: updatedKeywordTree
+          }
           : version
       );
       return updatedVersions;
@@ -359,11 +371,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           const updatedVersions = prevVersions.map(version =>
             version.id === versionId
               ? {
-                  ...version,
-                  description: updatedDescription,
-                  savedOldDescription: updatedDescription,
-                  keywordTree: extractKeywords(updatedDescription)
-                }
+                ...version,
+                description: updatedDescription,
+                savedOldDescription: updatedDescription,
+                keywordTree: extractKeywords(updatedDescription)
+              }
               : version
           );
           return updatedVersions;
@@ -442,101 +454,116 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  // const handleWordDoubleClick = (keywordText: string) => {
-  //   console.log('double clicked')
-  //   const basicPrompt = 'basic prompt text here'; // Replace with actual logic to get the basic prompt
-  //   setHoveredElement({ keyword: keywordText, basicPrompt });
-  // };
-
-  const handleCodeDoubleClick = (event: React.MouseEvent) => {
-    console.log('double clicked')
-    const selection = window.getSelection();
-    if (selection) {
-      console.log()
-      const word = selection.toString().trim();
-      if (word) {
-        // onDoubleClick(word); // Notify the double-clicked word
-        console.log(word)
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === '$') {
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const textBeforeCursor = js.slice(0, cursorPosition);
+      const textAfterCursor = js.slice(cursorPosition);
+      const hintText = textBeforeCursor.split('$').pop();
+      if (hintText) {
+        setHintKeywords(hintText);
+        const rect = editorRef.current?.getBoundingClientRect();
+        if (rect) {
+          setAutocompletePosition({ top: rect.bottom, left: rect.left });
+          setShowAutocomplete(true);
+        }
       }
     }
   };
 
+  const callClaudeApi = async (hint: string) => {
+    try {
+      const response = await axios.post(claudeApiUrl, {
+        hint: hint,
+        apiKey: API_KEY
+      });
 
-  const AutocompleteItem = ({ entity: { text, onClick } }) => (
-    <div style={{ padding: '5px' }}>
-      <button onClick={onClick}>{text}</button>
-    </div>
-  );
+      const data = await response.data;
+      return data.generatedText;
+    } catch (error) {
+      console.error("Error calling Claude API:", error);
+      return '';
+    }
+  };
 
-  const handleAutocomplete = (token: string, option: string) => {
+  const handleUpGenerate = async (hint: string) => {
+    const generatedText = 'text1\ntext2\ntext3\n';
+    const options = generatedText.split('\n').filter(Boolean);
+    setGeneratedOptions(options);
+  };
+
+  const handleRightGenerate = async (hint: string) => {
+    const generatedText = 'text4\ntext5\ntext6\n';
+    const options = generatedText.split('\n').filter(Boolean);
+    setGeneratedOptions(options);
+  };
+
+  const handleDownGenerate = async (hint: string) => {
+    const generatedText = 'text7\ntext8\ntext9\n';
+    const options = generatedText.split('\n').filter(Boolean);
+    setGeneratedOptions(options);
+  };
+
+  const handleAutocompleteOptionClick = (option: string) => {
     const currentValue = js;
     const cursorPosition = editorRef.current?.selectionStart || 0;
     const textBeforeCursor = currentValue.slice(0, cursorPosition);
     const textAfterCursor = currentValue.slice(cursorPosition);
     const newText = textBeforeCursor + option + textAfterCursor;
     setJs(newText);
+    setShowAutocomplete(false);
   };
 
-  const CodeEditorWithAutocomplete = () => (
-    <ReactTextareaAutocomplete
-      className="my-textarea"
-      loadingComponent={() => <span>Loading...</span>}
+  const AutocompleteWidget = () => (
+    <div
+      ref={widgetRef}
+      className="autocomplete-widget"
       style={{
-        fontSize: 15,
-        lineHeight: '20px',
-        padding: 5,
-        minHeight: '600px',
-        width: '100%',
-        backgroundColor: '#f5f5f5',
-        fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+        position: 'absolute',
+        top: autocompletePosition.top,
+        left: autocompletePosition.left,
+        zIndex: 1000,
       }}
-      containerStyle={{
-        marginTop: 20,
-        width: '100%',
-        height: '100%',
-      }}
-      minChar={0}
-      trigger={{
-        '#': {
-          dataProvider: token => {
-            return [
-              { text: 'Option 1', onClick: () => handleAutocomplete(token, 'Option 1') },
-              { text: 'Option 2', onClick: () => handleAutocomplete(token, 'Option 2') },
-              { text: 'Option 3', onClick: () => handleAutocomplete(token, 'Option 3') },
-            ];
-          },
-          component: AutocompleteItem,
-          output: (item, trigger) => item.text
-        }
-      }}
-      // onChange={(e) => setJs(e.target.value)}
-      value={js}
-      textAreaComponent={{
-        component: CodeEditor,
-        ref: 'ref',
-        props: {
-          language: "js",
-          padding: 15,
-          style: {
-            fontSize: 15,
-            backgroundColor: '#f5f5f5',
-            fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-          }
-        }
-      }}
-      innerRef={(textarea) => {
-        if (textarea) {
-          editorRef.current = textarea;
-        }
-      }}
-    />
+    >
+      {generatedOptions.length === 0 ? (
+        <div className="button-container">
+          <button onClick={() => handleUpGenerate(hintKeywords)}>⬆️</button>
+          <button onClick={() => handleRightGenerate(hintKeywords)}>➡️</button>
+          <button onClick={() => handleDownGenerate(hintKeywords)}>⬇️</button>
+        </div>
+      ) : (
+        <ul className="autocomplete-options">
+          {generatedOptions.map((option, index) => (
+            <li
+              key={index}
+              className="autocomplete-option"
+              onClick={() => handleAutocompleteOptionClick(option)}
+            >
+              {option}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 
   return (
-    <div className="code-editor">
+    <div className="code-editor" onKeyDown={handleKeyDown}>
       {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
       <div style={{ height: '600px', width: '400px', overflow: 'auto' }}>
-        <CodeEditorWithAutocomplete />
+        {showAutocomplete && <AutocompleteWidget />}
+        <CodeEditor
+          value={js}
+          language="js"
+          padding={15}
+          style={{
+            fontSize: 15,
+            backgroundColor: '#f5f5f5',
+            fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+          }}
+          ref={editorRef}
+          onChange={(evn) => setJs(evn.target.value)}
+        />
       </div>
       <div className="button-group">
         <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>Run</button>
