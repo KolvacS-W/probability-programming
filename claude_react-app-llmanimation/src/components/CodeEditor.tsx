@@ -458,7 +458,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     if (event.key === '$') {
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const textBeforeCursor = js.slice(0, cursorPosition);
-      const textAfterCursor = js.slice(cursorPosition);
       const hintText = textBeforeCursor.split('$').pop();
       if (hintText) {
         setHintKeywords(hintText);
@@ -471,7 +470,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const callClaudeApi = async (hint: string) => {
+  const callClaudeAPIforUpGenerate = async (hint: string) => {
     try {
       const response = await axios.post(claudeApiUrl, {
         hint: hint,
@@ -507,11 +506,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const handleAutocompleteOptionClick = (option: string) => {
     const currentValue = js;
     const cursorPosition = editorRef.current?.selectionStart || 0;
-    const textBeforeCursor = currentValue.slice(0, cursorPosition);
+    const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(/\$[\w]*$/, ''); // Remove the hintText and $
     const textAfterCursor = currentValue.slice(cursorPosition);
     const newText = textBeforeCursor + option + textAfterCursor;
     setJs(newText);
     setShowAutocomplete(false);
+    setGeneratedOptions([]);
   };
 
   const AutocompleteWidget = () => (
