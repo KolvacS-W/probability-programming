@@ -18,7 +18,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://5c75-34-44-206-208.ngrok-free.app';
+const ngrok_url = 'https://20a5-34-106-97-78.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url+'/api/message';
 const ngrok_url_haiku = ngrok_url+'/api/message-haiku';
 
@@ -67,6 +67,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        setGeneratedOptions([]);
         setShowAutocomplete(false);
       }
     };
@@ -484,26 +485,40 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  // const callClaudeApi = async (hint: string) => {
-  //   try {
-  //     const response = await axios.post(claudeApiUrl, {
-  //       hint: hint,
-  //       apiKey: API_KEY
-  //     });
-
-  //     const data = await response.data;
-  //     return data.generatedText;
-  //   } catch (error) {
-  //     console.error("Error calling Claude API:", error);
-  //     return '';
-  //   }
-  // };
+  const handleRightClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    const selection = window.getSelection();
+    const word = selection?.toString().trim();
+    if (word) {
+      console.log('right clicked word', word)
+      setHintKeywords(word);
+      const rect = editorRef.current?.getBoundingClientRect();
+      if (rect) {
+        setAutocompletePosition({ top: event.clientY - rect.top, left: event.clientX - rect.left });
+        setShowAutocomplete(true);
+      }
+    }
+  };
 
   const handleUpGenerate = async (hint: string) => {
-    const prompt = `given a word, give me 5 words that is one level higher than that word. 
-    For example, motor vehicle is one level higher than car, self-propelled vehicle is one level higher than motor vehicle, wheeled vehicle is one level higher than self-propelled vehicle; blue is one level higher than ocean blue.
-    Make sure all the 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response`
-    try {
+    if(hint.includes(' ')){
+      console.log('phrase')
+      var prompt = `Given a text, give me 5 text pieces that are a more abstract and general level of given text piece.
+      The more abstract level of a text can be achieved by removing details, descriptions and modifiers of the text and making it more generalizable.
+      For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
+      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
+  
+    }
+    else{
+      console.log('word')
+      var prompt = `given a word, give me 5 words that are a more abstract and general level of given word. 
+    The more abstract level of a word can be achieved by finding hypernyms of that word.
+    For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
+    Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `+hint
+    }
+
+        try {
+        console.log('prompt for upgenerate', prompt)
         const response = await axios.post(ngrok_url_sonnet, {
           method: 'POST',
           headers: {
@@ -530,16 +545,24 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleRightGenerate = async (hint: string) => {
-    const generatedText = 'text4\ntext5\ntext6\n';
-    const options = generatedText.split('\n').filter(Boolean);
-    setGeneratedOptions(options);
-  };
+    if(hint.includes(' ')){
+      console.log('phrase')
+      var prompt = `Given a text, give me 5 text pieces that are a more abstract and general level of given text piece.
+      The more abstract level of a text can be achieved by removing details, descriptions and modifiers of the text and making it more generalizable.
+      For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
+      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
+  
+    }
+    else{
+      console.log('word')
+      var prompt = `given a word, give me 5 words that are a more abstract and general level of given word. 
+    The more abstract level of a word can be achieved by finding hypernyms of that word.
+    For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
+    Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `+hint
+    }
 
-  const handleDownGenerate = async (hint: string) => {
-    const prompt = `given a word, give me 5 words that is one level higher than that word. 
-    For example, motor vehicle is one level higher than car, self-propelled vehicle is one level higher than motor vehicle, wheeled vehicle is one level higher than self-propelled vehicle; blue is one level higher than ocean blue.
-    Make sure all the 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response`
-    try {
+        try {
+        console.log('prompt for upgenerate', prompt)
         const response = await axios.post(ngrok_url_sonnet, {
           method: 'POST',
           headers: {
@@ -565,11 +588,55 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const handleAutocompleteOptionClick = (option: string) => {
+  const handleDownGenerate = async (hint: string) => {
+    if(hint.includes(' ')){
+      console.log('phrase')
+      var prompt = `Given a text, give me 5 text pieces that are 1 level more specific than given text piece.
+      The more specific level of a text can be achieved by adding details, descriptions, categories, and modifiers of the text and making it more specific.
+      For example, "two beautiful parrots with colorful feathers" is 1 level more specific than "two parrots with feathers", "two parrots with features" is 1 level more specific than "two parrots"
+      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
+  
+    }
+    else{
+      console.log('word')
+      var prompt = `given a word, give me 5 words that are 1 level more specific than given word. 
+    The more specific level of a word can be achieved by finding hyponyms of that word.
+    For example, “car” is one level more specific than “motor vehicle”, “motor vehicle” is one level more specific than self-propelled  vehicle”, “self-propelled vehicle” is one level more specific than “wheeled vehicle”; "blue"" is one level more specific than "color".
+    Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `+hint
+    }
+
+        try {
+        console.log('prompt for upgenerate', prompt)
+        const response = await axios.post(ngrok_url_sonnet, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+    
+      const data = await response.data;
+      const content = data?.content;
+      console.log('content from handleDownGenerate:', content);
+      if (content) {
+        const textResponse = content;
+        console.log('Response from handleDownGenerate:', textResponse);
+        const generatedText = textResponse;
+        const options = generatedText.split('\n').filter(Boolean);
+        setGeneratedOptions(options);
+      }
+    }
+    catch (error) {
+      console.error("Error processing request:", error);
+    } finally {
+    }
+  };
+
+  const handleAutocompleteOptionClick = (option: string, hintText: string) => {
     const currentValue = js;
     const cursorPosition = editorRef.current?.selectionStart || 0;
     const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(/\$[\w]*$|[\w]*$/, ''); // Remove the hintText and $ or double clicked word
-    const textAfterCursor = currentValue.slice(cursorPosition);
+    const textAfterCursor = currentValue.slice(cursorPosition+ hintText.length);
     const newText = textBeforeCursor + option + textAfterCursor;
     setJs(newText);
     setShowAutocomplete(false);
@@ -603,7 +670,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             <li
               key={index}
               className="autocomplete-option"
-              onClick={() => handleAutocompleteOptionClick(option)}
+              onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
               style={{ padding: '5px', cursor: 'pointer' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
@@ -649,7 +716,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   return (
     <div className="code-editor-container" style={{ position: 'relative' }}>
       {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
-      <div className="code-editor" style={{ height: '600px', width: '400px', overflow: 'auto' }} onKeyDown={handleKeyDown} onDoubleClick={handleDoubleClick}>
+      <div className="code-editor" style={{ height: '600px', width: '400px', overflow: 'auto' }} onKeyDown={handleKeyDown} onDoubleClick={handleDoubleClick} onContextMenu={handleRightClick}>
         {showAutocomplete && <AutocompleteWidget />}
         <CodeEditor
           value={js}
