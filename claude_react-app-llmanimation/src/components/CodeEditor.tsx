@@ -18,7 +18,9 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const claudeApiUrl = 'https://api.claude.ai/your_endpoint';
+const ngrok_url = 'https://5c75-34-44-206-208.ngrok-free.app';
+const ngrok_url_sonnet = ngrok_url+'/api/message';
+const ngrok_url_haiku = ngrok_url+'/api/message-haiku';
 
 const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   code,
@@ -461,34 +463,70 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const hintText = textBeforeCursor.split('$').pop();
       if (hintText) {
         setHintKeywords(hintText);
-        const rect = editorRef.current?.getBoundingClientRect();
-        if (rect) {
-          setAutocompletePosition({ top: rect.bottom, left: rect.left });
-          setShowAutocomplete(true);
-        }
+        const position = getCaretCoordinates(editorRef.current, cursorPosition - hintText.length - 1);
+        console.log('check pos:', position, cursorPosition)
+        setAutocompletePosition({ top: position.top, left: position.left });
+        setShowAutocomplete(true);
       }
     }
   };
 
-  const callClaudeAPIforUpGenerate = async (hint: string) => {
-    try {
-      const response = await axios.post(claudeApiUrl, {
-        hint: hint,
-        apiKey: API_KEY
-      });
-
-      const data = await response.data;
-      return data.generatedText;
-    } catch (error) {
-      console.error("Error calling Claude API:", error);
-      return '';
+  const handleDoubleClick = (event: React.MouseEvent) => {
+    const selection = window.getSelection();
+    const word = selection?.toString().trim();
+    if (word) {
+      setHintKeywords(word);
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+      console.log('check pos:', position, cursorPosition)
+      setAutocompletePosition({ top: position.top+50, left: position.left });
+      setShowAutocomplete(true);
     }
   };
 
+  // const callClaudeApi = async (hint: string) => {
+  //   try {
+  //     const response = await axios.post(claudeApiUrl, {
+  //       hint: hint,
+  //       apiKey: API_KEY
+  //     });
+
+  //     const data = await response.data;
+  //     return data.generatedText;
+  //   } catch (error) {
+  //     console.error("Error calling Claude API:", error);
+  //     return '';
+  //   }
+  // };
+
   const handleUpGenerate = async (hint: string) => {
-    const generatedText = 'text1\ntext2\ntext3\n';
-    const options = generatedText.split('\n').filter(Boolean);
-    setGeneratedOptions(options);
+    const prompt = `given a word, give me 5 words that is one level higher than that word. 
+    For example, motor vehicle is one level higher than car, self-propelled vehicle is one level higher than motor vehicle, wheeled vehicle is one level higher than self-propelled vehicle; blue is one level higher than ocean blue.
+    Make sure all the 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response`
+    try {
+        const response = await axios.post(ngrok_url_sonnet, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+    
+      const data = await response.data;
+      const content = data?.content;
+      console.log('content from handleUpGenerate:', content);
+      if (content) {
+        const textResponse = content;
+        console.log('Response from handleUpGenerate:', textResponse);
+        const generatedText = textResponse;
+        const options = generatedText.split('\n').filter(Boolean);
+        setGeneratedOptions(options);
+      }
+    }
+    catch (error) {
+      console.error("Error processing request:", error);
+    } finally {
+    }
   };
 
   const handleRightGenerate = async (hint: string) => {
@@ -498,15 +536,39 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleDownGenerate = async (hint: string) => {
-    const generatedText = 'text7\ntext8\ntext9\n';
-    const options = generatedText.split('\n').filter(Boolean);
-    setGeneratedOptions(options);
+    const prompt = `given a word, give me 5 words that is one level higher than that word. 
+    For example, motor vehicle is one level higher than car, self-propelled vehicle is one level higher than motor vehicle, wheeled vehicle is one level higher than self-propelled vehicle; blue is one level higher than ocean blue.
+    Make sure all the 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response`
+    try {
+        const response = await axios.post(ngrok_url_sonnet, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+    
+      const data = await response.data;
+      const content = data?.content;
+      console.log('content from handleUpGenerate:', content);
+      if (content) {
+        const textResponse = content;
+        console.log('Response from handleUpGenerate:', textResponse);
+        const generatedText = textResponse;
+        const options = generatedText.split('\n').filter(Boolean);
+        setGeneratedOptions(options);
+      }
+    }
+    catch (error) {
+      console.error("Error processing request:", error);
+    } finally {
+    }
   };
 
   const handleAutocompleteOptionClick = (option: string) => {
     const currentValue = js;
     const cursorPosition = editorRef.current?.selectionStart || 0;
-    const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(/\$[\w]*$/, ''); // Remove the hintText and $
+    const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(/\$[\w]*$|[\w]*$/, ''); // Remove the hintText and $ or double clicked word
     const textAfterCursor = currentValue.slice(cursorPosition);
     const newText = textBeforeCursor + option + textAfterCursor;
     setJs(newText);
@@ -523,6 +585,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         top: autocompletePosition.top,
         left: autocompletePosition.left,
         zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
       }}
     >
       {generatedOptions.length === 0 ? (
@@ -538,6 +604,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
               key={index}
               className="autocomplete-option"
               onClick={() => handleAutocompleteOptionClick(option)}
+              style={{ padding: '5px', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
             >
               {option}
             </li>
@@ -547,10 +616,40 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     </div>
   );
 
+  const getCaretCoordinates = (element: HTMLTextAreaElement | null, position: number) => {
+    if (!element) return { top: 0, left: 0 };
+    const div = document.createElement('div');
+    const style = getComputedStyle(element);
+    [...style].forEach(prop => {
+      div.style.setProperty(prop, style.getPropertyValue(prop));
+    });
+    div.style.position = 'absolute';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.visibility = 'hidden';
+    div.style.top = '0';
+    div.style.left = '0';
+    document.body.appendChild(div);
+
+    const text = element.value.substring(0, position);
+    div.textContent = text;
+
+    const span = document.createElement('span');
+    span.textContent = element.value.substring(position) || '.';
+    div.appendChild(span);
+
+    const coordinates = {
+      top: span.offsetTop + element.offsetTop - element.scrollTop,
+      left: span.offsetLeft + element.offsetLeft - element.scrollLeft
+    };
+
+    document.body.removeChild(div);
+    return coordinates;
+  };
+
   return (
-    <div className="code-editor" onKeyDown={handleKeyDown}>
+    <div className="code-editor-container" style={{ position: 'relative' }}>
       {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
-      <div style={{ height: '600px', width: '400px', overflow: 'auto' }}>
+      <div className="code-editor" style={{ height: '600px', width: '400px', overflow: 'auto' }} onKeyDown={handleKeyDown} onDoubleClick={handleDoubleClick}>
         {showAutocomplete && <AutocompleteWidget />}
         <CodeEditor
           value={js}
