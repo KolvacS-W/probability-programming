@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 
 interface ResultViewerProps {
-  code: {
-    html: string;
-    css: string;
+  usercode: {
     js: string;
+  };
+  backendcode: {
+    html: string;
   };
 }
 
 const ngrok_url = 'https://0e5b-35-221-58-30.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
+const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -36,7 +37,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Fabric.js Library Example</title>
-                <style>${code.css}</style>
             </head>
             <body>
                 <canvas id="c"></canvas>
@@ -147,7 +147,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
                   }
 
                   (function() {
-                    ${code.js}
+                    ${usercode.js}
                   })();
                 </script>
             </body>
@@ -157,11 +157,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
         }
       }
     }
-  }, [code]);
+  }, [usercode]);
 
   return (
     <div className="result-viewer">
-      <iframe key={JSON.stringify(code)} ref={iframeRef} title="Result Viewer" />
+      <iframe key={JSON.stringify(usercode)} ref={iframeRef} title="Result Viewer" />
     </div>
   );
 };

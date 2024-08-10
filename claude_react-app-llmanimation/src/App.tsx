@@ -19,7 +19,8 @@ const App: React.FC = () => {
       id: 'init',
       description: "Adding sth...",
       savedOldDescription: '', 
-      code: { html: '', css: '', js: `// Initialize Fabric.js canvas
+      backendcode: {html: ``},
+      usercode: { js: `// Initialize Fabric.js canvas
 const canvas = create_canvas(600, 600, 'lightgray');
 
 // Example usage
@@ -186,13 +187,13 @@ myObject.draw(coord, canvas);` },
     });
   };
 
-  const handleCodeInitialize = (newCode: { html: string; css: string; js: string }) => {
-    console.log('check code in handleCodeInitialize', newCode.html)
+  const handleCodeInitialize = (newuserCode: { js: string }) => {
+    // console.log('check code in handleCodeInitialize', newCode.html)
     if (currentVersionId === null) return;
     setVersions((prevVersions) => {
       const updatedVersions = prevVersions.map(version =>
         version.id === currentVersionId
-          ? { ...version, code: newCode }
+          ? { ...version, usercode: newuserCode }
           : version
       );
       return updatedVersions;
@@ -243,7 +244,7 @@ myObject.draw(coord, canvas);` },
                 ...version,
                 description: currentVersion.description,
                 savedOldDescription: currentVersion.savedOldDescription,
-                code: currentVersion.code,
+                usercode: currentVersion.usercode,
                 savedOldCode: currentVersion.savedOldCode,
                 keywordTree: currentVersion.keywordTree,
                 wordselected: currentVersion.wordselected,
@@ -264,7 +265,7 @@ myObject.draw(coord, canvas);` },
                 ...version,
                 description: currentVersion.description,
                 savedOldDescription: currentVersion.savedOldDescription,
-                code: currentVersion.code,
+                usercode: currentVersion.usercode,
                 savedOldCode: currentVersion.savedOldCode,
                 keywordTree: currentVersion.keywordTree,
                 wordselected: currentVersion.wordselected,
@@ -288,7 +289,8 @@ myObject.draw(coord, canvas);` },
       id: 'init'+uuidv4(),
       description: "Adding sth...",
       savedOldDescription: '',
-      code: { html: '', css: '', js: '' },
+      backendcode: {html: ''},
+      usercode: { js: '' },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -364,7 +366,8 @@ myObject.draw(coord, canvas);` },
       id: newId,
       description: prefix +currentVersion.description,
       savedOldDescription: '', 
-      code: { html: '', css: '', js: '' },
+      backendcode: {html: ''},
+      usercode: { js: '' },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -415,7 +418,8 @@ myObject.draw(coord, canvas);` },
               extractKeywords={extractKeywords}
             />
             <CustomCodeEditor
-              code={versions.find(version => version.id === currentVersionId)!.code}
+              usercode={versions.find(version => version.id === currentVersionId)!.usercode}
+              backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
               onApply={handleCodeInitialize}
               description={versions.find(version => version.id === currentVersionId)!.description}
               savedOldCode={versions.find(version => version.id === currentVersionId)!.savedOldCode}
@@ -426,7 +430,7 @@ myObject.draw(coord, canvas);` },
               setVersions={setVersions}
               extractKeywords={extractKeywords}
             />
-            <ResultViewer code={versions.find(version => version.id === currentVersionId)!.code} />
+            <ResultViewer usercode={versions.find(version => version.id === currentVersionId)!.usercode} backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}/>
             <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}

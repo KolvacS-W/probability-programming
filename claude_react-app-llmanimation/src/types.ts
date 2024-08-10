@@ -17,7 +17,8 @@ export interface KeywordNode {
     id: string;
     description: string;
     savedOldDescription: string; // to track the old description to call descriptionupdate
-    code: { html: string; css: string; js: string };
+    backendcode: { html: string }; //backend hidden
+    usercode: { js: string } //user use
     savedOldCode: { html: string; css: string; js: string }; // to track the old code to call codeupdate
     keywordTree: KeywordTree[];
     wordselected: string;
