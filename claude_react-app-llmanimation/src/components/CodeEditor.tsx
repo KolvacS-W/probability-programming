@@ -18,7 +18,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://20a5-34-106-97-78.ngrok-free.app';
+const ngrok_url = 'https://0e5b-35-221-58-30.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url+'/api/message';
 const ngrok_url_haiku = ngrok_url+'/api/message-haiku';
 
@@ -545,31 +545,36 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleRightGenerate = async (hint: string) => {
-    if(hint.includes(' ')){
-      console.log('phrase')
-      var prompt = `Given a text, give me 5 text pieces that are a more abstract and general level of given text piece.
-      The more abstract level of a text can be achieved by removing details, descriptions and modifiers of the text and making it more generalizable.
-      For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
-      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
+    // if(hint.includes(' ')){
+    //   console.log('phrase')
+    //   var prompt = `Given a text, give me 5 text pieces that are a more abstract and general level of given text piece.
+    //   The more abstract level of a text can be achieved by removing details, descriptions and modifiers of the text and making it more generalizable.
+    //   For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
+    //   Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
   
-    }
-    else{
-      console.log('word')
-      var prompt = `given a word, give me 5 words that are a more abstract and general level of given word. 
-    The more abstract level of a word can be achieved by finding hypernyms of that word.
-    For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
-    Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `+hint
-    }
+    // }
+    // else{
+    //   console.log('word')
+    //   var prompt = `given a word, give me 5 words that are a more abstract and general level of given word. 
+    // The more abstract level of a word can be achieved by finding hypernyms of that word.
+    // For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
+    // Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `+hint
+    // }
+    var prompt = `Given a text, give me 5 text pieces that are a variation given text piece.
+      The variation text should generally be the same as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
+      For example "A white passenger plane with two wings and a tail flying across a clear blue sky with fluffy white clouds." and "A small, red biplane with a propeller in the front gliding through the sky dotted with wispy, gray clouds." are both variations of "A large, commercial airliner with multiple engines and a rounded body cruising through the expansive blue sky filled with puffy, cumulus clouds." 
+      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `+hint
 
-        try {
-        console.log('prompt for upgenerate', prompt)
-        const response = await axios.post(ngrok_url_sonnet, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ prompt: prompt })
-        });
+
+      try {
+      console.log('prompt for upgenerate', prompt)
+      const response = await axios.post(ngrok_url_sonnet, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: prompt })
+      });
     
       const data = await response.data;
       const content = data?.content;

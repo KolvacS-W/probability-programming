@@ -8,6 +8,9 @@ interface ResultViewerProps {
   };
 }
 
+const ngrok_url = 'https://0e5b-35-221-58-30.ngrok-free.app';
+const ngrok_url_sonnet = ngrok_url+'/api/message';
+
 const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -42,8 +45,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
                 <script>
                   // Ensure the Generate class is not redefined
                   if (!window.Generate) {
-                    class Generate {
+                  class Generate {
                       constructor(name) {
+                        this.ngrok_url_sonnet = '`
+                        + ngrok_url_sonnet +
+                        `'
                         this.basic_prompt = name;
                         this.detail_prompt = '';
                         console.log('object created:', name);
@@ -54,16 +60,17 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ code }) => {
                         console.log('detail added:', detail);
                       }
 
-                      async draw(coord, canvas, ngrok_url) {
+                      async draw(coord, canvas, ngrok_url_sonnet = this.ngrok_url_sonnet) {
                         const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Make sure donot include anything other than the svg code in your response.';
                         console.log('api prompt', APIprompt);
+                        console.log(ngrok_url_sonnet)
                         try {
-                          const response = await axios.post(ngrok_url, {
-                            prompt: APIprompt
-                          }, {
+                          const response = await axios.post(ngrok_url_sonnet, {
+                            method: 'POST',
                             headers: {
-                              'Content-Type': 'application/x-www-form-urlencoded'
-                            }
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ prompt: APIprompt })
                           });
 
                           const data = response.data;

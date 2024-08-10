@@ -29,7 +29,9 @@ canvas.setWidth(600);
 
 // Example usage
 const myObject = new Generate('house');
-myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');` },
+myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');
+const coord = { x: 100, y: 100 };
+myObject.draw(coord, canvas);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
