@@ -20,12 +20,7 @@ const App: React.FC = () => {
       description: "Adding sth...",
       savedOldDescription: '', 
       code: { html: '', css: '', js: `// Initialize Fabric.js canvas
-const canvas = new fabric.Canvas('c', {
-    backgroundColor: '#DBB4B4'
-});
-
-canvas.setHeight(600);
-canvas.setWidth(600);
+const canvas = create_canvas(600, 600, 'lightgray');
 
 // Example usage
 const myObject = new Generate('house');
