@@ -19,7 +19,39 @@ const App: React.FC = () => {
       id: 'init',
       description: "Adding sth...",
       savedOldDescription: '', 
-      backendcode: {html: ``},
+      backendcode: {html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Example</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: skyblue;
+            width: 600px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        svg {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+        }
+    </style>
+</head>
+<body><svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="50" y="100" width="100" height="80" fill="blue"/>
+  <polygon points="50,100 100,50 150,100" fill="rgb(180,160,122)"/>
+  <rect x="80" y="130" width="40" height="50" fill="white"/>
+  <rect x="90" y="140" width="20" height="20" fill="lightblue"/>
+  <rect x="115" y="110" width="20" height="20" fill="lightblue"/>
+</svg>
+</body>
+</html>`},
       usercode: { js: `// Initialize Fabric.js canvas
 const canvas = create_canvas(600, 600, 'lightgray');
 
@@ -27,7 +59,7 @@ const canvas = create_canvas(600, 600, 'lightgray');
 const myObject = new Generate('house');
 myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');
 const coord = { x: 100, y: 100 };
-myObject.draw(coord, canvas);` },
+//myObject.draw(coord, canvas);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
