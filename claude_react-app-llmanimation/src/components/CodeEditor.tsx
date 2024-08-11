@@ -314,6 +314,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const renderEditor = () => {
     if (activeTab === 'js') {
       return (
+        <div style={{ 
+          height: '600px', 
+          width: '400px', 
+          overflow: 'auto',
+         }}>
         <CodeEditor
           value={userjs}
           language="js"
@@ -322,15 +327,22 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             fontSize: 15,
             backgroundColor: '#f5f5f5',
             fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-            height: '100%',
-            overflow: 'auto',
+            //this will do style conflict!
+            // height: '100%',
+            // overflow: 'auto',
           }}
           ref={editorRef}
           onChange={(evn) => setuserJs(evn.target.value)}
         />
+        </div>
       );
     } else if (activeTab === 'html') {
       return (
+        <div style={{           
+            height: '600px', 
+            width: '400px', 
+            overflow: 'auto', 
+          }}>
         <CodeEditor
           value={backendhtml}
           language="html"
@@ -339,57 +351,52 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             fontSize: 15,
             backgroundColor: '#f5f5f5',
             fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-            height: '100%',
-            overflow: 'auto',
+            //this will do style conflict!
+            // height: '100%',
+            // overflow: 'auto',
           }}
           ref={editorRef}
           onChange={(evn) => setbackendHtml(evn.target.value)}
         />
+        </div>
       );
     }
     return null;
   };
 
   return (
-    <div className="code-editor-container" style={{ position: 'relative', height: '100%', overflow: 'auto' }}>
-      {loading && (
-        <div className="loading-container">
-          <ReactLoading type="spin" color="#007bff" height={50} width={50} />
-        </div>
-      )}
-      <div
-        className="code-editor"
-        style={{ height: '600px', width: '400px', overflow: 'auto' }}
-        // onScroll={handleScroll}
-        onKeyDown={handleKeyDown}
-        onDoubleClick={handleDoubleClick}
-        onContextMenu={handleRightClick}
+    <div
+    className="code-editor"
+    onKeyDown={handleKeyDown}
+    onDoubleClick={handleDoubleClick}
+    onContextMenu={handleRightClick}
+  >
+    {showAutocomplete && <AutocompleteWidget />}
+    {renderEditor()}
+  
+    <div className="button-group">
+      <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>
+        Run
+      </button>
+      <button
+        className="green-button"
+        onClick={() =>
+          setVersions((prevVersions) => {
+            const updatedVersions = prevVersions.map((version) =>
+              version.id === currentVersionId ? { ...version, highlightEnabled: !highlightEnabled } : version
+            );
+            return updatedVersions;
+          })
+        }
       >
-        {showAutocomplete && <AutocompleteWidget />}
-        {renderEditor()}
-      </div>
-      <div className="button-group">
-        <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>
-          Run
-        </button>
-        <button
-          className="green-button"
-          onClick={() =>
-            setVersions((prevVersions) => {
-              const updatedVersions = prevVersions.map((version) =>
-                version.id === currentVersionId ? { ...version, highlightEnabled: !highlightEnabled } : version
-              );
-              return updatedVersions;
-            })
-          }
-        >
-          {highlightEnabled ? 'Disable Highlight' : 'Enable Highlight'}
-        </button>
-        <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
-          Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
-        </button>
-      </div>
+        {highlightEnabled ? 'Disable Highlight' : 'Enable Highlight'}
+      </button>
+      <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
+        Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
+      </button>
     </div>
+  </div>
+  
   );
 };
 

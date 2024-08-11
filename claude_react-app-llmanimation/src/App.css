@@ -30,7 +30,6 @@ html, body, #root {
 }
 
 .description-editor,
-.code-editor,
 .result-viewer {
   flex: 1;
   margin: 0 10px;
