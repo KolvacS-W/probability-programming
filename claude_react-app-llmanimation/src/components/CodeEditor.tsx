@@ -3,6 +3,7 @@ import CodeEditor from '@uiw/react-textarea-code-editor';
 import ReactLoading from 'react-loading';
 import { Version, KeywordTree } from '../types';
 import axios from 'axios';
+import ResultViewer from './ResultViewer'; // Import the ResultViewer component
 
 interface CodeEditorProps {
   backendcode: { html: string }; // backend hidden
@@ -16,6 +17,8 @@ interface CodeEditorProps {
   setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
   versions: Version[];
   extractKeywords: (description: string) => KeywordTree[];
+  activeTab: string;
+  setActiveTab: (tab: string) => void; // Passed from parent (App component)
 }
 
 const API_KEY = '';
@@ -35,10 +38,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   setVersions,
   versions,
   extractKeywords,
+  activeTab,
+  setActiveTab, // Received from parent
 }) => {
   const [backendhtml, setbackendHtml] = useState(backendcode.html);
   const [userjs, setuserJs] = useState(usercode.js);
-  const [activeTab, setActiveTab] = useState('js');
+  // const [codeactiveTab, setActiveTab] = useState(activeTab);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
   const [hintKeywords, setHintKeywords] = useState('');
@@ -380,7 +385,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
     {showAutocomplete && <AutocompleteWidget />}
     {renderEditor()}
-  
     <div className="button-group">
       <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>
         Run

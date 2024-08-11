@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('js');
 
   useEffect(() => {
     // Initialize the base version on load
@@ -461,8 +462,13 @@ const coord = { x: 100, y: 100 };
               versions={versions}
               setVersions={setVersions}
               extractKeywords={extractKeywords}
+              activeTab={activeTab} // Pass activeTab
+              setActiveTab={setActiveTab} // Pass setActiveTab
             />
-            <ResultViewer usercode={versions.find(version => version.id === currentVersionId)!.usercode} backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}/>
+            <ResultViewer  
+            activeTab={activeTab} 
+            usercode={versions.find(version => version.id === currentVersionId)!.usercode} 
+            backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}/>
             <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}
