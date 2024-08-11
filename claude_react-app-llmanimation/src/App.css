@@ -356,6 +356,23 @@ textarea {
   background-color: #f0f0f0;
 }
 
+.tab-button {
+  padding: 10px;
+  background-color: #e0e0e0;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 
+.tab-button.active {
+  background-color: #333; /* Dark background */
+  color: #fff; /* White text */
+}
+
+.tab-button:focus {
+  outline: none; /* Remove the focus outline when button is clicked */
+}
 
 

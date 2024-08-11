@@ -371,6 +371,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     onDoubleClick={handleDoubleClick}
     onContextMenu={handleRightClick}
   >
+    {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
+      <div className="tabs">
+      <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
+        Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
+      </button>
+      </div>
+
     {showAutocomplete && <AutocompleteWidget />}
     {renderEditor()}
   
@@ -391,9 +398,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       >
         {highlightEnabled ? 'Disable Highlight' : 'Enable Highlight'}
       </button>
-      <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
+      {/* <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
         Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
-      </button>
+      </button> */}
     </div>
   </div>
   
