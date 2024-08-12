@@ -126,6 +126,17 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('svg', svgContent);
 
                           const objectName = this.basic_prompt.replace(' ', '_'); // Using the first letter of the prompt
+                          
+                          const canvasUpdate = 
+                          \`margin: 0;
+                            background-color: \`+canvas.backgroundColor+\`;
+                            width: \`+canvas.width+\`px;
+                            height: \`+canvas.width+\`px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            position: relative;\`
+                            
                           const styleUpdate = 
                             \`#\`+objectName+\` {
                               position: absolute;
@@ -148,7 +159,26 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log(\`${backendcode.html}\`.replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'))
 
                           // Append new style and SVG content to the backend HTML
-                          const updatedHtml = (\`${backendcode.html}\`.replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'))
+                          function extractBodyStyle(html) {
+                              const startMarker = 'body {';
+                              const endMarker = '}';
+                              
+                              const startIndex = html.indexOf(startMarker);
+                              if (startIndex === -1) return null;
+                              
+                              const endIndex = html.indexOf(endMarker, startIndex);
+                              if (endIndex === -1) return null;
+                              
+                              return html.substring(startIndex + startMarker.length, endIndex).trim();
+                          }
+
+                          const bodyStyle = extractBodyStyle(\`${backendcode.html}\`);
+                          console.log(bodyStyle);
+                          if (bodyStyle) {
+                              console.log(bodyStyle);
+                          }
+                        
+                          const updatedHtml = (\`${backendcode.html}\`.replace(bodyStyle, canvasUpdate).replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'))
                           // Send the updated HTML back to the parent window (React app)
                           window.parent.postMessage({ type: 'UPDATE_HTML', html: updatedHtml }, '*');
                         }
