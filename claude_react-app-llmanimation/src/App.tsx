@@ -453,6 +453,7 @@ dog.draw(coord2, canvas);` },
       return updatedVersions;
     });
   };
+  
 
 
   return (

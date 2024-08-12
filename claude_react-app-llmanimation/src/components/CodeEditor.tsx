@@ -95,28 +95,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const handleRun = (versionId: string) => {
     console.log('handlerun called')
     if(activeTab == 'js'){
-      onApplyjs({ js: userjs }, {html: `<!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>SVG Example</title>
-            <style>
-                body {
-                    margin: 0;
-                    background-color: skyblue;
-                    width: 600px;
-                    height: 600px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    position: relative;
-                }
-            </style>
-        </head>
-        <body>
-        </body>
-        </html>`});
+      onApplyjs({ js: userjs }, {html: ``});
     console.log('run js, backendHtml back to initiate', backendhtml)
     }
     else{
