@@ -25,7 +25,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     };
 
     window.addEventListener('message', handleIframeMessage);
-
     if (iframeRef.current) {
       const iframe = iframeRef.current;
       const iframeDocument = iframe.contentDocument;
@@ -176,7 +175,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [usercode, activeTab, updateBackendHtml]);
+  }, [usercode]);
 
   return (
     <div className="result-viewer">

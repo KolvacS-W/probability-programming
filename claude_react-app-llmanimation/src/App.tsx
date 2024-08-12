@@ -49,7 +49,7 @@ const canvas = create_canvas(600, 600, 'lightgray');
 const myObject = new Generate('house');
 myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');
 const coord = { x: 100, y: 100 };
-//myObject.draw(coord, canvas);` },
+myObject.draw(coord, canvas);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
