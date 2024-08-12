@@ -8,7 +8,8 @@ import ResultViewer from './ResultViewer'; // Import the ResultViewer component
 interface CodeEditorProps {
   backendcode: { html: string }; // backend hidden
   usercode: { js: string }; // user use
-  onApply: (usercode: { js: string }) => void;
+  onApplyjs: (usercode: { js: string }, backendCode: { html: string }) => void;
+  onApplyhtml: (usercode: { js: string }) => void;
   description: string;
   savedOldCode: { html: string; css: string; js: string };
   keywordTree: KeywordTree[];
@@ -29,7 +30,8 @@ const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   usercode,
   backendcode,
-  onApply,
+  onApplyjs,
+  onApplyhtml,
   description,
   savedOldCode,
   keywordTree,
@@ -89,8 +91,38 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     });
   };
 
+  //make sure backendcode starts from original when new usercode is run
   const handleRun = (versionId: string) => {
-    onApply({ js: userjs });
+    console.log('handlerun called')
+    if(activeTab == 'js'){
+      onApplyjs({ js: userjs }, {html: `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SVG Example</title>
+            <style>
+                body {
+                    margin: 0;
+                    background-color: skyblue;
+                    width: 600px;
+                    height: 600px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: relative;
+                }
+            </style>
+        </head>
+        <body>
+        </body>
+        </html>`});
+    console.log('run js, backendHtml back to initiate', backendhtml)
+    }
+    else{
+      console.log('run html')
+      onApplyhtml({ js: userjs })
+    }
   };
 
   // const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {

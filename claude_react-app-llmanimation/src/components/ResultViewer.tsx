@@ -84,12 +84,12 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('detail added:', detail);
                         }
 
-                        async draw(coord, canvas, ngrok_url_sonnet = this.ngrok_url_sonnet) {
+                        draw(coord, canvas, ngrok_url_sonnet = this.ngrok_url_sonnet) {
                           const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Make sure donot include anything other than the svg code in your response.';
                           console.log('api prompt', APIprompt);
                           console.log(ngrok_url_sonnet);
                           try {
-                            const response = await axios.post(ngrok_url_sonnet, {
+                            const response = axios.post(ngrok_url_sonnet, {
                               prompt: APIprompt
                             }, {
                               headers: {
@@ -113,6 +113,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                                 canvas.add(group);
                                 canvas.renderAll();
+                                console.log('getting code for', content)
                                 this.generateEquivalentCode(canvas, content, leftpos, toppos);
                               });
                             }
@@ -136,7 +137,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             justify-content: center;
                             align-items: center;
                             position: relative;\`
-                            
+
                           const styleUpdate = 
                             \`#\`+objectName+\` {
                               position: absolute;
@@ -145,18 +146,20 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             }
                           \`;
 
-                          const newSvg = \`
-                            <svg id="\`+objectName+\`" width="\`+canvas.width+\`px" height="\`+canvas.width+\`px">
-                              \`+svgContent+\`
-                            </svg>
-                          \`;
+                          // const newSvg = \`
+                          //   <svg id="\`+objectName+\`">
+                          //     \`+svgContent+\`
+                          //   </svg>
+                          // \`;
+
+                          const newSvg = svgContent.replace(\`<svg\`, \`<svg id ="\`+objectName+\`"\`)
 
                           console.log('this')
                           console.log(newSvg)
                           console.log('that')
                           console.log(styleUpdate)
                           console.log('check backend')
-                          console.log(\`${backendcode.html}\`.replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'))
+                          console.log(\`${backendcode.html}\`)
 
                           // Append new style and SVG content to the backend HTML
                           function extractBodyStyle(html) {

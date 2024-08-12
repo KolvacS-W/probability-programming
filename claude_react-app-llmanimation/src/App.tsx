@@ -49,7 +49,12 @@ const canvas = create_canvas(600, 600, 'lightgray');
 const myObject = new Generate('house');
 myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');
 const coord = { x: 100, y: 100 };
-myObject.draw(coord, canvas);` },
+myObject.draw(coord, canvas);
+
+const dog = new Generate('tree');
+myObject.detail('a tall tree');
+const coord2 = { x: 200, y: 200 };
+dog.draw(coord2, canvas);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -208,8 +213,21 @@ myObject.draw(coord, canvas);` },
       return updatedVersions;
     });
   };
-
-  const handleCodeInitialize = (newuserCode: { js: string }) => {
+  //run userjs
+  const handlejsCodeInitialize = (newuserCode: { js: string }, initialbackendCode: { html: string }) => {
+    // console.log('check code in handleCodeInitialize', newCode.html)
+    if (currentVersionId === null) return;
+    setVersions((prevVersions) => {
+      const updatedVersions = prevVersions.map(version =>
+        version.id === currentVersionId
+          ? { ...version, usercode: newuserCode}
+          : version
+      );
+      return updatedVersions;
+    });
+  };
+  //run backendhtml
+  const handlehtmlCodeInitialize = (newuserCode: { js: string }) => {
     // console.log('check code in handleCodeInitialize', newCode.html)
     if (currentVersionId === null) return;
     setVersions((prevVersions) => {
@@ -454,7 +472,8 @@ myObject.draw(coord, canvas);` },
             <CustomCodeEditor
               usercode={versions.find(version => version.id === currentVersionId)!.usercode}
               backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
-              onApply={handleCodeInitialize}
+              onApplyjs={handlejsCodeInitialize}
+              onApplyhtml={handlehtmlCodeInitialize}
               description={versions.find(version => version.id === currentVersionId)!.description}
               savedOldCode={versions.find(version => version.id === currentVersionId)!.savedOldCode}
               keywordTree={versions.find(version => version.id === currentVersionId)!.keywordTree}
