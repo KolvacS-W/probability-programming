@@ -37,20 +37,9 @@ const App: React.FC = () => {
             align-items: center;
             position: relative;
         }
-        svg {
-            position: absolute;
-            left: 0px;
-            top: 0px;
-        }
     </style>
 </head>
-<body><svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-  <rect x="50" y="100" width="100" height="80" fill="blue"/>
-  <polygon points="50,100 100,50 150,100" fill="rgb(180,160,122)"/>
-  <rect x="80" y="130" width="40" height="50" fill="white"/>
-  <rect x="90" y="140" width="20" height="20" fill="lightblue"/>
-  <rect x="115" y="110" width="20" height="20" fill="lightblue"/>
-</svg>
+<body>
 </body>
 </html>`},
       usercode: { js: `// Initialize Fabric.js canvas
@@ -435,6 +424,18 @@ const coord = { x: 100, y: 100 };
     });
   };
 
+  const handleUpdateBackendHtml = (newHtml: string) => {
+    if (currentVersionId === null) return;
+    setVersions((prevVersions) => {
+      const updatedVersions = prevVersions.map(version =>
+        version.id === currentVersionId
+          ? { ...version, backendcode: { ...version.backendcode, html: newHtml } }
+          : version
+      );
+      return updatedVersions;
+    });
+  };
+
 
   return (
     <div className="App">
@@ -468,7 +469,8 @@ const coord = { x: 100, y: 100 };
             <ResultViewer  
             activeTab={activeTab} 
             usercode={versions.find(version => version.id === currentVersionId)!.usercode} 
-            backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}/>
+            backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
+            updateBackendHtml={handleUpdateBackendHtml} />
             <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}
