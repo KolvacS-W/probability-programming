@@ -8,29 +8,27 @@ interface ResultViewerProps {
     html: string;
   };
   activeTab: string;
-  updateBackendHtml: (newHtml: string) => void; // Receive the function as a prop
+  updateBackendHtml: (newHtml: string) => void;
 }
 
-const ngrok_url = 'https://f3b5-34-29-202-234.ngrok-free.app';
+const ngrok_url = 'https://b2ca-35-204-192-111.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
-
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const [localBackendHtml, setLocalBackendHtml] = useState(backendcode.html);
+  // const [localBackendHtml, setLocalBackendHtml] = useState(backendcode.html);
 
-  useEffect(() => {
-    setLocalBackendHtml(backendcode.html);
-  }, [backendcode.html]);
-
+  // useEffect(() => {
+  //   setLocalBackendHtml(backendcode.html);
+  // }, [backendcode.html]);
 
   useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data.type === 'UPDATE_HTML') {
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
-        setLocalBackendHtml(event.data.html); // Also update the local state
-        console.log('all html updated', event.data.html, localBackendHtml)
+        // setLocalBackendHtml(event.data.html); // Also update the local state
+        console.log('backendhtml updated to app', event.data.html);
       }
     };
 
@@ -95,7 +93,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                         }
 
                         async draw(coord, canvas) {
-                          const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Make sure donot include anything other than the svg code in your response.';
+                          const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                           console.log('api prompt', APIprompt);
                           console.log(this.ngrok_url_sonnet);
                           try {
@@ -112,92 +110,115 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             console.log('content from api call:', content);
 
                             if (content) {
-                              await new Promise((resolve) => {
+                              return new Promise((resolve) => {
                                 fabric.loadSVGFromString(content, (objects, options) => {
                                   const group = fabric.util.groupSVGElements(objects, options);
                                   group.set({
                                     left: coord.x - group.width / 2,
                                     top: coord.y - group.height / 2
                                   });
-                                  var leftpos = coord.x - group.width / 2;
-                                  var toppos = coord.y - group.height / 2;
+                                  const leftpos = coord.x - group.width / 2;
+                                  const toppos = coord.y - group.height / 2;
 
                                   canvas.add(group);
                                   canvas.renderAll();
-                                  console.log('getting code for', content);
-                                  this.generateEquivalentCode(canvas, content, leftpos, toppos).then(resolve);
+                                  resolve({ svgContent: content, leftpos, toppos });
                                 });
                               });
+                            } else {
+                              return null; // Return null if content is empty
                             }
                           } catch (error) {
                             console.error('Error drawing the shape:', error);
+                            return null; // Return null if there is an error
                           }
-                        }
-
-                        async generateEquivalentCode(canvas, svgContent, leftpos, toppos) {
-                          console.log('left', leftpos);
-                          console.log('svg', svgContent);
-
-                          const objectName = this.basic_prompt.replace(' ', '_'); // Using the first letter of the prompt
-                          
-                          const canvasUpdate = 
-                          \`margin: 0;
-                            background-color: \`+canvas.backgroundColor+\`;
-                            width: \`+canvas.width+\`px;
-                            height: \`+canvas.width+\`px;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            position: relative;\`
-
-                          const styleUpdate = 
-                            \`#\`+objectName+\` {
-                              position: absolute;
-                              left: \`+leftpos+\`px;
-                              top: \`+toppos+\`px;
-                            }
-                          \`;
-
-                          const newSvg = svgContent.replace(\`<svg\`, \`<svg id ="\`+objectName+\`"\`)
-
-                          console.log('this');
-                          console.log(newSvg);
-                          console.log('that');
-                          console.log(styleUpdate);
-                          // Ensure state is updated before accessing localBackendHtml
-                          await new Promise(resolve => setTimeout(resolve, 10000)); // Let React update the state
-                          const newestlocalBackendHtml = \`${localBackendHtml}\`
-                          console.log('check backend');
-                          console.log(newestlocalBackendHtml);
-
-                          function extractBodyStyle(html) {
-                              const startMarker = 'body {';
-                              const endMarker = '}';
-                              
-                              const startIndex = html.indexOf(startMarker);
-                              if (startIndex === -1) return null;
-                              
-                              const endIndex = html.indexOf(endMarker, startIndex);
-                              if (endIndex === -1) return null;
-                              
-                              return html.substring(startIndex + startMarker.length, endIndex).trim();
-                          }
-                          await new Promise(resolve => setTimeout(resolve, 1000)); // Let React update the state
-                          const bodyStyle = extractBodyStyle(newestlocalBackendHtml);
-                          console.log(bodyStyle);
-                          if (bodyStyle) {
-                              console.log(bodyStyle);
-                          }
-                          await new Promise(resolve => setTimeout(resolve, 1000)); // Let React update the state
-                          const updatedHtml = (newestlocalBackendHtml.replace(bodyStyle, canvasUpdate).replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'));
-                          window.parent.postMessage({ type: 'UPDATE_HTML', html: updatedHtml }, '*');
-                          console.log(objectName, 'updated html:', updatedHtml)
-                          return new Promise(resolve => setTimeout(resolve, 1000)); // small delay to ensure order
                         }
                       }
-
                       // Assign the class to the global window object
                       window.Generate = Generate;
+                    }
+
+                    //another class
+                    if (!window.whole_canvas) {
+                      class whole_canvas {
+                            constructor(canvas_height = 600, canvas_width = 600, canvas_color = '#ffffff') 
+                              {
+                                this.canvas = create_canvas(canvas_height, canvas_width, canvas_color);
+                                this.backendhtmlString = \`${backendcode.html}\`;
+                                console.log('Canvas created with size:', canvas_height, canvas_width);
+                              }
+
+                          async draw(generateObject, coord) {
+                            const result = await generateObject.draw(coord, this.canvas);
+                            console.log('drawing to canvas', generateObject, result)  
+                            if (result) {
+                              await this.generateEquivalentCode(generateObject, this.canvas, result.svgContent, result.leftpos, result.toppos);
+                            }
+                          }
+
+                          async generateEquivalentCode(generateObject, canvas, svgContent, leftpos, toppos) {
+                            console.log('left', leftpos);
+                            console.log('svg', svgContent);
+
+                            const objectName = generateObject.basic_prompt.replace(' ', '_'); // Using the first letter of the prompt
+                            
+                            const canvasUpdate = 
+                            \`margin: 0;
+                              background-color: \`+canvas.backgroundColor+\`;
+                              width: \`+canvas.width+\`px;
+                              height: \`+canvas.width+\`px;
+                              display: flex;
+                              justify-content: center;
+                              align-items: center;
+                              position: relative;\`
+
+                            const styleUpdate = 
+                              \`#\`+objectName+\` {
+                                position: absolute;
+                                left: \`+leftpos+\`px;
+                                top: \`+toppos+\`px;
+                              }
+                            \`;
+
+                            const newSvg = svgContent.replace(\`<svg\`, \`<svg id ="\`+objectName+\`"\`)
+
+                            console.log('this');
+                            console.log(newSvg);
+                            console.log('that');
+                            console.log(styleUpdate);
+                            
+                            // Introduce delay to ensure previous updates have completed
+                            const newestlocalBackendHtml = this.backendhtmlString
+                            console.log('check backend');
+                            console.log(newestlocalBackendHtml);
+
+                            function extractBodyStyle(html) {
+                                const startMarker = 'body {';
+                                const endMarker = '}';
+                                
+                                const startIndex = html.indexOf(startMarker);
+                                if (startIndex === -1) return null;
+                                
+                                const endIndex = html.indexOf(endMarker, startIndex);
+                                if (endIndex === -1) return null;
+                                
+                                return html.substring(startIndex + startMarker.length, endIndex).trim();
+                            }
+                            
+                            const bodyStyle = extractBodyStyle(newestlocalBackendHtml);
+                            console.log(bodyStyle);
+                            if (bodyStyle) {
+                                console.log(bodyStyle);
+                            }
+                            
+                            const updatedHtml = (newestlocalBackendHtml.replace(bodyStyle, canvasUpdate).replace('</style>', styleUpdate + '</style>').replace('</body>', newSvg + '</body>'));
+                            //window.parent.postMessage({ type: 'UPDATE_HTML', html: updatedHtml }, '*');
+                            console.log(objectName, 'updated html:', updatedHtml)
+                            this.backendhtmlString = updatedHtml
+                            window.parent.postMessage({ type: 'UPDATE_HTML', html: this.backendhtmlString }, '*');
+                          }
+                      }  
+                          window.whole_canvas = whole_canvas;
                     }
 
                     (function() {
@@ -217,7 +238,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [usercode, activeTab]);
+  }, [usercode]);
 
   return (
     <div className="result-viewer">

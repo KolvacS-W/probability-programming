@@ -43,18 +43,18 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `// Initialize Fabric.js canvas
-const canvas = create_canvas(600, 600, 'lightgray');
+const myCanvas = new whole_canvas(600, 600, '#DBB4B4');
 
 // Example usage
-const myObject = new Generate('house');
-myObject.detail('small house, with a rgb(180,160,122) roof and blue walls');
+const house = new Generate('house');
+house.detail('small house, with a rgb(180,160,122) roof and blue walls');
 const coord = { x: 100, y: 100 };
-myObject.draw(coord, canvas);
+myCanvas.draw(house, coord);
 
-const dog = new Generate('tree');
-myObject.detail('a tall tree');
+const tree = new Generate('tree');
+tree.detail('a tall tree');
 const coord2 = { x: 200, y: 200 };
-dog.draw(coord2, canvas);` },
+myCanvas.draw(tree, coord2);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
