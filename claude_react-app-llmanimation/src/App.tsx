@@ -49,12 +49,12 @@ const myCanvas = new whole_canvas(600, 600, '#DBB4B4');
 const house = new Generate('house');
 house.detail('small house, with a rgb(180,160,122) roof and blue walls');
 const coord = { x: 100, y: 100 };
-myCanvas.draw(house, coord);
+myCanvas.draw(house, coord, 1);
 
 const tree = new Generate('tree');
 tree.detail('a tall tree');
 const coord2 = { x: 200, y: 200 };
-myCanvas.draw(tree, coord2);` },
+myCanvas.draw(tree, coord2, 0.5);` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
