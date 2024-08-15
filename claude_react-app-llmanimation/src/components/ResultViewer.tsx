@@ -11,7 +11,7 @@ interface ResultViewerProps {
   updateBackendHtml: (newHtml: string) => void;
 }
 
-const ngrok_url = 'https://c492-34-74-53-149.ngrok-free.app';
+const ngrok_url = 'https://770b-34-106-218-122.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml }) => {
@@ -117,7 +117,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               console.log('Content from API call:', content);
 
                               if (content) {
-                                  const svgElement = this.createSVGElement(content, coord, scale, canvas.offsetWidth, canvas.offsetHeight);
+                                  const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
                                   canvas.appendChild(svgElement);
                                   console.log('svgelement is', svgElement);
                                   return content;
@@ -138,7 +138,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           const originalHeight = viewBox.height;
 
                           // Apply scaling using transform
-                          svgElement.setAttribute('transform', \`scale(\${scale})\`);
+                          //svgElement.setAttribute('transform', \`scale(\${scale})\`);
 
                           // Calculate the scaled dimensions
                           const scaledWidth = originalWidth * scale;
@@ -152,7 +152,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           svgElement.style.position = 'absolute';
                           svgElement.style.left = \`\${leftPercent}%\`;
                           svgElement.style.top = \`\${topPercent}%\`;
-                          svgElement.style.transform = 'scale(\${scale}) translate(-50%, -50%)'; // Center the SVG element
+                          svgElement.style.transform = \`translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
 
                           return svgElement;
                         }
