@@ -11,7 +11,7 @@ interface ResultViewerProps {
   updateBackendHtml: (newHtml: string) => void;
 }
 
-const ngrok_url = 'https://770b-34-106-218-122.ngrok-free.app';
+const ngrok_url = 'https://9fa9-34-139-82-65.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml }) => {
@@ -70,9 +70,14 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                     align-items: center;
                     overflow: hidden;
                   }
+                  #canvasContainer {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                  }
                 </style>
               <body>
-                  <div id="canvasContainer" style="position: relative; width: 100%; height: 100%;"></div>
+                  <div id="canvasContainer"></div>
                   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js"></script>
                   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
                   <script>
@@ -120,7 +125,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                   const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
                                   canvas.appendChild(svgElement);
                                   console.log('svgelement is', svgElement);
-                                  return content;
+                                  return svgElement;
                               }
                           } catch (error) {
                               console.error('Error drawing the shape:', error);
@@ -136,9 +141,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           const viewBox = svgElement.viewBox.baseVal;
                           const originalWidth = viewBox.width;
                           const originalHeight = viewBox.height;
-
-                          // Apply scaling using transform
-                          //svgElement.setAttribute('transform', \`scale(\${scale})\`);
 
                           // Calculate the scaled dimensions
                           const scaledWidth = originalWidth * scale;
@@ -167,37 +169,70 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                       class whole_canvas {
                             constructor(canvas_color) {
                                 this.canvasContainer = create_canvas(canvas_color);
-                                this.backendhtmlString = \`${backendcode.html}\`;
-                                console.log('Canvas created');
+
+                                // Initialize backendhtmlString with the canvas container
+                                this.backendhtmlString = \`
+                                <!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <title>Canvas and SVG</title>
+                                    <style>
+                                        html, body {
+                                            margin: 0;
+                                            padding: 0;
+                                            width: 100%;
+                                            height: 100%;
+                                            display: flex;
+                                            justify-content: center;
+                                            align-items: center;
+                                            overflow: hidden;
+                                        }
+                                        #canvasContainer {
+                                            position: relative;
+                                            width: 100%;
+                                            height: 100%;
+                                            background-color: \${canvas_color};
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div id="canvasContainer"></div>
+                                </body>
+                                </html>\`;
+                                console.log('Canvas created and backendhtmlString initialized');
                               }
 
                           async draw(generateObject, coord, scale = 1) {
-                            const svgContent = await generateObject.draw(coord, this.canvasContainer, scale);
-                            if (svgContent) {
+                            const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
+                            if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgContent, coord, scale);
+                                this.updateHTMLString(svgElement, coord, scale);
                             }
                           }
 
-                          updateHTMLString(svgContent, coord, scale) {
-                            const svgWrapper = document.createElement('div');
-                            svgWrapper.innerHTML = svgContent.trim();
-                            const svgElement = svgWrapper.firstElementChild;
+                          updateHTMLString(svgElement, coord, scale) {
+                            // Convert the SVG element to its outer HTML
+                            const svgHTML = svgElement.outerHTML;
+                            console.log('svgHtml:', svgElement, svgHTML)
 
-                            // Calculate width and height of the SVG
-                            let width = svgElement.getAttribute('width') || svgElement.viewBox.baseVal.width;
-                            let height = svgElement.getAttribute('height') || svgElement.viewBox.baseVal.height;
+                            // Calculate the percentage-based coordinates
+                            // const leftPercent = (coord.x / this.canvasContainer.offsetWidth) * 100;
+                            // const topPercent = (coord.y / this.canvasContainer.offsetHeight) * 100;
 
-                            // Apply scaling
-                            width *= scale;
-                            height *= scale;
+                            // Construct the div containing the SVG element with positioning
+                            const positionedSvgHTML = \`<div>\`
+                                +svgHTML+
+                            \`</div>\`;
 
-                            console.log('in updateHTMLString', width, height, coord);
+                            // Update backendhtmlString by appending the new positioned SVG's HTML
+                            this.backendhtmlString = this.backendhtmlString.replace('</body>', positionedSvgHTML + '</body>');
 
-                            const svgHTML = \`<div style="position: absolute; left:\` + (coord.x - width / 2) +\`px; top: \` + (coord.y - width) / 2 +\`px;">
-                                \`+svgContent.trim()+\`</div>\`;
+                            // Post the updated HTML back to the parent component
+                            window.parent.postMessage({ type: 'UPDATE_HTML', html: this.backendhtmlString }, '*');
 
-                            console.log("updateHTMLString", svgHTML);
+                            console.log("updateHTMLString with positioned SVG:", positionedSvgHTML);
                           }
                       }  
                       window.whole_canvas = whole_canvas;

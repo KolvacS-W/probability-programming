@@ -48,9 +48,9 @@ const myCanvas = new whole_canvas('#DBB4B4');
 
 // Example usage to draw a house
 const house = new Generate('house');
-house.detail('small house, with a rgb(180,160,122) roof and blue walls');
+house.detail('a big luxurious castle');
 // Coordinates as percentages: (10%, 10%)
-const coord = { x: 10, y: 10 }; 
+const coord = { x: 40, y: 50 }; 
 myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
 
 // Example usage to draw a tree
@@ -58,7 +58,7 @@ const tree = new Generate('tree');
 tree.detail('a tall tree');
 // Coordinates as percentages: (50%, 50%)
 const coord2 = { x: 50, y: 50 }; 
-myCanvas.draw(tree, coord2, 0.5); // Scale of 0.5 (half the size)
+myCanvas.draw(tree, coord2, 0.2); // Scale of 0.5 (half the size)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
