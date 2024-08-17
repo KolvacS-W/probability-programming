@@ -11,7 +11,7 @@ interface ResultViewerProps {
   updateBackendHtml: (newHtml: string) => void;
 }
 
-const ngrok_url = 'https://9fa9-34-139-82-65.ngrok-free.app';
+const ngrok_url = 'https://7d47-34-73-18-70.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml }) => {
@@ -104,31 +104,33 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                         }
 
                         async draw(coord, canvas, scale = 1) {
+                          console.log('object draw called', this.basic_prompt);
+
                           const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                           console.log('api prompt', APIprompt);
                           console.log(this.ngrok_url_sonnet);
 
                           try {
-                              const response = await axios.post(this.ngrok_url_sonnet, {
+                            const response = await axios.post(this.ngrok_url_sonnet, {
                               prompt: APIprompt
-                              }, {
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    }
-                                });
-
-                              const data = response.data;
-                              const content = data?.content;
-                              console.log('Content from API call:', content);
-
-                              if (content) {
-                                  const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
-                                  canvas.appendChild(svgElement);
-                                  console.log('svgelement is', svgElement);
-                                  return svgElement;
+                            }, {
+                              headers: {
+                                'Content-Type': 'application/json'
                               }
+                            });
+
+                            const data = response.data;
+                            const content = data?.content;
+                            console.log('Content from API call:', content);
+
+                            if (content) {
+                              const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                              canvas.appendChild(svgElement);
+                              console.log('svgElement is', svgElement);
+                              return svgElement;
+                            }
                           } catch (error) {
-                              console.error('Error drawing the shape:', error);
+                            console.error('Error drawing the shape:', error);
                           }
                         }
 
@@ -202,24 +204,32 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 </body>
                                 </html>\`;
                                 console.log('Canvas created and backendhtmlString initialized');
+
+                                // Initialize the queue as a resolved Promise to maintain order
+                                this.drawQueue = Promise.resolve();
                               }
 
                           async draw(generateObject, coord, scale = 1) {
-                            const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
-                            if (svgElement) {
+                            console.log('canvas draw called', generateObject);
+
+                            // Add the draw operation to the queue
+                            this.drawQueue = this.drawQueue.then(async () => {
+                              const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
+                              if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
                                 this.updateHTMLString(svgElement, coord, scale);
-                            }
+                              }
+                            }).catch(error => {
+                              console.error('Error in canvas draw sequence:', error);
+                            });
+
+                            return this.drawQueue; // Return the updated queue
                           }
 
                           updateHTMLString(svgElement, coord, scale) {
                             // Convert the SVG element to its outer HTML
                             const svgHTML = svgElement.outerHTML;
-                            console.log('svgHtml:', svgElement, svgHTML)
-
-                            // Calculate the percentage-based coordinates
-                            // const leftPercent = (coord.x / this.canvasContainer.offsetWidth) * 100;
-                            // const topPercent = (coord.y / this.canvasContainer.offsetHeight) * 100;
+                            console.log('svgHtml:', svgElement, svgHTML);
 
                             // Construct the div containing the SVG element with positioning
                             const positionedSvgHTML = \`<div>\`
