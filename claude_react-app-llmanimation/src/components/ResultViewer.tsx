@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Version, KeywordTree } from '../types';
 
 interface ResultViewerProps {
@@ -25,7 +25,32 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
-  console.log('check svglist', currentreuseableElementList)
+  //console.log('check svglist', currentreuseableElementList)
+  const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
+
+  
+  useEffect(() => {
+    const handleIframeClick = (event: MessageEvent) => {
+      if (event.data.type === 'CLICK_COORDINATES') {
+        setClickCoordinates({ x: event.data.x, y: event.data.y });
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version =>
+            version.id === currentVersionId
+              ? { ...version, storedcoordinate: { x: event.data.x, y: event.data.y }}
+              : version
+          );
+          return updatedVersions;
+        });
+        console.log('stored coordinates:', { x: event.data.x, y: event.data.y });
+      }
+    };
+
+    window.addEventListener('message', handleIframeClick);
+
+    return () => {
+      window.removeEventListener('message', handleIframeClick);
+    };
+  }, []);
   
   useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
@@ -108,6 +133,14 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js"></script>
                   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
                   <script>
+                  document.addEventListener('click', function(event) {
+                      const rect = document.body.getBoundingClientRect();
+                      const x = ((event.clientX - rect.left) / rect.width) * 100;
+                      const y = ((event.clientY - rect.top) / rect.height) * 100;
+                      window.parent.postMessage({ type: 'CLICK_COORDINATES', x: x, y: y }, '*');
+                  });
+                  </script>
+                  <script>
                     window.currentreuseableElementList = ${JSON.stringify(currentreuseableElementList)};
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
@@ -132,7 +165,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('detail added:', detail);
                         }
 
-                        use(code) {
+                        usesvg(code) {
                           this.code = code;
                           console.log('svg code added:', code);
                         }
@@ -266,7 +299,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgElement, generateObject.basic_prompt, scale, generateObject.code); // Pass the codename and code
+                                this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, scale, generateObject.code); // Pass the codename and code
                               }
                             }).catch(error => {
                               console.error('Error in canvas draw sequence:', error);
@@ -321,8 +354,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   }, [usercode]);
 
   return (
-    <div ref={containerRef} className="result-viewer">
-      <iframe key={JSON.stringify(usercode)} ref={iframeRef} title="Result Viewer" style={{ width: '100%', height: '100%' }} />
+    <div ref={containerRef} className="result-viewer" >
+      <iframe key={JSON.stringify(usercode)} ref={iframeRef} title="Result Viewer" style={{ width: '100%', height: '100%' }}/>
     </div>
   );
 };

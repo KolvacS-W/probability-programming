@@ -47,11 +47,11 @@ const App: React.FC = () => {
 const myCanvas = new whole_canvas('#DBB4B4');
 
 // Example usage to draw a house
-const house = new Generate('house');
-house.detail('a big luxurious castle');
-// Coordinates as percentages: (10%, 10%)
-const coord = { x: 40, y: 50 }; 
-myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
+// const house = new Generate('house');
+// house.detail('a big luxurious castle');
+// // Coordinates as percentages: (10%, 10%)
+// const coord = { x: 40, y: 50 }; 
+// myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
 
 // // Example usage to draw a tree
 // const tree = new Generate('tree');

@@ -174,7 +174,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
           onMouseLeave={() => setHoveredElement(null)}
         >
           <span>{element.codeName}</span>
-          <button className="delete-icon" onClick={() => handleDeleteReusableElement(currentVersionId, element.codeName)}>🗑️</button>
+          <button className="delete-icon" onClick={() => handleDeleteReusableElement(currentVersionId, element.codeName)}>🆇</button>
           {hoveredElement === element.codeText && (
             <div className="hovered-element-text">
               <pre>{element.codeText}</pre>

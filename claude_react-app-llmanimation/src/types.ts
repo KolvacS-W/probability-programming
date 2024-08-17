@@ -35,6 +35,7 @@ export interface KeywordNode {
     history?: Version;  // Added for undo functionality
     detailtargetext?: string[],
     reuseableElementList: { codeName: string, codeText: string, selected: boolean }[];
+    storedcoordinate?: { x: number, y: number };
   }
   
   
