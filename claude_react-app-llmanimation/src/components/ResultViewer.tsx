@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Version, KeywordTree } from '../types';
 
 interface ResultViewerProps {
   usercode: {
@@ -9,20 +10,46 @@ interface ResultViewerProps {
   };
   activeTab: string;
   updateBackendHtml: (newHtml: string) => void;
+
+  currentVersionId: string | null;
+  setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
+  versions: Version[];
+
 }
 
 const ngrok_url = 'https://7d47-34-73-18-70.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
+//for future use in draw()
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml }) => {
+const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
+  const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
+  console.log('check svglist', currentreuseableElementList)
+  
   useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data.type === 'UPDATE_HTML') {
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
         console.log('backendhtml updated to app', event.data.html);
+      }
+
+      if (event.data.type === 'UPDATE_REUSEABLE') {
+
+        const newElements = [{
+          codeName: event.data.codename,
+          codeText: event.data.codetext,
+          selected: false
+        }];
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version =>
+            version.id === currentVersionId
+              ? { ...version, reuseableElementList: [...version.reuseableElementList, ...newElements] }
+              : version
+          );
+          return updatedVersions;
+        });
+        console.log('svg code added to element list');
       }
     };
 
@@ -81,6 +108,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js"></script>
                   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
                   <script>
+                    window.currentreuseableElementList = ${JSON.stringify(currentreuseableElementList)};
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
                         const canvasContainer = document.getElementById('canvasContainer');
@@ -95,6 +123,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
                           this.basic_prompt = name;
                           this.detail_prompt = '';
+                          this.code = '';
                           console.log('object created:', name);
                         }
 
@@ -103,10 +132,30 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('detail added:', detail);
                         }
 
+                        use(code) {
+                          this.code = code;
+                          console.log('svg code added:', code);
+                        }
+
                         async draw(coord, canvas, scale = 1) {
                           console.log('object draw called', this.basic_prompt);
+                          var APIprompt = '';
 
-                          const APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                          if(this.code){
+                            console.log('has existing code')
+                            const codename = this.code
+                            const codelist = window.currentreuseableElementList
+                            console.log('use list newhhhh', codelist)
+                            const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+                            console.log('draw with existing code:', existingcode)
+
+                            APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                          }
+
+                          else{
+                            APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                          }
+
                           console.log('api prompt', APIprompt);
                           console.log(this.ngrok_url_sonnet);
 
@@ -217,7 +266,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgElement, coord, scale);
+                                this.updateHTMLString(svgElement, generateObject.basic_prompt, scale, generateObject.code); // Pass the codename and code
                               }
                             }).catch(error => {
                               console.error('Error in canvas draw sequence:', error);
@@ -226,7 +275,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             return this.drawQueue; // Return the updated queue
                           }
 
-                          updateHTMLString(svgElement, coord, scale) {
+                          updateHTMLString(svgElement, codename, coord, scale) {
                             // Convert the SVG element to its outer HTML
                             const svgHTML = svgElement.outerHTML;
                             console.log('svgHtml:', svgElement, svgHTML);
@@ -243,6 +292,10 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             window.parent.postMessage({ type: 'UPDATE_HTML', html: this.backendhtmlString }, '*');
 
                             console.log("updateHTMLString with positioned SVG:", positionedSvgHTML);
+
+                            // Add the svgHTML to the reusable element list with codename
+                            window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+
                           }
                       }  
                       window.whole_canvas = whole_canvas;
@@ -265,7 +318,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [usercode, activeTab]);
+  }, [usercode]);
 
   return (
     <div ref={containerRef} className="result-viewer">

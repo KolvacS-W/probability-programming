@@ -53,12 +53,12 @@ house.detail('a big luxurious castle');
 const coord = { x: 40, y: 50 }; 
 myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
 
-// Example usage to draw a tree
-const tree = new Generate('tree');
-tree.detail('a tall tree');
-// Coordinates as percentages: (50%, 50%)
-const coord2 = { x: 50, y: 50 }; 
-myCanvas.draw(tree, coord2, 0.2); // Scale of 0.5 (half the size)
+// // Example usage to draw a tree
+// const tree = new Generate('tree');
+// tree.detail('a tall tree');
+// // Coordinates as percentages: (50%, 50%)
+// const coord2 = { x: 50, y: 50 }; 
+// myCanvas.draw(tree, coord2, 0.2); // Scale of 0.5 (half the size)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
@@ -495,7 +495,10 @@ myCanvas.draw(tree, coord2, 0.2); // Scale of 0.5 (half the size)
             activeTab={activeTab} 
             usercode={versions.find(version => version.id === currentVersionId)!.usercode} 
             backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
-            updateBackendHtml={handleUpdateBackendHtml} />
+            updateBackendHtml={handleUpdateBackendHtml}
+            currentVersionId={currentVersionId}
+            versions={versions}
+            setVersions={setVersions} />
             <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}

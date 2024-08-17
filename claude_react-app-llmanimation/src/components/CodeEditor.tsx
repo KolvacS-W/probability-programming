@@ -140,11 +140,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     event.preventDefault();
     const selection = window.getSelection();
     const word = selection?.toString().trim();
-    if (word) {
+      if (word) {
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
       setHintKeywords(word);
       const rect = editorRef.current?.getBoundingClientRect();
       if (rect) {
-        setAutocompletePosition({ top: event.clientY - rect.top, left: event.clientX - rect.left });
+        setAutocompletePosition({ top: position.top + 50, left: position.left });
         setShowAutocomplete(true);
       }
     }
@@ -244,6 +246,19 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
+  const handleExistingCode = async (hint: string) => {
+    const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
+    
+    if (currentreuseableElementList) {
+      const codenamelist = currentreuseableElementList.map(item => item.codeName)
+      const options = codenamelist;
+
+      // const codetextlist = currentreuseableElementList.map(item => item.codeText)
+      // const options = codetextlist;
+      setGeneratedOptions(options);
+    }
+  };
+
   const handleAutocompleteOptionClick = (option: string, hintText: string) => {
     const currentValue = userjs;
     const cursorPosition = editorRef.current?.selectionStart || 0;
@@ -275,6 +290,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           <button onClick={() => handleUpGenerate(hintKeywords)}>⬆️</button>
           <button onClick={() => handleRightGenerate(hintKeywords)}>➡️</button>
           <button onClick={() => handleDownGenerate(hintKeywords)}>⬇️</button>
+          <button onClick={() => handleExistingCode(hintKeywords)}>℀</button>
         </div>
       ) : (
         <ul className="autocomplete-options">
