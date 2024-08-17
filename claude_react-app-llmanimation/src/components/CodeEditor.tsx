@@ -47,7 +47,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [userjs, setuserJs] = useState(usercode.js);
   // const [codeactiveTab, setActiveTab] = useState(activeTab);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [showCoordcomplete, setShowCoordcomplete] = useState(false);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
+  const [CoordcompletePosition, setCoordcompletePosition] = useState({ top: 0, left: 0 });
   const [hintKeywords, setHintKeywords] = useState('');
   const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
@@ -69,6 +71,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
         setGeneratedOptions([]);
         setShowAutocomplete(false);
+        setShowCoordcomplete(false);
       }
     };
 
@@ -104,11 +107,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  // const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-  //   if (editorRef.current) {
-  //     editorRef.current.scrollTop = e.currentTarget.scrollTop;
-  //   }
-  // };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === '$') {
@@ -122,12 +120,30 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowAutocomplete(true);
       }
     }
+    if (event.key === '@') {
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const textBeforeCursor = userjs.slice(0, cursorPosition);
+      const hintText = textBeforeCursor.split('coord').pop();
+      if (hintText) {
+        setHintKeywords(hintText);
+        const position = getCaretCoordinates(editorRef.current, cursorPosition - hintText.length - 1);
+        setCoordcompletePosition({ top: position.top, left: position.left });
+        setShowCoordcomplete(true);
+      }
+    }
   };
 
   const handleDoubleClick = (event: React.MouseEvent) => {
     const selection = window.getSelection();
     const word = selection?.toString().trim();
-    if (word) {
+    if (word == 'coord'){
+      setHintKeywords(word);
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+      setCoordcompletePosition({ top: position.top + 50, left: position.left });
+      setShowCoordcomplete(true);
+    }
+    else if(word){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
@@ -270,6 +286,17 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setGeneratedOptions([]);
   };
 
+  const handleCoordcompleteOptionClick = (option: string, hintText: string) => {
+    const currentValue = userjs;
+    const cursorPosition = editorRef.current?.selectionStart || 0;
+    const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(new RegExp(`${hintText}$`), '');
+    const textAfterCursor = currentValue.slice(cursorPosition + hintText.length);
+    const newText = textBeforeCursor + option + textAfterCursor;
+    setuserJs(newText);
+    setShowAutocomplete(false);
+    setGeneratedOptions([]);
+  };
+
   const AutocompleteWidget = () => (
     <div
       ref={widgetRef}
@@ -310,6 +337,38 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       )}
     </div>
   );
+
+  const CoordcompleteWidget = () => (
+    <div
+      ref={widgetRef}
+      className="coordcomplete-widget"
+      style={{
+        position: 'absolute',
+        top: CoordcompletePosition.top,
+        left: CoordcompletePosition.left,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      <ul className="coordcomplete-options" style={{ listStyleType: 'none', paddingLeft: 0 }}>
+        {versions.find(version => version.id === currentVersionId)?.storedcoordinate && (
+          <li
+            className="coordcomplete-option"
+            onClick={() => handleCoordcompleteOptionClick(`{x: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.x}, y: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.y}}`, hintKeywords)}
+            style={{ padding: '5px', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+          >
+            {`{x: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.x}, y: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.y}}`}
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+  
 
   const getCaretCoordinates = (element: HTMLTextAreaElement | null, position: number) => {
     if (!element) return { top: 0, left: 0 };
@@ -411,6 +470,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       </div>
 
     {showAutocomplete && <AutocompleteWidget />}
+    {showCoordcomplete && <CoordcompleteWidget />}
     {renderEditor()}
     <div className="button-group">
       <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>
