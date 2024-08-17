@@ -310,6 +310,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                           updateHTMLString(svgElement, codename, coord, scale) {
                             // Convert the SVG element to its outer HTML
+                            svgElement.setAttribute('name', codename); // Add this line to set the name attribute
                             const svgHTML = svgElement.outerHTML;
                             console.log('svgHtml:', svgElement, svgHTML);
 
