@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://7d47-34-73-18-70.ngrok-free.app';
+const ngrok_url = 'https://d7ec-34-45-210-90.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -94,6 +94,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     });
   };
 
+
   //make sure backendcode starts from original when new usercode is run
   const handleRun = (versionId: string) => {
     console.log('handlerun called')
@@ -105,6 +106,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       console.log('run html')
       onApplyhtml({ js: userjs })
     }
+
   };
 
 
@@ -473,10 +475,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     {showCoordcomplete && <CoordcompleteWidget />}
     {renderEditor()}
     <div className="button-group">
-      <button className="blue-button" onClick={() => handleRun(currentVersionId || '')}>
+      <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
         Run
       </button>
-      <button
+      {/* <button
         className="green-button"
         onClick={() =>
           setVersions((prevVersions) => {
@@ -488,7 +490,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
       >
         {highlightEnabled ? 'Disable Highlight' : 'Enable Highlight'}
-      </button>
+      </button> */}
       {/* <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
         Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
       </button> */}

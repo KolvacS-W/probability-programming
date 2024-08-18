@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Version, KeywordTree } from '../types';
+import axios from 'axios';
 
 interface ResultViewerProps {
   usercode: {
@@ -17,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://7d47-34-73-18-70.ngrok-free.app';
+const ngrok_url = 'https://d7ec-34-45-210-90.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -75,6 +76,94 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
           return updatedVersions;
         });
         console.log('svg code added to element list');
+      }
+
+      if (event.data.type == 'CODE2DESC'){
+        handleCode2Desc(currentVersionId, event.data.code)
+        console.log('code2desc called')
+      }
+    };
+
+    const saveVersionToHistory = (currentVersionId: string) => {
+      setVersions((prevVersions) => {
+        const updatedVersions = prevVersions.map((version) => {
+          if (version.id === currentVersionId) {
+            const historyVersion = { ...version, id: `${currentVersionId}-history` };
+            return { ...version, history: historyVersion };
+          }
+          return version;
+        });
+        return updatedVersions;
+      });
+    };
+
+    const handleCode2Desc = async (versionId: string, code: string) => {
+      saveVersionToHistory(versionId);
+      if (!versionId) return;
+  
+      setVersions((prevVersions) => {
+        const updatedVersions = prevVersions.map(version =>
+          version.id === versionId
+            ? { ...version, loading: true }
+            : version
+        );
+        return updatedVersions;
+      });
+  
+      const prompt = `Based on the following code with annotations, provide an updated description. Code:`+ code +
+      `Create the description by:
+      1): create a backbone description with the annotations
+      2): finding important entities in the backbone description (for example, 'planet', 'shape', 'color', and 'move' are all entities) and inserting [] around them 
+      3): inserting a detail wrapped in {} behind each entity according to the code (make sure to add all the details about the entity in the code, including all the variable names, numbers, specific svg path coordinates, and parameters. For example, add the number of planets and each planet's dom element type, class, style features, and name to entity 'planet').\\
+      New description format:\\
+      xxxxx[entity1]{detail for entity1}xxxx[entity2]{detail for entity2}... \\ 
+      Important: The entities must be within the old description already instead of being newly created. Find as many entities in the old description as possible. Each entity and each detail are wrapped in a [] and {} respectively. Other than the two symbols ([], {}) and added details, the updated description should be exactly the same as the old description. Include nothing but the new description in the response.\\
+      If there are svg paths or customized polygons in the code, the coordinates and points must be included in details.
+      Example: 
+      old description: Polygons moving and growing
+      output updated description:
+      [polygons]{two different polygon elements, polygon1 and polygon2 colored red and blue respectively, each defined by three points to form a triangle shape} [moving]{motion defined along path1-transparent fill and black stroke, and path2 -transparent fill and black stroke} and [growing]{size oscillates between 1 and 2 over a duration of 2000ms with easing}`;
+  ;
+  
+      try {
+        const response = await axios.post(ngrok_url_sonnet, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+  
+        const data = await response.data;
+        const content = data?.content;
+        console.log('content from code2text:', content);
+  
+        if (content) {
+          const updatedDescription = content.replace('] {', ']{').replace(']\n{', ']{');
+          setVersions((prevVersions) => {
+            const updatedVersions = prevVersions.map(version =>
+              version.id === versionId
+                ? {
+                    ...version,
+                    description: updatedDescription,
+                    savedOldDescription: updatedDescription,
+                  }
+                : version
+            );
+            return updatedVersions;
+          });
+        }
+      } catch (error) {
+        console.error("Error processing update code request:", error);
+      } finally {
+        setVersions((prevVersions) => {
+          const updatedVersions = prevVersions.map(version =>
+            version.id === versionId
+              ? { ...version, loading: false }
+              : version
+          );
+          return updatedVersions;
+        });
       }
     };
 
@@ -291,15 +380,15 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 this.drawQueue = Promise.resolve();
                               }
 
-                          async draw(generateObject, coord, scale = 1) {
-                            console.log('canvas draw called', generateObject);
+                          async draw(generateObject, coord, scale = 1, ifcode2desc = false) {
+                            console.log('canvas draw called', generateObject, ifcode2desc);
 
                             // Add the draw operation to the queue
                             this.drawQueue = this.drawQueue.then(async () => {
                               const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, scale, generateObject.code); // Pass the codename and code
+                                this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, coord, scale, ifcode2desc); // Pass the codename and code
                               }
                             }).catch(error => {
                               console.error('Error in canvas draw sequence:', error);
@@ -308,7 +397,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             return this.drawQueue; // Return the updated queue
                           }
 
-                          updateHTMLString(svgElement, codename, coord, scale) {
+                          updateHTMLString(svgElement, codename, coord, scale, ifcode2desc) {
+                            console.log('in updatedhtmlstring', ifcode2desc)
                             // Convert the SVG element to its outer HTML
                             svgElement.setAttribute('name', codename); // Add this line to set the name attribute
                             const svgHTML = svgElement.outerHTML;
@@ -329,6 +419,12 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                             // Add the svgHTML to the reusable element list with codename
                             window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+
+                            if(ifcode2desc){
+                              // Add the svgHTML to the reusable element list with codename
+                              console.log('need code2desc')
+                              window.parent.postMessage({ type: 'CODE2DESC', code: this.backendhtmlString}, '*');
+                            }
 
                           }
                       }  

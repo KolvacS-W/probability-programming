@@ -811,7 +811,7 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
         }}
         placeholder="Enter detail target text here" // Added
       />
-      <div className="button-group">
+      {/* <div className="button-group">
         <button className="purple-button" onClick={() => handleExtend(currentVersionId || '')}>Extend</button>
         <button className="purple-button" onClick={() => handleInitialize(currentVersionId || '')}>Initialize</button>
         <button className="purple-button" onClick={() => updateDescriptionGPTCall(currentVersionId || '')}>Update</button>
@@ -831,7 +831,7 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
           {version?.paramCheckEnabled ? 'Disable Param Check' : 'Enable Param Check'}
         </button>
         <button className="red-button" onClick={handleUndo}>Undo</button>
-      </div>
+      </div> */}
       {loading && (
         <div className="loading-container">
           <ReactLoading type="spin" color="#007bff" height={50} width={50} />
