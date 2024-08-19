@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://d7ec-34-45-210-90.ngrok-free.app';
+const ngrok_url = 'https://152d-34-168-175-184.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -61,21 +61,32 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       }
 
       if (event.data.type === 'UPDATE_REUSEABLE') {
-
-        const newElements = [{
+        const newElement = {
           codeName: event.data.codename,
           codeText: event.data.codetext,
           selected: false
-        }];
+        };
+        
         setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version =>
-            version.id === currentVersionId
-              ? { ...version, reuseableElementList: [...version.reuseableElementList, ...newElements] }
-              : version
-          );
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              const updatedReuseableElementList = version.reuseableElementList.map(element => 
+                element.codeName === newElement.codeName ? newElement : element
+              );
+              
+              if (!updatedReuseableElementList.some(element => element.codeName === newElement.codeName)) {
+                updatedReuseableElementList.push(newElement);
+              }
+              
+              return { ...version, reuseableElementList: updatedReuseableElementList };
+            }
+            return version;
+          });
+          
           return updatedVersions;
         });
-        console.log('svg code added to element list');
+        
+        console.log('svg code updated or added to element list');
       }
 
       if (event.data.type == 'CODE2DESC'){
@@ -124,6 +135,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       output updated description:
       [polygons]{two different polygon elements, polygon1 and polygon2 colored red and blue respectively, each defined by three points to form a triangle shape} [moving]{motion defined along path1-transparent fill and black stroke, and path2 -transparent fill and black stroke} and [growing]{size oscillates between 1 and 2 over a duration of 2000ms with easing}`;
   ;
+      console.log('code2desc prompt', prompt)
   
       try {
         const response = await axios.post(ngrok_url_sonnet, {
@@ -271,11 +283,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                             console.log('draw with existing code:', existingcode)
 
-                            APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                            APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                           }
 
                           else{
-                            APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Donnot include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                            APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                           }
 
                           console.log('api prompt', APIprompt);

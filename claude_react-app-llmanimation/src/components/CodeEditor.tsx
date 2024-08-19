@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://d7ec-34-45-210-90.ngrok-free.app';
+const ngrok_url = 'https://152d-34-168-175-184.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -205,11 +205,25 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleRightGenerate = async (hint: string) => {
-    const prompt = `Given a text, give me 5 text pieces that are a variation of the given text piece.
-      The variation text should generally be the same as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
-      For example "A white passenger plane with two wings and a tail flying across a clear blue sky with fluffy white clouds." and "A small, red biplane with a propeller in the front gliding through the sky dotted with wispy, gray clouds." are both variations of "A large, commercial airliner with multiple engines and a rounded body cruising through the expansive blue sky filled with puffy, cumulus clouds." 
-      Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
+    var prompt = '';
 
+    if (hint.includes(' ')) {
+      prompt = `Given a text, give me 5 text pieces that each are a variation of the given text piece.
+      The variation text should have same amount of details and same format as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
+      For example "A white passenger plane with two wings and a tail." is an variation of "A small, red biplane with a propeller in the front."
+      "blue", "purple", or "red" are variations of "yellow".
+      "cow" and "a horse with brown color running" are not variations of each other because they have different amount of details.
+      Make sure the generated text pieces have same amount of details and same format as the original text. Include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
+      }
+
+    else{
+      prompt = `Given a word, give me 5 words that each are a variation of the given word.
+      The variation text should have same amount of details and same format as the original word.
+      For example,
+      "blue", "purple", or "red" are variations of "yellow".
+      "cow" and "person" are not variations of each other because they are of different categories.
+      Include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
+     }
     try {
       const response = await axios.post(ngrok_url_sonnet, {
         method: 'POST',
@@ -359,12 +373,15 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         {versions.find(version => version.id === currentVersionId)?.storedcoordinate && (
           <li
             className="coordcomplete-option"
-            onClick={() => handleCoordcompleteOptionClick(`{x: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.x}, y: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.y}}`, hintKeywords)}
+            onClick={() => handleCoordcompleteOptionClick(
+              `{x: ${Math.round(versions.find(version => version.id === currentVersionId)?.storedcoordinate.x)}, y: ${Math.round(versions.find(version => version.id === currentVersionId)?.storedcoordinate.y)}}`,
+              hintKeywords
+            )}
             style={{ padding: '5px', cursor: 'pointer' }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
           >
-            {`{x: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.x}, y: ${versions.find(version => version.id === currentVersionId)?.storedcoordinate.y}}`}
+            {`{x: ${Math.round(versions.find(version => version.id === currentVersionId)?.storedcoordinate.x)}, y: ${Math.round(versions.find(version => version.id === currentVersionId)?.storedcoordinate.y)}}`}
           </li>
         )}
       </ul>

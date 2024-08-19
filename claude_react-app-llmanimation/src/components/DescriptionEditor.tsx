@@ -809,7 +809,7 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
             return updatedVersions;
           });
         }}
-        placeholder="Enter detail target text here" // Added
+        placeholder="" // Added
       />
       {/* <div className="button-group">
         <button className="purple-button" onClick={() => handleExtend(currentVersionId || '')}>Extend</button>

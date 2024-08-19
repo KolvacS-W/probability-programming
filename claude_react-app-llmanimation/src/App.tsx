@@ -12,13 +12,13 @@ const App: React.FC = () => {
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('js');
+  const [activeTab, setActiveTab] = useState('html');
 
   useEffect(() => {
     // Initialize the base version on load
     const baseVersion: Version = {
       id: 'init',
-      description: "Adding sth...",
+      description: "set 'code2desc = true' in whole_canvas.draw() parameter to generate descriptions",
       savedOldDescription: '', 
       backendcode: {html: `<!DOCTYPE html>
 <html lang="en">
@@ -43,22 +43,20 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `// Initialize Fabric.js canvas
-// Initialize Fabric.js canvas with a size of 600x600 and a background color
-const myCanvas = new whole_canvas('#DBB4B4');
+// Initialize a background color
+const myCanvas = new whole_canvas('blue');
 
-// Example usage to draw a house
-const house = new Generate('house');
-house.detail('a big luxurious castle');
-// Coordinates as percentages: (10%, 10%)
-const coord = { x: 40, y: 50 }; 
-myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
+// // Example usage to draw a house
+// const house = new Generate('house');
+// house.detail('a red house');
 
-// Example usage to draw a tree
-const tree = new Generate('tree');
-tree.detail('a tall tree');
-// Coordinates as percentages: (50%, 50%)
-const coord2 = { x: 50, y: 50 }; 
-myCanvas.draw(tree, coord2, 0.2, true); // Scale of 0.5 (half the size)
+// myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
+
+// // Example usage to draw a tree
+// const tree = new Generate('tree');
+// tree.detail('a tall tree');
+
+// myCanvas.draw(tree, coord, 0.2, true); // Scale of 0.5 (half the size)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
