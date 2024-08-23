@@ -47,6 +47,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [userjs, setuserJs] = useState(usercode.js);
   // const [codeactiveTab, setActiveTab] = useState(activeTab);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [showGenerateOption, setShowGenerateOption] = useState(false);
   const [showCoordcomplete, setShowCoordcomplete] = useState(false);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
   const [CoordcompletePosition, setCoordcompletePosition] = useState({ top: 0, left: 0 });
@@ -60,6 +61,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const highlightEnabled = version ? version.highlightEnabled : true;
   const piecesToHighlightLevel1 = version ? version.piecesToHighlightLevel1 : [];
   const piecesToHighlightLevel2 = version ? version.piecesToHighlightLevel2 : [];
+  const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
+  // New state to track which generate function was last called
+  const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     setbackendHtml(backendcode.html);
@@ -69,8 +73,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
-        setGeneratedOptions([]);
+        setOptionLevels([])
         setShowAutocomplete(false);
+        setShowGenerateOption(false);
         setShowCoordcomplete(false);
       }
     };
@@ -150,7 +155,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
       setAutocompletePosition({ top: position.top + 50, left: position.left });
-      setShowAutocomplete(true);
+      // const initialOptions = [word]; // You can replace this with an array of initial options if available
+      // setOptionLevels([{ options: initialOptions, position }]);
+      setShowGenerateOption(true);
     }
   };
 
@@ -165,7 +172,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const rect = editorRef.current?.getBoundingClientRect();
       if (rect) {
         setAutocompletePosition({ top: position.top + 50, left: position.left });
-        setShowAutocomplete(true);
+        // const initialOptions = [word]; // You can replace this with an array of initial options if available
+        // setOptionLevels([{ options: initialOptions, position }]);
+        setShowGenerateOption(true);
       }
     }
   };
@@ -271,7 +280,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const content = data?.content;
       if (content) {
         const options = content.split('\n').filter(Boolean);
-        setGeneratedOptions(options);
+        const position = { top: autocompletePosition.top, left: autocompletePosition.left };
+        setOptionLevels([{ options, position }]); // Initialize with the first level
+        console.log('option levels:', optionLevels)
+        setShowAutocomplete(true)
+        setLastGenerateFunction(() => () => handleDownGenerate(hint)); // Save this function as the last called
       }
     } catch (error) {
       console.error('Error processing request:', error);
@@ -299,6 +312,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const newText = textBeforeCursor + option + textAfterCursor;
     setuserJs(newText);
     setShowAutocomplete(false);
+    setShowGenerateOption(false);
     setGeneratedOptions([]);
   };
 
@@ -313,10 +327,63 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setGeneratedOptions([]);
   };
 
-  const AutocompleteWidget = () => (
+  const proceedGeneration = async (option: string, levelIndex: number) => {
+    if (lastGenerateFunction) {
+      await lastGenerateFunction(); // Re-run the last generation function with the updated option
+    }
+    
+    try {
+      const newPosition = {
+        top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
+        left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
+      };
+  
+      setOptionLevels((prevLevels) => {
+        const updatedLevels = [...prevLevels];
+        updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: generatedOptions, position: newPosition });
+        return updatedLevels;
+      });
+    } catch (error) {
+      console.error('Error processing request:', error);
+    }
+  };
+  // const proceedGeneration = async (option: string, levelIndex: number) => {
+  //   let prompt = ''; // Customize this based on the original function called
+  //   prompt = `Given the option "${option}", generate more specific variations of this option.`;
+  
+  //   try {
+  //     const response = await axios.post(ngrok_url_sonnet, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ prompt }),
+  //     });
+  
+  //     const data = await response.data;
+  //     const content = data?.content;
+  //     if (content) {
+  //       const newOptions = content.split('\n').filter(Boolean);
+  //       const newPosition = {
+  //         top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
+  //         left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
+  //       };
+        
+  //       setOptionLevels((prevLevels) => {
+  //         const updatedLevels = [...prevLevels];
+  //         updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: newOptions, position: newPosition });
+  //         return updatedLevels;
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Error processing request:', error);
+  //   }
+  // };
+  
+  const GenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
     <div
       ref={widgetRef}
-      className="autocomplete-widget"
+      className="generate-option-widget"
       style={{
         position: 'absolute',
         top: autocompletePosition.top,
@@ -328,31 +395,51 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
       }}
     >
-      {generatedOptions.length === 0 ? (
-        <div className="button-container">
-          <button onClick={() => handleUpGenerate(hintKeywords)}>🔼</button>
-          <button onClick={() => handleRightGenerate(hintKeywords)}>🔄</button>
-          <button onClick={() => handleDownGenerate(hintKeywords)}>🔽</button>
-          <button onClick={() => handleExistingCode(hintKeywords)}>℀</button>
-        </div>
-      ) : (
-        <ul className="autocomplete-options">
-          {generatedOptions.map((option, index) => (
-            <li
-              key={index}
-              className="autocomplete-option"
-              onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
-              style={{ padding: '5px', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-            >
-              {option}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="button-container">
+        <button onClick={() => handleUpGenerate(hintKeywords)}>🔼</button>
+        <button onClick={() => handleRightGenerate(hintKeywords)}>🔄</button>
+        <button onClick={() => handleDownGenerate(hintKeywords)}>🔽</button>
+        <button onClick={() => handleExistingCode(hintKeywords)}>℀</button>
+      </div>
     </div>
   );
+  
+
+  const AutocompleteWidget = ({ options, levelIndex }: { options: string[], levelIndex: number }) => (
+    <div
+      ref={widgetRef}
+      className="autocomplete-widget"
+      style={{
+        position: 'absolute',
+        top: optionLevels[levelIndex]?.position.top || autocompletePosition.top,
+        left: optionLevels[levelIndex]?.position.left || autocompletePosition.left,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      <ul className="autocomplete-options">
+        {options.map((option, index) => (
+          <li
+            key={index}
+            className="autocomplete-option"
+            onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
+            style={{ padding: '5px', cursor: 'pointer' }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+          >
+            {option}
+            <button onClick={() => proceedGeneration(option, levelIndex)}>...</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+  
+  
+  
 
   const CoordcompleteWidget = () => (
     <div
@@ -476,45 +563,31 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
   return (
     <div
-    className="code-editor"
-    onKeyDown={handleKeyDown}
-    onDoubleClick={handleDoubleClick}
-    onContextMenu={handleRightClick}
-  >
-    {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
+      className="code-editor"
+      onKeyDown={handleKeyDown}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleRightClick}
+    >
+      {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
       <div className="tabs">
-      <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
-        Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
-      </button>
+        <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
+          Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
+        </button>
       </div>
-
-    {showAutocomplete && <AutocompleteWidget />}
-    {showCoordcomplete && <CoordcompleteWidget />}
-    {renderEditor()}
-    <div className="button-group">
-      <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
-        Run
-      </button>
-      {/* <button
-        className="green-button"
-        onClick={() =>
-          setVersions((prevVersions) => {
-            const updatedVersions = prevVersions.map((version) =>
-              version.id === currentVersionId ? { ...version, highlightEnabled: !highlightEnabled } : version
-            );
-            return updatedVersions;
-          })
-        }
-      >
-        {highlightEnabled ? 'Disable Highlight' : 'Enable Highlight'}
-      </button> */}
-      {/* <button className="tab-button" onClick={() => setActiveTab(activeTab === 'js' ? 'html' : 'js')}>
-        Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
-      </button> */}
-    </div>
-  </div>
   
+      {showGenerateOption && optionLevels.length === 0 && <GenerateOptionWidget hintKeywords={hintKeywords} />}
+      {showAutocomplete && optionLevels.map((level, index) => (
+        <AutocompleteWidget key={index} options={level.options} levelIndex={index} />
+      ))}
+      {renderEditor()}
+      <div className="button-group">
+        <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
+          Run
+        </button>
+      </div>
+    </div>
   );
+  
 };
 
 export default CustomCodeEditor;
