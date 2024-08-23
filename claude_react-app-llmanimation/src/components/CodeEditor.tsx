@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://152d-34-168-175-184.ngrok-free.app';
+const ngrok_url = 'https://d939-34-123-118-134.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -330,9 +330,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     >
       {generatedOptions.length === 0 ? (
         <div className="button-container">
-          <button onClick={() => handleUpGenerate(hintKeywords)}>⬆️</button>
-          <button onClick={() => handleRightGenerate(hintKeywords)}>➡️</button>
-          <button onClick={() => handleDownGenerate(hintKeywords)}>⬇️</button>
+          <button onClick={() => handleUpGenerate(hintKeywords)}>🔼</button>
+          <button onClick={() => handleRightGenerate(hintKeywords)}>🔄</button>
+          <button onClick={() => handleDownGenerate(hintKeywords)}>🔽</button>
           <button onClick={() => handleExistingCode(hintKeywords)}>℀</button>
         </div>
       ) : (
