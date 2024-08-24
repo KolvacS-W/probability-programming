@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://2ab8-34-125-203-232.ngrok-free.app';
+const ngrok_url = 'https://dca9-34-75-244-217.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 

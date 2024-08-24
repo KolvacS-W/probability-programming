@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://2ab8-34-125-203-232.ngrok-free.app';
+const ngrok_url = 'https://dca9-34-75-244-217.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -55,15 +55,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const widgetRef = useRef<HTMLDivElement | null>(null);
-
+  const [boldOptions, setBoldOptions] = useState<string[]>([]);
   const version = currentVersionId !== null ? versions.find((version) => version.id === currentVersionId) : null;
   const loading = version ? version.loading : false;
-  const highlightEnabled = version ? version.highlightEnabled : true;
-  const piecesToHighlightLevel1 = version ? version.piecesToHighlightLevel1 : [];
-  const piecesToHighlightLevel2 = version ? version.piecesToHighlightLevel2 : [];
+  // const highlightEnabled = version ? version.highlightEnabled : true;
+  // const piecesToHighlightLevel1 = version ? version.piecesToHighlightLevel1 : [];
+  // const piecesToHighlightLevel2 = version ? version.piecesToHighlightLevel2 : [];
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
   // New state to track which generate function was last called
-  const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
+  // const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
+  const [buttonchoice, setButtonchoice] = useState('');
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
@@ -84,6 +85,21 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         For example, "two beautiful parrots with colorful feathers" is 1 level more specific than "two parrots with feathers", "two parrots with features" is 1 level more specific than "two parrots"
         Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
   
+  const handleRightGenerateprompt_word = `Given a word, give me 5 words that each are a variation of the given word.
+        The variation text should have same amount of details and same format as the original word.
+        For example,
+        "blue", "purple", or "red" are variations of "yellow".
+        "cow" and "person" are not variations of each other because they are of different categories.
+        Include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+
+  const handleRightGenerateprompt_sentence = `Given a text, give me 5 text pieces that each are a variation of the given text piece.
+        The variation text should have same amount of details and same format as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
+        For example "A white passenger plane with two wings and a tail." is an variation of "A small, red biplane with a propeller in the front."
+        "blue", "purple", or "red" are variations of "yellow".
+        "cow" and "a horse with brown color running" are not variations of each other because they have different amount of details.
+        Make sure the generated text pieces have same amount of details and same format as the original text. Include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+
+
   useEffect(() => {
     setbackendHtml(backendcode.html);
     setuserJs(usercode.js);
@@ -105,18 +121,18 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     };
   }, []);
 
-  const saveVersionToHistory = (currentVersionId: string) => {
-    setVersions((prevVersions) => {
-      const updatedVersions = prevVersions.map((version) => {
-        if (version.id === currentVersionId) {
-          const historyVersion = { ...version, id: `${currentVersionId}-history` };
-          return { ...version, history: historyVersion };
-        }
-        return version;
-      });
-      return updatedVersions;
-    });
-  };
+  // const saveVersionToHistory = (currentVersionId: string) => {
+  //   setVersions((prevVersions) => {
+  //     const updatedVersions = prevVersions.map((version) => {
+  //       if (version.id === currentVersionId) {
+  //         const historyVersion = { ...version, id: `${currentVersionId}-history` };
+  //         return { ...version, history: historyVersion };
+  //       }
+  //       return version;
+  //     });
+  //     return updatedVersions;
+  //   });
+  // };
 
 
   //make sure backendcode starts from original when new usercode is run
@@ -198,18 +214,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const handleUpGenerate = async (hint: string) => {
+  const handleUpGenerate = async (hint: string, levelIndex = 0) => {
+    setButtonchoice('up') // for ...
     let prompt = '';
     if (hint.includes(' ')) {
-      prompt = `Given a text, give me 5 text pieces that are a more abstract and general level of the given text piece.
-        The more abstract level of a text can be achieved by removing details, descriptions, and modifiers of the text and making it more generalizable.
-        For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
-        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
+      prompt = handleUpGenerateprompt_sentence+hint
     } else {
-      prompt = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
-        The more abstract level of a word can be achieved by finding hypernyms of that word.
-        For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
-        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: ${hint}`;
+      prompt = handleUpGenerateprompt_word + hint
     }
 
     try {
@@ -225,33 +236,31 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const content = data?.content;
       if (content) {
         const options = content.split('\n').filter(Boolean);
-        setGeneratedOptions(options);
-      }
+        const position = { top: autocompletePosition.top, left: autocompletePosition.left };
+        //setOptionLevels([{ options, position }]); // Initialize with the first level
+        setOptionLevels((prevLevels) => {
+          const updatedLevels = [...prevLevels];
+          updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: options, position: position });
+          return updatedLevels;
+        });
+        console.log('option levels:', optionLevels)
+        setGeneratedOptions(options); //just to pass variables to proceedfunction
+        setShowAutocomplete(true)
+        }
     } catch (error) {
       console.error('Error processing request:', error);
     }
   };
 
-  const handleRightGenerate = async (hint: string) => {
+  const handleRightGenerate = async (hint: string, levelIndex = 0) => {
+    setButtonchoice('right') // for ...
     var prompt = '';
 
     if (hint.includes(' ')) {
-      prompt = `Given a text, give me 5 text pieces that each are a variation of the given text piece.
-      The variation text should have same amount of details and same format as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
-      For example "A white passenger plane with two wings and a tail." is an variation of "A small, red biplane with a propeller in the front."
-      "blue", "purple", or "red" are variations of "yellow".
-      "cow" and "a horse with brown color running" are not variations of each other because they have different amount of details.
-      Make sure the generated text pieces have same amount of details and same format as the original text. Include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
-      }
-
-    else{
-      prompt = `Given a word, give me 5 words that each are a variation of the given word.
-      The variation text should have same amount of details and same format as the original word.
-      For example,
-      "blue", "purple", or "red" are variations of "yellow".
-      "cow" and "person" are not variations of each other because they are of different categories.
-      Include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
-     }
+      prompt = handleRightGenerateprompt_sentence+hint
+    } else {
+      prompt = handleRightGenerateprompt_word + hint
+    }
     try {
       const response = await axios.post(ngrok_url_sonnet, {
         method: 'POST',
@@ -265,26 +274,29 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const content = data?.content;
       if (content) {
         const options = content.split('\n').filter(Boolean);
-        setGeneratedOptions(options);
-      }
+        const position = { top: autocompletePosition.top, left: autocompletePosition.left };
+        //setOptionLevels([{ options, position }]); // Initialize with the first level
+        setOptionLevels((prevLevels) => {
+          const updatedLevels = [...prevLevels];
+          updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: options, position: position });
+          return updatedLevels;
+        });
+        console.log('option levels:', optionLevels)
+        setGeneratedOptions(options); //just to pass variables to proceedfunction
+        setShowAutocomplete(true)
+        }
     } catch (error) {
       console.error('Error processing request:', error);
     }
   };
 
   const handleDownGenerate = async (hint: string, levelIndex = 0) => {
-    console.log('level for handleDownGenerate', levelIndex)
+    setButtonchoice('down') // for ...
     let prompt = '';
     if (hint.includes(' ')) {
-      prompt = `Given a text, give me 5 text pieces that are 1 level more specific than the given text piece.
-        The more specific level of a text can be achieved by adding details, descriptions, categories, and modifiers of the text and making it more specific.
-        For example, "two beautiful parrots with colorful feathers" is 1 level more specific than "two parrots with feathers", "two parrots with features" is 1 level more specific than "two parrots"
-        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: ${hint}`;
+      prompt = handleDownGenerateprompt_sentence+hint
     } else {
-      prompt = `Given a word, give me 5 words that are 1 level more specific than the given word. 
-        The more specific level of a word can be achieved by finding hyponyms of that word.
-        For example, “car” is one level more specific than “motor vehicle”, “motor vehicle” is one level more specific than self-propelled vehicle”, “self-propelled vehicle” is one level more specific than “wheeled vehicle”; "blue" is one level more specific than "color".
-        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: ${hint}`;
+      prompt = handleDownGenerateprompt_word + hint
     }
 
     try {
@@ -352,42 +364,35 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setGeneratedOptions([]);
   };
 
-  // const proceedGeneration = async (option: string, levelIndex: number) => {
-  //   console.log('lastGenerateFunction', lastGenerateFunction);
-    
-  //   let newOptions: string[] = [];
-    
-  //   if (lastGenerateFunction) {
-  //     // Run the last generate function to get the new options
-  //     await lastGenerateFunction();
-  
-  //     // After running the function, use the latest `generatedOptions`
-  //     newOptions = generatedOptions;
-  
-  //     try {
-  //       const newPosition = {
-  //         top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
-  //         left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
-  //       };
-  
-  //       setOptionLevels((prevLevels) => {
-  //         const updatedLevels = [...prevLevels];
-  //         updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: newOptions, position: newPosition });
-  //         return updatedLevels;
-  //       });
-  //     } catch (error) {
-  //       console.error('Error processing request:', error);
-  //     }
-  //   }
-  // };
-  
+
   const proceedGeneration = async (option: string, levelIndex: number) => {
     let prompt = '';
-    console.log('proceedgeneration, option', option)
-    if (option.includes(' ')) {
-      prompt = handleDownGenerateprompt_sentence+option    
-    } else {
-      prompt = handleDownGenerateprompt_word+option    
+
+    if (buttonchoice == 'down'){
+      console.log('proceedgeneration, option', option, buttonchoice)
+      if (option.includes(' ')) {
+        prompt = handleDownGenerateprompt_sentence+option    
+      } else {
+        prompt = handleDownGenerateprompt_word+option    
+      }
+    }
+
+    if (buttonchoice == 'up'){
+      console.log('proceedgeneration, option', option, buttonchoice)
+      if (option.includes(' ')) {
+        prompt = handleUpGenerateprompt_sentence+option    
+      } else {
+        prompt = handleUpGenerateprompt_word+option    
+      }
+    }    
+
+    if (buttonchoice == 'right'){
+      console.log('proceedgeneration, option', option, buttonchoice)
+      if (option.includes(' ')) {
+        prompt = handleRightGenerateprompt_sentence+option    
+      } else {
+        prompt = handleRightGenerateprompt_word+option    
+      }
     }
     
     try {
@@ -445,59 +450,74 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     </div>
   );
   
-
-  const AutocompleteWidget = ({ options, levelIndex }: { options: string[], levelIndex: number }) => (
-    <div
-      ref={widgetRef}
-      className="autocomplete-widget"
-      style={{
-        position: 'absolute',
-        top: optionLevels[levelIndex]?.position.top || autocompletePosition.top,
-        left: optionLevels[levelIndex]?.position.left || autocompletePosition.left,
-        zIndex: 1000,
-        backgroundColor: 'white',
-        border: '1px solid #ccc',
-        padding: '10px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      <ul className="autocomplete-options">
-        {options.map((option, index) => (
-          <li
-            key={index}
-            className="autocomplete-option"
-            style={{
-              padding: '5px',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-          >
-            <span onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}>
-              {option}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent triggering the option click
-                proceedGeneration(option, levelIndex);
-              }}
+  const AutocompleteWidget = ({ options, levelIndex }: { options: string[], levelIndex: number }) => {
+    const handleProceedClick = (option: string) => {
+      if (!boldOptions.includes(option)) {
+        setBoldOptions([...boldOptions, option]); // Add option to boldOptions array
+      }
+      console.log('bold options', boldOptions);
+      proceedGeneration(option, levelIndex);
+    };
+  
+    return (
+      <div
+        ref={widgetRef}
+        className="autocomplete-widget"
+        style={{
+          position: 'absolute',
+          top: optionLevels[levelIndex]?.position.top || autocompletePosition.top,
+          left: optionLevels[levelIndex]?.position.left || autocompletePosition.left,
+          zIndex: 1000,
+          backgroundColor: 'white',
+          border: '1px solid #ccc',
+          padding: '10px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          width: '200px', // Fixed width to provide more space for longer texts
+          fontSize: '14px', // Smaller font size
+        }}
+      >
+        <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+          {options.map((option, index) => (
+            <li
+              key={index}
+              className="autocomplete-option"
+              onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
               style={{
-                marginLeft: '10px',
-                backgroundColor: 'transparent',
-                border: 'none',
+                padding: '5px',
                 cursor: 'pointer',
+                whiteSpace: 'pre-wrap', // Allow text to wrap onto the next line
+                overflow: 'hidden', // Hide overflow text
+                textOverflow: 'ellipsis', // Show ellipsis for overflowing text
+                fontWeight: boldOptions.includes(option) ? 'bold' : 'normal', // Apply bold if in boldOptions
+                wordWrap: 'break-word', // Ensure words break to the next line if they are too long
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
             >
-              ...
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+              {option}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent the click event from propagating to the list item
+                  handleProceedClick(option); // Bold the option and proceed with generation
+                }} 
+                style={{
+                  float: 'right',
+                  marginLeft: '10px',
+                  padding: '2px 5px',
+                  fontSize: '10px',
+                }}
+              >
+                ...
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+  
+  
+  
   
 
   const CoordcompleteWidget = () => (
