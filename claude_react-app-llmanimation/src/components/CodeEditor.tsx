@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://d939-34-123-118-134.ngrok-free.app';
+const ngrok_url = 'https://2ab8-34-125-203-232.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -64,7 +64,26 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
   // New state to track which generate function was last called
   const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
-
+  const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
+        The more abstract level of a word can be achieved by finding hypernyms of that word.
+        For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
+        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `;
+;
+  const handleUpGenerateprompt_sentence = `Given a text, give me 5 text pieces that are a more abstract and general level of the given text piece.
+        The more abstract level of a text can be achieved by removing details, descriptions, and modifiers of the text and making it more generalizable.
+        For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
+        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+;
+  const handleDownGenerateprompt_word = `Given a word, give me 5 words that are 1 level more specific than the given word. 
+        The more specific level of a word can be achieved by finding hyponyms of that word.
+        For example, “car” is one level more specific than “motor vehicle”, “motor vehicle” is one level more specific than self-propelled vehicle”, “self-propelled vehicle” is one level more specific than “wheeled vehicle”; "blue" is one level more specific than "color".
+        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `;
+  
+  const handleDownGenerateprompt_sentence = `Given a text, give me 5 text pieces that are 1 level more specific than the given text piece.
+        The more specific level of a text can be achieved by adding details, descriptions, categories, and modifiers of the text and making it more specific.
+        For example, "two beautiful parrots with colorful feathers" is 1 level more specific than "two parrots with feathers", "two parrots with features" is 1 level more specific than "two parrots"
+        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+  
   useEffect(() => {
     setbackendHtml(backendcode.html);
     setuserJs(usercode.js);
@@ -253,7 +272,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const handleDownGenerate = async (hint: string) => {
+  const handleDownGenerate = async (hint: string, levelIndex = 0) => {
+    console.log('level for handleDownGenerate', levelIndex)
     let prompt = '';
     if (hint.includes(' ')) {
       prompt = `Given a text, give me 5 text pieces that are 1 level more specific than the given text piece.
@@ -281,11 +301,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       if (content) {
         const options = content.split('\n').filter(Boolean);
         const position = { top: autocompletePosition.top, left: autocompletePosition.left };
-        setOptionLevels([{ options, position }]); // Initialize with the first level
+        //setOptionLevels([{ options, position }]); // Initialize with the first level
+        setOptionLevels((prevLevels) => {
+          const updatedLevels = [...prevLevels];
+          updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: options, position: position });
+          return updatedLevels;
+        });
         console.log('option levels:', optionLevels)
+        setGeneratedOptions(options); //just to pass variables to proceedfunction
         setShowAutocomplete(true)
-        setLastGenerateFunction(() => () => handleDownGenerate(hint)); // Save this function as the last called
-      }
+        }
     } catch (error) {
       console.error('Error processing request:', error);
     }
@@ -313,7 +338,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setuserJs(newText);
     setShowAutocomplete(false);
     setShowGenerateOption(false);
-    setGeneratedOptions([]);
+    setOptionLevels([]);
   };
 
   const handleCoordcompleteOptionClick = (option: string, hintText: string) => {
@@ -327,58 +352,74 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setGeneratedOptions([]);
   };
 
-  const proceedGeneration = async (option: string, levelIndex: number) => {
-    if (lastGenerateFunction) {
-      await lastGenerateFunction(); // Re-run the last generation function with the updated option
-    }
-    
-    try {
-      const newPosition = {
-        top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
-        left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
-      };
-  
-      setOptionLevels((prevLevels) => {
-        const updatedLevels = [...prevLevels];
-        updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: generatedOptions, position: newPosition });
-        return updatedLevels;
-      });
-    } catch (error) {
-      console.error('Error processing request:', error);
-    }
-  };
   // const proceedGeneration = async (option: string, levelIndex: number) => {
-  //   let prompt = ''; // Customize this based on the original function called
-  //   prompt = `Given the option "${option}", generate more specific variations of this option.`;
+  //   console.log('lastGenerateFunction', lastGenerateFunction);
+    
+  //   let newOptions: string[] = [];
+    
+  //   if (lastGenerateFunction) {
+  //     // Run the last generate function to get the new options
+  //     await lastGenerateFunction();
   
-  //   try {
-  //     const response = await axios.post(ngrok_url_sonnet, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({ prompt }),
-  //     });
+  //     // After running the function, use the latest `generatedOptions`
+  //     newOptions = generatedOptions;
   
-  //     const data = await response.data;
-  //     const content = data?.content;
-  //     if (content) {
-  //       const newOptions = content.split('\n').filter(Boolean);
+  //     try {
   //       const newPosition = {
   //         top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
   //         left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
   //       };
-        
+  
   //       setOptionLevels((prevLevels) => {
   //         const updatedLevels = [...prevLevels];
   //         updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: newOptions, position: newPosition });
   //         return updatedLevels;
   //       });
+  //     } catch (error) {
+  //       console.error('Error processing request:', error);
   //     }
-  //   } catch (error) {
-  //     console.error('Error processing request:', error);
   //   }
   // };
+  
+  const proceedGeneration = async (option: string, levelIndex: number) => {
+    let prompt = '';
+    console.log('proceedgeneration, option', option)
+    if (option.includes(' ')) {
+      prompt = handleDownGenerateprompt_sentence+option    
+    } else {
+      prompt = handleDownGenerateprompt_word+option    
+    }
+    
+    try {
+      const response = await axios.post(ngrok_url_sonnet, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.data;
+      const content = data?.content;
+      console.log('proceedgeneration, option', option, prompt, content)
+      if (content) {
+        const newOptions = content.split('\n').filter(Boolean);
+        const newPosition = {
+          top: optionLevels.length > 0 ? optionLevels[levelIndex].position.top : 0,
+          left: optionLevels.length > 0 ? optionLevels[levelIndex].position.left + 200 : 0,
+        };
+        
+        setOptionLevels((prevLevels) => {
+          const updatedLevels = [...prevLevels];
+          updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: newOptions, position: newPosition });
+          return updatedLevels;
+        });
+        console.log('proceed: optionlevels', optionLevels)
+      }
+    } catch (error) {
+      console.error('Error processing request:', error);
+    }
+  };
   
   const GenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
     <div
@@ -425,20 +466,38 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           <li
             key={index}
             className="autocomplete-option"
-            onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
-            style={{ padding: '5px', cursor: 'pointer' }}
+            style={{
+              padding: '5px',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
           >
-            {option}
-            <button onClick={() => proceedGeneration(option, levelIndex)}>...</button>
+            <span onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}>
+              {option}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the option click
+                proceedGeneration(option, levelIndex);
+              }}
+              style={{
+                marginLeft: '10px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              ...
+            </button>
           </li>
         ))}
       </ul>
     </div>
   );
-  
-  
   
 
   const CoordcompleteWidget = () => (
