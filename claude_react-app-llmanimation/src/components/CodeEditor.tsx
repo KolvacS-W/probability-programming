@@ -263,6 +263,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     } else {
       prompt = handleRightGenerateprompt_word + hint
     }
+    console.log('generate prompt', prompt)
     try {
       const response = await axios.post(ngrok_url_sonnet, {
         method: 'POST',
@@ -338,6 +339,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const options = codenamelist;
       console.log('codelist', options)
       setShowAutocomplete(true)
+      setButtonchoice('')
       if(options.length >0){
         const position = { top: autocompletePosition.top, left: autocompletePosition.left };
         //setOptionLevels([{ options, position }]); // Initialize with the first level
@@ -462,6 +464,31 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   );
   
   const AutocompleteWidget = ({ options, levelIndex }: { options: string[], levelIndex: number }) => {
+    const [checkedOptions, setCheckedOptions] = useState<string[]>([]);
+  
+    const handleCheckboxChange = (option: string) => {
+      setCheckedOptions((prev) => {
+        if (prev.includes(option)) {
+          return prev.filter((item) => item !== option);
+        } else {
+          return [...prev, option];
+        }
+      });
+    };
+  
+    const handleEqualButtonClick = () => {
+      const combinedText = checkedOptions.join('\', \'');
+      const currentValue = userjs;
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const textBeforeCursor = currentValue.slice(0, cursorPosition);
+      const textAfterCursor = currentValue.slice(cursorPosition);
+      const newText = textBeforeCursor + combinedText + textAfterCursor;
+      setuserJs(newText);
+      setShowAutocomplete(false);
+      setShowGenerateOption(false);
+      setOptionLevels([]);
+    };
+
     const handleProceedClick = (option: string) => {
       if (!boldOptions.includes(option)) {
         setBoldOptions([...boldOptions, option]); // Add option to boldOptions array
@@ -492,7 +519,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             <li
               key={index}
               className="autocomplete-option"
-              onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
               style={{
                 padding: '5px',
                 cursor: 'pointer',
@@ -501,18 +527,28 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 textOverflow: 'ellipsis', // Show ellipsis for overflowing text
                 fontWeight: boldOptions.includes(option) ? 'bold' : 'normal', // Apply bold if in boldOptions
                 wordWrap: 'break-word', // Ensure words break to the next line if they are too long
+                display: 'flex',
+                alignItems: 'center',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
             >
-              {option}
+              <input
+                type="checkbox"
+                checked={checkedOptions.includes(option)}
+                onChange={() => handleCheckboxChange(option)}
+                style={{ marginRight: '5px' }}
+              />
+              <span
+                onClick={() => handleAutocompleteOptionClick(option, hintKeywords)}
+                style={{ flexGrow: 1 }}
+              >
+                {option}
+              </span>
               <button 
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent the click event from propagating to the list item
                   handleProceedClick(option); // Bold the option and proceed with generation
                 }} 
                 style={{
-                  float: 'right',
                   marginLeft: '10px',
                   padding: '2px 5px',
                   fontSize: '10px',
@@ -523,9 +559,25 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             </li>
           ))}
         </ul>
+        <button
+        onClick={handleEqualButtonClick}
+        style={{
+          marginTop: '10px',
+          width: '100%',
+          padding: '5px 0',
+          backgroundColor: 'transparent', // No background color
+          color: 'inherit', // Inherit the default text color
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'center', // Center the text
+        }}
+      >
+        create array
+      </button>
       </div>
     );
   };
+  
   
   
   
