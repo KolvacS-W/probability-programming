@@ -277,7 +277,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                           if(this.code){
                             console.log('has existing code')
-                            console.log('reading codelist  in canvas object', this.reuseablecodelist)
+                            console.log('reading codelist  in canvas object', reuseablecodelist)
                             const codename = this.code
                             //const codelist = window.currentreuseableElementList
                             const codelist = reuseablecodelist
@@ -289,6 +289,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           }
 
                           else{
+                            console.log('no existing code')
                             APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                           }
 
@@ -405,8 +406,24 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
                                 this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, coord, scale, ifcode2desc); // Pass the codename and code
-                                this.reuseablecodelist.push({ codename: generateObject.basic_prompt + ' ' + generateObject.detail_prompt, svg: svgElement.outerHTML }); // in case user wants to use existing html quickly, it takes too long time to go to reuseable list
-                                console.log('codelist updated in canvas object', this.reuseablecodelist)
+                                // in case user wants to use existing html quickly, it takes too long time to go to reuseable list
+                                // Find the index of the existing entry with the same codename
+                                const existingIndex = this.reuseablecodelist.findIndex(item => item.codename === generateObject.basic_prompt + ' ' + generateObject.detail_prompt);
+
+                                const newEntry = { 
+                                    codename: generateObject.basic_prompt + ' ' + generateObject.detail_prompt, 
+                                    svg: svgElement.outerHTML 
+                                };
+
+                                if (existingIndex !== -1) {
+                                    // Overwrite the existing entry
+                                    this.reuseablecodelist[existingIndex] = newEntry;
+                                    console.log('codelist updated in canvas object: existing entry overwritten', this.reuseablecodelist);
+                                } else {
+                                    // Push a new entry
+                                    this.reuseablecodelist.push(newEntry);
+                                    console.log('codelist updated in canvas object: new entry added', this.reuseablecodelist);
+                                }
                                 return generateObject.basic_prompt + ' ' + generateObject.detail_prompt; // Return the codename
                               }
                             }).catch(error => {
