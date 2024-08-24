@@ -330,16 +330,25 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     }
   };
 
-  const handleExistingCode = async (hint: string) => {
+  const handleExistingCode = async (hint: string, levelIndex = 0) => {
     const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
     
     if (currentreuseableElementList) {
       const codenamelist = currentreuseableElementList.map(item => item.codeName)
       const options = codenamelist;
+      console.log('codelist', options)
+      setShowAutocomplete(true)
+      if(options.length >0){
+        const position = { top: autocompletePosition.top, left: autocompletePosition.left };
+        //setOptionLevels([{ options, position }]); // Initialize with the first level
+        setOptionLevels((prevLevels) => {
+          const updatedLevels = [...prevLevels];
+          updatedLevels.splice(levelIndex + 1, prevLevels.length - levelIndex - 1, { options: options, position: position });
+          return updatedLevels;
+        });
+        console.log('optionlevels set', optionLevels)
+      }
 
-      // const codetextlist = currentreuseableElementList.map(item => item.codeText)
-      // const options = codetextlist;
-      setGeneratedOptions(options);
     }
   };
 
@@ -660,6 +669,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       {showAutocomplete && optionLevels.map((level, index) => (
         <AutocompleteWidget key={index} options={level.options} levelIndex={index} />
       ))}
+      {showCoordcomplete && <CoordcompleteWidget />}
       {renderEditor()}
       <div className="button-group">
         <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>

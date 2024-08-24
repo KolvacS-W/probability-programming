@@ -271,16 +271,18 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('svg code added:', code);
                         }
 
-                        async draw(coord, canvas, scale = 1) {
+                        async draw(coord, canvas, reuseablecodelist, scale = 1) {
                           console.log('object draw called', this.basic_prompt);
                           var APIprompt = '';
 
                           if(this.code){
                             console.log('has existing code')
+                            console.log('reading codelist  in canvas object', this.reuseablecodelist)
                             const codename = this.code
-                            const codelist = window.currentreuseableElementList
+                            //const codelist = window.currentreuseableElementList
+                            const codelist = reuseablecodelist
                             console.log('use list newhhhh', codelist)
-                            const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+                            const existingcode = codelist.find((item) => item.codename === codename)?.svg;
                             console.log('draw with existing code:', existingcode)
 
                             APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
@@ -355,6 +357,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             constructor(canvas_color) {
                                 this.canvasContainer = create_canvas(canvas_color);
 
+                                this.reuseablecodelist = [];;
+
                                 // Initialize backendhtmlString with the canvas container
                                 this.backendhtmlString = \`
                                 <!DOCTYPE html>
@@ -397,16 +401,19 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                             // Add the draw operation to the queue
                             this.drawQueue = this.drawQueue.then(async () => {
-                              const svgElement = await generateObject.draw(coord, this.canvasContainer, scale);
+                              const svgElement = await generateObject.draw(coord, this.canvasContainer, this.reuseablecodelist, scale);
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
                                 this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, coord, scale, ifcode2desc); // Pass the codename and code
+                                this.reuseablecodelist.push({ codename: generateObject.basic_prompt + ' ' + generateObject.detail_prompt, svg: svgElement.outerHTML }); // in case user wants to use existing html quickly, it takes too long time to go to reuseable list
+                                console.log('codelist updated in canvas object', this.reuseablecodelist)
+                                return generateObject.basic_prompt + ' ' + generateObject.detail_prompt; // Return the codename
                               }
                             }).catch(error => {
                               console.error('Error in canvas draw sequence:', error);
                             });
 
-                            return this.drawQueue; // Return the updated queue
+                            return this.drawQueue.then(() => generateObject.basic_prompt + ' ' + generateObject.detail_prompt); // Ensure the codename is returned
                           }
 
                           updateHTMLString(svgElement, codename, coord, scale, ifcode2desc) {

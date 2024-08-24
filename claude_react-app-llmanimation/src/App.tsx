@@ -42,21 +42,23 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `// Initialize Fabric.js canvas
+      usercode: { js: `//itialize Fabric.js canvas
 // Initialize a background color
 const myCanvas = new whole_canvas('blue');
 
 // // Example usage to draw a house
-// const house = new Generate('house');
-// house.detail('a red house');
+const house = new Generate('house');
+house.detail('a red house');
 
-// myCanvas.draw(house, coord, 1); // Scale of 1 (no scaling)
+name = myCanvas.draw(house, {x: 47, y: 33}, 1); // Scale of 1 (no scaling)
 
+console.log('check name', name)
 // // Example usage to draw a tree
-// const tree = new Generate('tree');
-// tree.detail('a tall tree');
+const tree = new Generate('house');
+tree.detail('a green house');
+tree.usesvg(name)
+myCanvas.draw(tree, {x: 74, y: 69}, 1); // Scale of 0.5 (half the size)
 
-// myCanvas.draw(tree, coord, 0.2, true); // Scale of 0.5 (half the size)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
