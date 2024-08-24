@@ -65,39 +65,40 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   // New state to track which generate function was last called
   // const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
   const [buttonchoice, setButtonchoice] = useState('');
+  // const [originalhint, setOriginalhint] = useState('');
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
-        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `;
+        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given word: `;
 ;
   const handleUpGenerateprompt_sentence = `Given a text, give me 5 text pieces that are a more abstract and general level of the given text piece.
         The more abstract level of a text can be achieved by removing details, descriptions, and modifiers of the text and making it more generalizable.
         For example, "two parrots with feathers" is 1 level more abstract than "two beautiful parrots with colorful feathers", "two parrots" is 1 level more abstract than "two parrots with feathers"
-        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given text: `;
 ;
   const handleDownGenerateprompt_word = `Given a word, give me 5 words that are 1 level more specific than the given word. 
         The more specific level of a word can be achieved by finding hyponyms of that word.
         For example, “car” is one level more specific than “motor vehicle”, “motor vehicle” is one level more specific than self-propelled vehicle”, “self-propelled vehicle” is one level more specific than “wheeled vehicle”; "blue" is one level more specific than "color".
-        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Given word: `;
+        Make sure all 5 words in the response are on the same level; and include nothing but the 5 words separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given word: `;
   
   const handleDownGenerateprompt_sentence = `Given a text, give me 5 text pieces that are 1 level more specific than the given text piece.
         The more specific level of a text can be achieved by adding details, descriptions, categories, and modifiers of the text and making it more specific.
         For example, "two beautiful parrots with colorful feathers" is 1 level more specific than "two parrots with feathers", "two parrots with features" is 1 level more specific than "two parrots"
-        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+        Make sure all the 5 text pieces in the response are on the same level, and include nothing but the 5 text pieces separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given text: `;
   
   const handleRightGenerateprompt_word = `Given a word, give me 5 words that each are a variation of the given word.
         The variation text should have same amount of details and same format as the original word.
         For example,
         "blue", "purple", or "red" are variations of "yellow".
         "cow" and "person" are not variations of each other because they are of different categories.
-        Include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+        Include nothing but the 5 text pieces separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given text: `;
 
   const handleRightGenerateprompt_sentence = `Given a text, give me 5 text pieces that each are a variation of the given text piece.
         The variation text should have same amount of details and same format as the original text, with various different details, descriptions, categories, and modifiers of the text to make it somewhat different.
         For example "A white passenger plane with two wings and a tail." is an variation of "A small, red biplane with a propeller in the front."
         "blue", "purple", or "red" are variations of "yellow".
         "cow" and "a horse with brown color running" are not variations of each other because they have different amount of details.
-        Make sure the generated text pieces have same amount of details and same format as the original text. Include nothing but the 5 text pieces separated by '\n' in the response. Given text: `;
+        Make sure the generated text pieces have same amount of details and same format as the original text. Include nothing but the 5 text pieces separated by '\n' in the response. Make sure the generated contents are also in the semantic space of ${hintKeywords}. If there's no more suitable text to be generated, return "no further generation". Given text: `;
 
 
   useEffect(() => {
@@ -112,6 +113,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowAutocomplete(false);
         setShowGenerateOption(false);
         setShowCoordcomplete(false);
+        setButtonchoice('');
       }
     };
 
