@@ -25,7 +25,7 @@ const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
+  var currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
   //console.log('check svglist', currentreuseableElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
@@ -59,39 +59,59 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
         console.log('backendhtml updated to app', event.data.html);
       }
-
+  
       if (event.data.type === 'UPDATE_REUSEABLE') {
         const newElement = {
           codeName: event.data.codename,
           codeText: event.data.codetext,
-          selected: false
+          selected: false,
         };
-        
+  
+        // Update the reusable element list and then check the updated list
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              const updatedReuseableElementList = version.reuseableElementList.map(element => 
+              const updatedReuseableElementList = version.reuseableElementList.map(element =>
                 element.codeName === newElement.codeName ? newElement : element
               );
-              
+  
               if (!updatedReuseableElementList.some(element => element.codeName === newElement.codeName)) {
                 updatedReuseableElementList.push(newElement);
               }
-              
+  
               return { ...version, reuseableElementList: updatedReuseableElementList };
             }
             return version;
           });
-          
+  
+          // Now check if the `currentreuseableElementList` has been updated correctly
+          const currentreuseableElementList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableElementList;
+  
+          console.log('check currentreuseableElementList', currentreuseableElementList, updatedVersions);
+  
+          if (currentreuseableElementList && currentreuseableElementList.some(element => element.codeName === event.data.codename)) {
+            iframeRef.current.contentWindow.postMessage(
+              {
+                type: 'UPDATE_REUSEABLE_CONFIRMED',
+                codename: event.data.codename,
+                reuseableElementList: currentreuseableElementList,
+              },
+              '*'
+            );
+            console.log(
+              'posted UPDATE_REUSEABLE_CONFIRMED to iframe',
+              currentreuseableElementList,
+              updatedVersions.find(version => version.id === currentVersionId)?.reuseableElementList
+            );
+          }
+  
           return updatedVersions;
         });
-        
-        console.log('svg code updated or added to element list');
       }
-
-      if (event.data.type == 'CODE2DESC'){
-        handleCode2Desc(currentVersionId, event.data.code)
-        console.log('code2desc called')
+  
+      if (event.data.type === 'CODE2DESC') {
+        handleCode2Desc(currentVersionId, event.data.code);
+        console.log('code2desc called');
       }
     };
 
@@ -257,7 +277,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
                           this.basic_prompt = name;
                           this.detail_prompt = '';
-                          this.code = '';
+                          this.refcode = '';
+                          this.fixcode = '';
                           console.log('object created:', name);
                         }
 
@@ -266,58 +287,79 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('detail added:', detail);
                         }
 
+                        refsvg(code) {
+                          this.refcode = code;
+                          console.log('svg code reference:', code);
+                        }
+                        
                         usesvg(code) {
-                          this.code = code;
-                          console.log('svg code added:', code);
+                          this.fixcode = code;
+                          console.log('svg code fixed:', code);
                         }
 
                         async draw(coord, canvas, reuseablecodelist, scale = 1) {
                           console.log('object draw called', this.basic_prompt);
-                          var APIprompt = '';
 
-                          if(this.code){
-                            console.log('has existing code')
-                            console.log('reading codelist  in canvas object', reuseablecodelist)
-                            const codename = this.code
-                            //const codelist = window.currentreuseableElementList
-                            const codelist = reuseablecodelist
-                            console.log('use list newhhhh', codelist)
-                            const existingcode = codelist.find((item) => item.codename === codename)?.svg;
-                            console.log('draw with existing code:', existingcode)
+                          if (!(this.fixcode)){
+                            var APIprompt = '';
 
-                            APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
-                          }
+                            if(this.refcode){
+                              const codename = this.refcode
+                              const codelist = window.currentreuseableElementList
+                              //const codelist = reuseablecodelist
+                              console.log('check codelist in ref', codelist)
+                              const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+                              console.log('draw with ref code:', existingcode)
 
-                          else{
-                            console.log('no existing code')
-                            APIprompt = 'write me svg code to create a ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
-                          }
+                              APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                            }
+                        
+                            else{
+                              console.log('no existing code')
+                              APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                            }
 
-                          console.log('api prompt', APIprompt);
-                          console.log(this.ngrok_url_sonnet);
+                            console.log('api prompt', APIprompt);
+                            console.log(this.ngrok_url_sonnet);
 
-                          try {
-                            const response = await axios.post(this.ngrok_url_sonnet, {
-                              prompt: APIprompt
-                            }, {
-                              headers: {
-                                'Content-Type': 'application/json'
+                            try {
+                              const response = await axios.post(this.ngrok_url_sonnet, {
+                                prompt: APIprompt
+                              }, {
+                                headers: {
+                                  'Content-Type': 'application/json'
+                                }
+                              });
+
+                              const data = response.data;
+                              const content = data?.content;
+                              console.log('Content from API call:', content);
+
+                              if (content) {
+                                const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                                canvas.appendChild(svgElement);
+                                console.log('svgElement is', svgElement);
+                                return svgElement;
                               }
-                            });
+                            } catch (error) {
+                              console.error('Error drawing the shape:', error);
+                            }                          
+                          }
 
-                            const data = response.data;
-                            const content = data?.content;
-                            console.log('Content from API call:', content);
+                        else{
+                            const codelist = window.currentreuseableElementList
+                            const codename = this.fixcode
+                            const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+                            console.log('draw with fixed code:', existingcode)
+                            const content = existingcode;
 
                             if (content) {
                               const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
                               canvas.appendChild(svgElement);
                               console.log('svgElement is', svgElement);
                               return svgElement;
-                            }
-                          } catch (error) {
-                            console.error('Error drawing the shape:', error);
-                          }
+                            }                            
+                          }                          
                         }
 
                         createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
@@ -406,30 +448,30 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
                                 this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, coord, scale, ifcode2desc); // Pass the codename and code
-                                // in case user wants to use existing html quickly, it takes too long time to go to reuseable list
-                                // Find the index of the existing entry with the same codename
-                                const existingIndex = this.reuseablecodelist.findIndex(item => item.codename === generateObject.basic_prompt + ' ' + generateObject.detail_prompt);
+                                const svgHTML = svgElement.outerHTML;
+                                const codename = generateObject.basic_prompt + ' ' + generateObject.detail_prompt;
+                              // Send the message to update the reusable element list
+                              window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+                              console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
 
-                                const newEntry = { 
-                                    codename: generateObject.basic_prompt + ' ' + generateObject.detail_prompt, 
-                                    svg: svgElement.outerHTML 
-                                };
-
-                                if (existingIndex !== -1) {
-                                    // Overwrite the existing entry
-                                    this.reuseablecodelist[existingIndex] = newEntry;
-                                    console.log('codelist updated in canvas object: existing entry overwritten', this.reuseablecodelist);
-                                } else {
-                                    // Push a new entry
-                                    this.reuseablecodelist.push(newEntry);
-                                    console.log('codelist updated in canvas object: new entry added', this.reuseablecodelist);
-                                }
-                                return generateObject.basic_prompt + ' ' + generateObject.detail_prompt; // Return the codename
+                              // Wait for the confirmation after sending the message
+                              await new Promise((resolve) => {
+                                  const messageHandler = (event) => {
+                                      if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                                          window.currentreuseableElementList = event.data.reuseableElementList;
+                                          console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableElementList);
+                                          window.removeEventListener('message', messageHandler);
+                                          resolve(); // Resolve the promise to continue execution
+                                      }
+                                  };
+                                  window.addEventListener('message', messageHandler);
+                              });
+                                return codename; // Return the codename
                               }
                             }).catch(error => {
                               console.error('Error in canvas draw sequence:', error);
                             });
-
+                            
                             return this.drawQueue.then(() => generateObject.basic_prompt + ' ' + generateObject.detail_prompt); // Ensure the codename is returned
                           }
 
@@ -452,9 +494,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             window.parent.postMessage({ type: 'UPDATE_HTML', html: this.backendhtmlString }, '*');
 
                             console.log("updateHTMLString with positioned SVG:", positionedSvgHTML);
-
-                            // Add the svgHTML to the reusable element list with codename
-                            window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
 
                             if(ifcode2desc){
                               // Add the svgHTML to the reusable element list with codename

@@ -43,21 +43,22 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `//itialize Fabric.js canvas
+// Initialize Fabric.js canvas
 // Initialize a background color
-const myCanvas = new whole_canvas('blue');
+const myCanvas = new whole_canvas('azure');
+// Example usage to draw a car
+const car = new Generate('car');
+const colors = ['deep ruby', 'vivid vermilion', 'vibrant scarletbright red']
+async function drawSequence() {
+    for (let step = 0; step < 3; step++) {
+        car.detail('a large diesel-powered semi-truck with eighteen wheels and a flatbed trailer with color '+colors[step]);
+        const svgname = await myCanvas.draw(car, {x: 15 + step * 20, y: 15 + step * 20}, 0.2 + step * 0.1);
+        car.refsvg(svgname);
+    }
+}
+drawSequence()
 
-// // Example usage to draw a house
-const house = new Generate('house');
-house.detail('a red house');
 
-name = myCanvas.draw(house, {x: 47, y: 33}, 1); // Scale of 1 (no scaling)
-
-console.log('check name', name)
-// // Example usage to draw a tree
-const tree = new Generate('house');
-tree.detail('a green house');
-tree.usesvg(name)
-myCanvas.draw(tree, {x: 74, y: 69}, 1); // Scale of 0.5 (half the size)
 
 ` },
       savedOldCode: { html: '', css: '', js: '' },
