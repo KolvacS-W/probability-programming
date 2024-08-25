@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://dca9-34-75-244-217.ngrok-free.app';
+const ngrok_url = 'https://363f-34-106-195-237.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -108,8 +108,41 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
-        setOptionLevels([])
+      let clickedOutside = true;
+  
+      // Check if the click is inside any of the autocomplete widgets
+      optionLevels.forEach((_, levelIndex) => {
+        const widgetElement = document.getElementById(`autocomplete-widget-${levelIndex}`);
+        if (widgetElement && widgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      });
+  
+      // Check if the click is inside the generate option widget
+      if (widgetRef.current && widgetRef.current.contains(event.target as Node)) {
+        clickedOutside = false;
+      }
+  
+      // Check if the click is inside any of the autocomplete widgets
+      const autocompleteWidgets = document.querySelectorAll('.autocomplete-widget');
+      autocompleteWidgets.forEach((widget) => {
+        if (widget.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      });
+  
+      // Check if the click is inside the coordinate widget (if it's shown)
+      if (showCoordcomplete) {
+        const coordWidgetElement = widgetRef.current;
+        if (coordWidgetElement && coordWidgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      }
+  
+      // If the click was outside all widgets, close them
+      if (clickedOutside) {
+        console.log('Clicked outside');
+        setOptionLevels([]);
         setShowAutocomplete(false);
         setShowGenerateOption(false);
         setShowCoordcomplete(false);
@@ -364,6 +397,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setShowAutocomplete(false);
     setShowGenerateOption(false);
     setOptionLevels([]);
+    setButtonchoice('');
   };
 
   const handleCoordcompleteOptionClick = (option: string, hintText: string) => {
@@ -441,6 +475,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   
   const GenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
     <div
+      id="generate-option-widget"
       ref={widgetRef}
       className="generate-option-widget"
       style={{
@@ -488,7 +523,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       setShowGenerateOption(false);
       setOptionLevels([]);
     };
-
+  
     const handleProceedClick = (option: string) => {
       if (!boldOptions.includes(option)) {
         setBoldOptions([...boldOptions, option]); // Add option to boldOptions array
@@ -499,7 +534,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   
     return (
       <div
-        ref={widgetRef}
+        id={`autocomplete-widget-${levelIndex}`}
         className="autocomplete-widget"
         style={{
           position: 'absolute',
@@ -560,23 +595,27 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           ))}
         </ul>
         <button
-        onClick={handleEqualButtonClick}
-        style={{
-          marginTop: '10px',
-          width: '100%',
-          padding: '5px 0',
-          backgroundColor: 'transparent', // No background color
-          color: 'inherit', // Inherit the default text color
-          border: 'none',
-          cursor: 'pointer',
-          textAlign: 'center', // Center the text
-        }}
-      >
-        create array
-      </button>
+          onClick={handleEqualButtonClick}
+          style={{
+            marginTop: '10px',
+            width: '100%',
+            padding: '5px 0',
+            backgroundColor: 'transparent', // No background color
+            color: 'inherit', // Inherit the default text color
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'center', // Center the text
+          }}
+        >
+          create array
+        </button>
       </div>
     );
   };
+  
+
+
+  
   
   
   
