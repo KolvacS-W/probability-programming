@@ -109,9 +109,52 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
           return updatedVersions;
         });
       }
+
+      if (event.data.type === 'EMPTY_SVGPIECE') {
+        // Empty the reuseableSvgPieceList of the current version
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              return { ...version, reuseableSvgPieceList: [] };
+            }
+            return version;
+          });
+  
+          console.log('reuseableSvgPieceList emptied for version:', currentVersionId);
+          return updatedVersions;
+        });
+      }
+
+      if (event.data.type === 'REMOVE_SVGPIECE') {
+        console.log('removing svg:', event.data.codetext)
+        // Remove a specific SVG piece from the reuseableSvgPieceList by matching codeText
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.filter(
+                element => element.codeText !== event.data.codetext
+              ) || [];
+  
+              return { ...version, reuseableSvgPieceList: updatedReuseableSvgPieceList };
+            }
+            return version;
+          });
+          // Now check if the `currentreuseableSvgPieceList` has been updated correctly
+          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+              
+          console.log('check currentreuseableSvgPieceList', currentreuseableSvgPieceList, updatedVersions);
+
+          return updatedVersions;
+        });
+        
+      }
+  
       if (event.data.type === 'UPDATE_SVGPIECE') {
+        console.log('added svg:', event.data.codetext)
+        const newElementBaseName = event.data.codename;
+        let newElementName = newElementBaseName;
         const newElement = {
-          codeName: event.data.codename,
+          codeName: newElementName,
           codeText: event.data.codetext,
           selected: false,
         };
@@ -120,13 +163,18 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.map(element =>
-                element.codeName === newElement.codeName ? newElement : element
-              ) || [];
+              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.slice() || [];
       
-              if (!updatedReuseableSvgPieceList.some(element => element.codeName === newElement.codeName)) {
-                updatedReuseableSvgPieceList.push(newElement);
+              // Check if there are already elements with the same base name
+              const existingElements = updatedReuseableSvgPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
+              
+              if (existingElements.length > 0) {
+                // Add a number to the codename to make it unique
+                newElementName = newElementBaseName + '_' + existingElements.length.toString();
+                newElement.codeName = newElementName;
               }
+      
+              updatedReuseableSvgPieceList.push(newElement);
       
               return { ...version, reuseableSvgPieceList: updatedReuseableSvgPieceList };
             }
@@ -138,25 +186,10 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       
           console.log('check currentreuseableSvgPieceList', currentreuseableSvgPieceList, updatedVersions);
       
-          // if (currentreuseableSvgPieceList && currentreuseableSvgPieceList.some(element => element.codeName === event.data.codename)) {
-          //   iframeRef.current.contentWindow.postMessage(
-          //     {
-          //       type: 'UPDATE_SVGPIECE_CONFIRMED',
-          //       codename: event.data.codename,
-          //       reuseableSvgPieceList: currentreuseableSvgPieceList,
-          //     },
-          //     '*'
-          //   );
-          //   console.log(
-          //     'posted UPDATE_SVGPIECE_CONFIRMED to iframe',
-          //     currentreuseableSvgPieceList,
-          //     updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList
-          //   );
-          // }
-      
           return updatedVersions;
         });
       }
+      
       if (event.data.type === 'CODE2DESC') {
         handleCode2Desc(currentVersionId, event.data.code);
         console.log('code2desc called');
@@ -518,7 +551,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 // Function to highlight or unhighlight the clicked SVG element
 // Array to keep track of all highlighted elements
 window.highlightedElements = [];
-
+window.original
 // Function to toggle highlight on an SVG element by modifying its attributes
 function toggleHighlight(event) {
   console.log('clicked on svg', event.currentTarget);
@@ -527,6 +560,7 @@ function toggleHighlight(event) {
   const target = event.currentTarget;
 
   // Check if the element is already highlighted
+  const svgtext = target.outerHTML
   const isHighlighted = target.getAttribute('data-highlighted') === 'true';
 
   if (isHighlighted) {
@@ -534,11 +568,17 @@ function toggleHighlight(event) {
     target.setAttribute('stroke', target.getAttribute('data-original-stroke') || 'none');
     target.setAttribute('stroke-width', target.getAttribute('data-original-stroke-width') || '1');
     target.removeAttribute('data-highlighted');
+    target.removeAttribute('data-original-stroke-width'); // Remove the custom stroke-width
+target.removeAttribute('data-original-stroke'); // Remove the custom stroke-width
     window.highlightedElements = window.highlightedElements.filter(el => el !== target);
 
     // Also remove from the reuseablesvgpiecelist
-    const codename = target.getAttribute('name').split(' ')[0];
-    window.reuseablesvgpiecelist = window.reuseablesvgpiecelist.filter(el => el.codename !== codename);
+    const codename = target.outerHTML.split(' ')[0];
+        // Also remove from the reuseablesvgpiecelist
+    const svgString = target.outerHTML
+
+    // Send a message to the parent to remove the SVG piece
+    window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
   } else {
     // If not highlighted, store original attributes, apply highlight, and add to the list
     const originalStroke = target.getAttribute('stroke') || 'none';
@@ -547,14 +587,13 @@ function toggleHighlight(event) {
     target.setAttribute('data-original-stroke', originalStroke);
     target.setAttribute('data-original-stroke-width', originalStrokeWidth);
     target.setAttribute('stroke', 'yellow');
-    target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 4);
+    target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
     target.setAttribute('data-highlighted', 'true');
     window.highlightedElements.push(target);
     console.log('heighlighted')
     // Add the SVG piece to the reuseablesvgpiecelist
     const codename = target.outerHTML.split(' ')[0];
-    const svgString = target.outerHTML.replace(/stroke="yellow" stroke-width="\d+"/, ''); // Store without highlight
-    //window.reuseablesvgpiecelist.push({ codename, svgString });
+    const svgString = svgtext
     console.log('posting')
     // Send the updated SVG piece to the parent
     window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: codename, codetext: svgString }, '*');
@@ -609,6 +648,7 @@ document.querySelectorAll('svg *').forEach(svgElement => {
 document.body.addEventListener('click', function(event) {
   if (!event.target.closest('svg *')) {
     removeAllHighlights();
+    window.parent.postMessage({ type: 'EMPTY_SVGPIECE'}, '*');
   }
 });
 

@@ -186,6 +186,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
+    const selection = window.getSelection();
+    const word = selection?.toString().trim();
+
     if (event.key === '$') {
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const textBeforeCursor = userjs.slice(0, cursorPosition);
@@ -197,22 +200,45 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowAutocomplete(true);
       }
     }
-    if (event.key === '@') {
-      const cursorPosition = editorRef.current?.selectionStart || 0;
-      const textBeforeCursor = userjs.slice(0, cursorPosition);
-      const hintText = textBeforeCursor.split('coord').pop();
-      if (hintText) {
-        setHintKeywords(hintText);
-        const position = getCaretCoordinates(editorRef.current, cursorPosition - hintText.length - 1);
-        setCoordcompletePosition({ top: position.top, left: position.left });
-        setShowCoordcomplete(true);
-      }
-    }
+    // if (event.key === '@') {
+    //   const cursorPosition = editorRef.current?.selectionStart || 0;
+    //   const textBeforeCursor = userjs.slice(0, cursorPosition);
+    //   const hintText = textBeforeCursor.split('coord').pop();
+    //   if (hintText) {
+    //     setHintKeywords(hintText);
+    //     const position = getCaretCoordinates(editorRef.current, cursorPosition - hintText.length - 1);
+    //     setCoordcompletePosition({ top: position.top, left: position.left });
+    //     setShowCoordcomplete(true);
+    //   }
+    // }
   };
 
   const handleDoubleClick = (event: React.MouseEvent) => {
     const selection = window.getSelection();
     const word = selection?.toString().trim();
+
+    if (word === 'pieceis') {
+      console.log('double-clicked on piece');
+      const currentVersion = versions.find(version => version.id === currentVersionId);
+      if (!currentVersion) {
+        console.log('No current version found');
+        return;
+      }
+  
+      const currentreuseableSVGPieceList = currentVersion.reuseableSvgPieceList;
+      console.log('svgpieces', currentVersion, currentreuseableSVGPieceList);
+  
+      if (currentreuseableSVGPieceList) {
+        const codeNames = currentreuseableSVGPieceList.map(item => item.codeName).join('\', \'');
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const textBeforeCursor = userjs.slice(0, cursorPosition);
+        const textAfterCursor = userjs.slice(cursorPosition+word.length);
+        const newText = textBeforeCursor + '\''+ codeNames + '\''+ textAfterCursor;
+        setuserJs(newText);
+      } else {
+        console.log('reuseableSvgPieceList is undefined or empty');
+      }
+    }
     if (word == 'coord'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;

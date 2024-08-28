@@ -49,6 +49,7 @@ const myCanvas = new whole_canvas('azure');
 // Example usage to draw a car
 const car = new Generate('car');
 
+//car.modify(['<path', '<path_1', '<circle'], ['larger', 'make red', 'smaller'])
 car.detail('a large truck');
 myCanvas.draw(car, {x: 50, y: 43}, 1)` },
       savedOldCode: { html: '', css: '', js: '' },
