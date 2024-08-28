@@ -375,4 +375,8 @@ textarea {
   outline: none; /* Remove the focus outline when button is clicked */
 }
 
-
+/* Add a style for the highlighted SVG elements */
+/* .highlighted {
+  outline: 2px solid red;
+  outline-offset: 5px;
+} */

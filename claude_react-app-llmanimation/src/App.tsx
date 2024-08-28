@@ -48,19 +48,9 @@ const App: React.FC = () => {
 const myCanvas = new whole_canvas('azure');
 // Example usage to draw a car
 const car = new Generate('car');
-const colors = ['deep ruby', 'vivid vermilion', 'vibrant scarletbright red']
-async function drawSequence() {
-    for (let step = 0; step < 3; step++) {
-        car.detail('a large diesel-powered semi-truck with eighteen wheels and a flatbed trailer with color '+colors[step]);
-        const svgname = await myCanvas.draw(car, {x: 15 + step * 20, y: 15 + step * 20}, 0.2 + step * 0.1);
-        car.refsvg(svgname);
-    }
-}
-drawSequence()
 
-
-
-` },
+car.detail('a large truck');
+myCanvas.draw(car, {x: 50, y: 43}, 1)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -354,6 +344,7 @@ drawSequence()
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
       reuseableElementList: [], // Added
+      reuseableSVGPieceList: []
     };
 
     setVersions([...versions, newVersion]);

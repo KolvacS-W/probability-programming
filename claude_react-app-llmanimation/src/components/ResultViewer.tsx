@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://363f-34-106-195-237.ngrok-free.app';
+const ngrok_url = 'https://98d7-34-125-25-133.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -55,6 +55,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   
   useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
+      
       if (event.data.type === 'UPDATE_HTML') {
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
         console.log('backendhtml updated to app', event.data.html);
@@ -108,7 +109,54 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
           return updatedVersions;
         });
       }
-  
+      if (event.data.type === 'UPDATE_SVGPIECE') {
+        const newElement = {
+          codeName: event.data.codename,
+          codeText: event.data.codetext,
+          selected: false,
+        };
+      
+        // Update the reusable SVG piece list and then check the updated list
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.map(element =>
+                element.codeName === newElement.codeName ? newElement : element
+              ) || [];
+      
+              if (!updatedReuseableSvgPieceList.some(element => element.codeName === newElement.codeName)) {
+                updatedReuseableSvgPieceList.push(newElement);
+              }
+      
+              return { ...version, reuseableSvgPieceList: updatedReuseableSvgPieceList };
+            }
+            return version;
+          });
+      
+          // Now check if the `currentreuseableSvgPieceList` has been updated correctly
+          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+      
+          console.log('check currentreuseableSvgPieceList', currentreuseableSvgPieceList, updatedVersions);
+      
+          // if (currentreuseableSvgPieceList && currentreuseableSvgPieceList.some(element => element.codeName === event.data.codename)) {
+          //   iframeRef.current.contentWindow.postMessage(
+          //     {
+          //       type: 'UPDATE_SVGPIECE_CONFIRMED',
+          //       codename: event.data.codename,
+          //       reuseableSvgPieceList: currentreuseableSvgPieceList,
+          //     },
+          //     '*'
+          //   );
+          //   console.log(
+          //     'posted UPDATE_SVGPIECE_CONFIRMED to iframe',
+          //     currentreuseableSvgPieceList,
+          //     updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList
+          //   );
+          // }
+      
+          return updatedVersions;
+        });
+      }
       if (event.data.type === 'CODE2DESC') {
         handleCode2Desc(currentVersionId, event.data.code);
         console.log('code2desc called');
@@ -260,6 +308,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                       const y = ((event.clientY - rect.top) / rect.height) * 100;
                       window.parent.postMessage({ type: 'CLICK_COORDINATES', x: x, y: y }, '*');
                   });
+                  
                   </script>
                   <script>
                     window.currentreuseableElementList = ${JSON.stringify(currentreuseableElementList)};
@@ -466,6 +515,103 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                   };
                                   window.addEventListener('message', messageHandler);
                               });
+                                // Function to highlight or unhighlight the clicked SVG element
+// Array to keep track of all highlighted elements
+window.highlightedElements = [];
+
+// Function to toggle highlight on an SVG element by modifying its attributes
+function toggleHighlight(event) {
+  console.log('clicked on svg', event.currentTarget);
+  event.stopPropagation();
+
+  const target = event.currentTarget;
+
+  // Check if the element is already highlighted
+  const isHighlighted = target.getAttribute('data-highlighted') === 'true';
+
+  if (isHighlighted) {
+    // If already highlighted, reset to original attributes and remove from the list
+    target.setAttribute('stroke', target.getAttribute('data-original-stroke') || 'none');
+    target.setAttribute('stroke-width', target.getAttribute('data-original-stroke-width') || '1');
+    target.removeAttribute('data-highlighted');
+    window.highlightedElements = window.highlightedElements.filter(el => el !== target);
+
+    // Also remove from the reuseablesvgpiecelist
+    const codename = target.getAttribute('name').split(' ')[0];
+    window.reuseablesvgpiecelist = window.reuseablesvgpiecelist.filter(el => el.codename !== codename);
+  } else {
+    // If not highlighted, store original attributes, apply highlight, and add to the list
+    const originalStroke = target.getAttribute('stroke') || 'none';
+    const originalStrokeWidth = target.getAttribute('stroke-width') || '1';
+
+    target.setAttribute('data-original-stroke', originalStroke);
+    target.setAttribute('data-original-stroke-width', originalStrokeWidth);
+    target.setAttribute('stroke', 'yellow');
+    target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 4);
+    target.setAttribute('data-highlighted', 'true');
+    window.highlightedElements.push(target);
+    console.log('heighlighted')
+    // Add the SVG piece to the reuseablesvgpiecelist
+    const codename = target.outerHTML.split(' ')[0];
+    const svgString = target.outerHTML.replace(/stroke="yellow" stroke-width="\d+"/, ''); // Store without highlight
+    //window.reuseablesvgpiecelist.push({ codename, svgString });
+    console.log('posting')
+    // Send the updated SVG piece to the parent
+    window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: codename, codetext: svgString }, '*');
+  }
+
+  // Trigger the re-render
+  reRenderCanvas();
+}
+
+// Function to re-render the canvas without rerunning user.js
+function reRenderCanvas() {
+  console.log('Re-rendering canvas');
+  
+  const canvasContainer = document.getElementById('canvasContainer');
+  
+  if (canvasContainer) {
+    const svgElements = Array.from(canvasContainer.querySelectorAll('svg'));
+
+    // Clear the canvas
+    while (canvasContainer.firstChild) {
+      canvasContainer.removeChild(canvasContainer.firstChild);
+    }
+
+    // Re-append the saved SVG elements
+    svgElements.forEach(svg => {
+      canvasContainer.appendChild(svg);
+    });
+  }
+}
+
+// Function to remove highlights from all elements in the highlightedElements array
+function removeAllHighlights() {
+  window.highlightedElements.forEach(element => {
+    element.setAttribute('stroke', element.getAttribute('data-original-stroke') || 'none');
+    element.setAttribute('stroke-width', element.getAttribute('data-original-stroke-width') || '1');
+    element.removeAttribute('data-highlighted');
+  });
+
+  // Clear the list after removing highlights
+  window.highlightedElements = [];
+
+  // Trigger the re-render
+  reRenderCanvas();
+}
+
+// Attach the click event listener to all SVG elements
+document.querySelectorAll('svg *').forEach(svgElement => {
+  svgElement.addEventListener('click', toggleHighlight);
+});
+
+// If the user clicks outside of an SVG element, remove highlights from all highlighted elements
+document.body.addEventListener('click', function(event) {
+  if (!event.target.closest('svg *')) {
+    removeAllHighlights();
+  }
+});
+
                                 return codename; // Return the codename
                               }
                             }).catch(error => {
@@ -505,9 +651,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                       }  
                       window.whole_canvas = whole_canvas;
                     }
-
                     (function() {
-                      ${usercode.js}
+                      // Automatically wrap the user code in an async function
+                      (async function() {
+                        ${usercode.js}
+                      })();
                     })();
                   </script>
               </body>
