@@ -148,6 +148,20 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
         });
         
       }
+
+      if (event.data.type === 'GET_SVGPIECELIST') {
+        const currentreuseableSvgPieceList = versions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+        if (currentreuseableSvgPieceList) {
+          iframeRef.current.contentWindow.postMessage(
+            {
+              type: 'RETURN_SVGPIECELIST',
+              currentreuseableSvgPieceList: currentreuseableSvgPieceList,
+            },
+            '*'
+          );
+          console.log('GET_SVGPIECELIST returned')
+        }
+      }
   
       if (event.data.type === 'UPDATE_SVGPIECE') {
         console.log('added svg:', event.data.codetext);
@@ -374,6 +388,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           this.detail_prompt = '';
                           this.refcode = '';
                           this.fixcode = '';
+                          this.piecenames = [];
+                          this.piecenamemodify = [];
                           console.log('object created:', name);
                         }
 
@@ -392,6 +408,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('svg code fixed:', code);
                         }
 
+                        modify(piecenames,piecenamemodify){
+                          this.piecenames = piecenames;
+                          this.piecenamemodify = piecenamemodify;
+                        }
+
                         async draw(coord, canvas, reuseablecodelist, scale = 1) {
                           console.log('object draw called', this.basic_prompt);
 
@@ -406,8 +427,45 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                               console.log('draw with ref code:', existingcode)
 
-                              APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
-                            }
+                              if (this.piecenames) {
+                              //get svgpiecelist from react app
+                              window.parent.postMessage({ type: 'GET_SVGPIECELIST'}, '*');
+                              let currentreuseableSvgPieceList = []
+                              await new Promise((resolve) => {
+                                  const messageHandler = (event) => {
+                                      if (event.data.type === 'RETURN_SVGPIECELIST') {
+                                          console.log('get returned svglist', event.data.currentreuseableSvgPieceList)
+                                          currentreuseableSvgPieceList = event.data.currentreuseableSvgPieceList
+                                          window.removeEventListener('message', messageHandler);
+                                          resolve(); // Resolve the promise to continue execution
+                                      }
+                                  };
+                                  window.addEventListener('message', messageHandler);
+                              });
+
+
+
+                                  // Create a new list: piececode by getting codeText using this.piecemodify elements as codeName from window.currentreuseablesvgpieces
+                                  let piececode = this.piecenames.map(codeName => {
+                                      const piece = currentreuseableSvgPieceList.find(item => item.codeName === codeName);
+                                      return piece ? piece.codeText : null;
+                                  }).filter(codeText => codeText !== null);
+
+                                  // Initialize the APIprompt
+                                  let modifyprompt = '';
+
+                                  // For each element A in piececode and element B in piecemodify, create a prompt
+                                  piececode.forEach((codePiece, index) => {
+                                      const modification = this.piecenamemodify[index];
+                                      modifyprompt += \`Make modification:\` +  modification + \` to svg code piece:\` + codePiece+\`. \`;
+                                  });
+                                  APIprompt = 'Modify an existing svg code: '+existingcode+ '. Only Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';                                
+                              }
+
+                                else{
+                                    APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                                }
+                              }
                         
                             else{
                               console.log('no existing code')

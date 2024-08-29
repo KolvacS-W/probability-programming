@@ -49,8 +49,9 @@ const myCanvas = new whole_canvas('azure');
 // Example usage to draw a car
 const car = new Generate('car');
 
-//car.modify(['<path', '<path_1', '<circle'], ['larger', 'make red', 'smaller'])
-car.detail('a large truck');
+//car.modify(['<rect_0', '<rect_1'], ['make purple', 'make orange'])
+//car.refsvg('car a large truck')
+car.detail('a large blue truck')
 myCanvas.draw(car, {x: 50, y: 43}, 1)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
@@ -217,7 +218,7 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)` },
     setVersions((prevVersions) => {
       const updatedVersions = prevVersions.map(version =>
         version.id === currentVersionId
-          ? { ...version, usercode: newuserCode}
+          ? { ...version, usercode: newuserCode, reuseableSVGPieceList: []}
           : version
       );
       return updatedVersions;
