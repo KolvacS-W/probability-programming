@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://98d7-34-125-25-133.ngrok-free.app';
+const ngrok_url = 'https://b3c1-34-145-232-210.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -150,7 +150,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       }
   
       if (event.data.type === 'UPDATE_SVGPIECE') {
-        console.log('added svg:', event.data.codetext)
+        console.log('added svg:', event.data.codetext);
         const newElementBaseName = event.data.codename;
         let newElementName = newElementBaseName;
         const newElement = {
@@ -167,10 +167,22 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       
               // Check if there are already elements with the same base name
               const existingElements = updatedReuseableSvgPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
-              
+      
               if (existingElements.length > 0) {
-                // Add a number to the codename to make it unique
-                newElementName = newElementBaseName + '_' + existingElements.length.toString();
+                // Find the biggest index after the underscore in the existing elements
+                const maxIndex = existingElements
+                  .map(element => {
+                    const parts = element.codeName.split('_');
+                    return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : 0;
+                  })
+                  .reduce((max, current) => Math.max(max, current), -1);
+      
+                // Set the new codename with the incremented index
+                newElementName = `${newElementBaseName}_${maxIndex + 1}`;
+                newElement.codeName = newElementName;
+              } else {
+                // No elements with the same base name, use basename_0
+                newElementName = `${newElementBaseName}_0`;
                 newElement.codeName = newElementName;
               }
       
@@ -189,6 +201,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
           return updatedVersions;
         });
       }
+      
       
       if (event.data.type === 'CODE2DESC') {
         handleCode2Desc(currentVersionId, event.data.code);
@@ -565,13 +578,23 @@ function toggleHighlight(event) {
 
   if (isHighlighted) {
     // If already highlighted, reset to original attributes and remove from the list
-    target.setAttribute('stroke', target.getAttribute('data-original-stroke') || 'none');
-    target.setAttribute('stroke-width', target.getAttribute('data-original-stroke-width') || '1');
+    const originalStroke = target.getAttribute('data-original-stroke') || 'none';
+    const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
+
+    // Set the stroke and stroke-width back to their original values
+    target.setAttribute('stroke', originalStroke);
+    target.setAttribute('stroke-width', originalStrokeWidth);
+
     target.removeAttribute('data-highlighted');
     target.removeAttribute('data-original-stroke-width'); // Remove the custom stroke-width
-target.removeAttribute('data-original-stroke'); // Remove the custom stroke-width
+    target.removeAttribute('data-original-stroke'); // Remove the custom stroke-width
     window.highlightedElements = window.highlightedElements.filter(el => el !== target);
 
+        // If the stroke is 'none' and stroke-width is '0', remove these attributes
+    if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
+        target.removeAttribute('stroke');
+        target.removeAttribute('stroke-width');
+    }
     // Also remove from the reuseablesvgpiecelist
     const codename = target.outerHTML.split(' ')[0];
         // Also remove from the reuseablesvgpiecelist
@@ -582,7 +605,7 @@ target.removeAttribute('data-original-stroke'); // Remove the custom stroke-widt
   } else {
     // If not highlighted, store original attributes, apply highlight, and add to the list
     const originalStroke = target.getAttribute('stroke') || 'none';
-    const originalStrokeWidth = target.getAttribute('stroke-width') || '1';
+    const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
 
     target.setAttribute('data-original-stroke', originalStroke);
     target.setAttribute('data-original-stroke-width', originalStrokeWidth);

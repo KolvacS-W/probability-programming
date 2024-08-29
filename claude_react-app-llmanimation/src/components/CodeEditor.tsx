@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://98d7-34-125-25-133.ngrok-free.app';
+const ngrok_url = 'https://b3c1-34-145-232-210.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
