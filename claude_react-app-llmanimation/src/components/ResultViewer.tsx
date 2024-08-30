@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://b3c1-34-145-232-210.ngrok-free.app';
+const ngrok_url = 'https://d307-35-230-114-216.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -54,6 +54,20 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   }, []);
   
   useEffect(() => {
+
+    // //this will be emptied everytime code is run:
+    // setVersions(prevVersions => {
+    //   const updatedVersions = prevVersions.map(version => {
+    //     if (version.id === currentVersionId) {
+    //       return { ...version, modifySVGPieceList: [] };
+    //     }
+    //     return version;
+    //   });
+
+    //   console.log('reuseableSvgPieceList emptied for version:', currentVersionId);
+    //   return updatedVersions;
+    // });
+
     const handleIframeMessage = (event: MessageEvent) => {
       
       if (event.data.type === 'UPDATE_HTML') {
@@ -150,7 +164,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       }
 
       if (event.data.type === 'GET_SVGPIECELIST') {
-        const currentreuseableSvgPieceList = versions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+        console.log('GET_SVGPIECELIST returning', versions.find(version => version.id === currentVersionId)?.modifySVGPieceList)
+        const currentreuseableSvgPieceList = versions.find(version => version.id === currentVersionId)?.modifySVGPieceList;
         if (currentreuseableSvgPieceList) {
           iframeRef.current.contentWindow.postMessage(
             {
@@ -178,9 +193,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
               const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.slice() || [];
+              const updatedModifySvgPieceList = version.modifySVGPieceList ? [...version.modifySVGPieceList] : []; 
       
               // Check if there are already elements with the same base name
-              const existingElements = updatedReuseableSvgPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
+              // the naming index is defined by modifySVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
+              const existingElements = updatedModifySvgPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
       
               if (existingElements.length > 0) {
                 // Find the biggest index after the underscore in the existing elements
@@ -201,16 +218,22 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
               }
       
               updatedReuseableSvgPieceList.push(newElement);
+              updatedModifySvgPieceList.push(newElement);
       
-              return { ...version, reuseableSvgPieceList: updatedReuseableSvgPieceList };
+              return { 
+                ...version, 
+                reuseableSvgPieceList: updatedReuseableSvgPieceList, 
+                modifySVGPieceList: updatedModifySvgPieceList 
+              };
             }
             return version;
           });
       
           // Now check if the `currentreuseableSvgPieceList` has been updated correctly
-          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.modifySVGPieceList;
       
-          console.log('check currentreuseableSvgPieceList', currentreuseableSvgPieceList, updatedVersions);
+          console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList);
+          console.log('check all previously selected SvgPieceList in update', currentreuseableSvgPieceList);
       
           return updatedVersions;
         });
@@ -393,10 +416,10 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('object created:', name);
                         }
 
-                        detail(detail) {
-                          this.detail_prompt = detail;
-                          console.log('detail added:', detail);
-                        }
+                        // detail(detail) {
+                        //   this.detail_prompt = detail;
+                        //   console.log('detail added:', detail);
+                        // }
 
                         refsvg(code) {
                           this.refcode = code;
@@ -463,13 +486,13 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               }
 
                                 else{
-                                    APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '(with these details: ' + this.detail_prompt + '). If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                                    APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '. If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                                 }
                               }
                         
                             else{
                               console.log('no existing code')
-                              APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt + ', with these details: ' + this.detail_prompt + '. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                              APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                             }
 
                             console.log('api prompt', APIprompt);
@@ -600,9 +623,9 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               const svgElement = await generateObject.draw(coord, this.canvasContainer, this.reuseablecodelist, scale);
                               if (svgElement) {
                                 console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgElement, generateObject.basic_prompt+' '+generateObject.detail_prompt, coord, scale, ifcode2desc); // Pass the codename and code
+                                this.updateHTMLString(svgElement, generateObject.basic_prompt, coord, scale, ifcode2desc); // Pass the codename and code
                                 const svgHTML = svgElement.outerHTML;
-                                const codename = generateObject.basic_prompt + ' ' + generateObject.detail_prompt;
+                                const codename = generateObject.basic_prompt;
                               // Send the message to update the reusable element list
                               window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
                               console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
@@ -720,10 +743,20 @@ function removeAllHighlights() {
   reRenderCanvas();
 }
 
-// Attach the click event listener to all SVG elements
-document.querySelectorAll('svg *').forEach(svgElement => {
+function attachHighlightListeners(svgElement) {
+  // Remove any existing listeners to prevent duplication
+  svgElement.removeEventListener('click', toggleHighlight);
+  console.log('toggleHighlight added')
+  // Attach the new click event listener
   svgElement.addEventListener('click', toggleHighlight);
-});
+  console.log('toggleHighlight deleted')
+}
+
+//attach click listener to the svg that is generated in this draw call call
+svgElement.querySelectorAll('*').forEach(svgChildElement => {
+      svgChildElement.addEventListener('click', toggleHighlight);
+    });
+    console.log('added listener for ', svgElement.outerHTML)
 
 // If the user clicks outside of an SVG element, remove highlights from all highlighted elements
 document.body.addEventListener('click', function(event) {
@@ -739,7 +772,7 @@ document.body.addEventListener('click', function(event) {
                               console.error('Error in canvas draw sequence:', error);
                             });
                             
-                            return this.drawQueue.then(() => generateObject.basic_prompt + ' ' + generateObject.detail_prompt); // Ensure the codename is returned
+                            return this.drawQueue.then(() => generateObject.basic_prompt); // Ensure the codename is returned
                           }
 
                           updateHTMLString(svgElement, codename, coord, scale, ifcode2desc) {

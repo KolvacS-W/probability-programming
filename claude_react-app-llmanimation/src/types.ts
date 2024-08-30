@@ -35,7 +35,8 @@ export interface KeywordNode {
     history?: Version;  // Added for undo functionality
     detailtargetext?: string[],
     reuseableElementList: { codeName: string, codeText: string, selected: boolean }[];
-    reuseableSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];
+    reuseableSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//use to maintain highlight info
+    modifySVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//use to query when modifying 
     storedcoordinate?: { x: number, y: number };
   }
   

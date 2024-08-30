@@ -42,17 +42,13 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `//itialize Fabric.js canvas
-// Initialize Fabric.js canvas
-// Initialize a background color
+      usercode: { js: `
 const myCanvas = new whole_canvas('azure');
 // Example usage to draw a car
-const car = new Generate('car');
+const car = new Generate('a large blue truck');
 
-//car.modify(['<rect_0', '<rect_1'], ['make purple', 'make orange'])
-//car.refsvg('car a large truck')
-car.detail('a large blue truck')
-myCanvas.draw(car, {x: 50, y: 43}, 1)` },
+myCanvas.draw(car, {x: 50, y: 43}, 1)
+` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -346,7 +342,8 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)` },
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
       reuseableElementList: [], // Added
-      reuseableSVGPieceList: []
+      reuseableSVGPieceList: [],
+      modifySVGPieceList: []
     };
 
     setVersions([...versions, newVersion]);

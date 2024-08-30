@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://b3c1-34-145-232-210.ngrok-free.app';
+const ngrok_url = 'https://d307-35-230-114-216.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -217,7 +217,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const selection = window.getSelection();
     const word = selection?.toString().trim();
 
-    if (word === 'pieceis') {
+    if (word === 'modifyauto') {
       console.log('double-clicked on piece');
       const currentVersion = versions.find(version => version.id === currentVersionId);
       if (!currentVersion) {
@@ -239,7 +239,31 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         console.log('reuseableSvgPieceList is undefined or empty');
       }
     }
-    if (word == 'coord'){
+
+    if (word === 'refauto') {
+      console.log('double-clicked on ref');
+      const currentVersion = versions.find(version => version.id === currentVersionId);
+      if (!currentVersion) {
+        console.log('No current version found');
+        return;
+      }
+  
+      const currentreuseableElementList = currentVersion.reuseableElementList;
+      console.log('svgpieces', currentVersion, currentreuseableElementList);
+  
+      if (currentreuseableElementList) {
+        const codeName = currentreuseableElementList.find(item => item.selected === true).codeName;;
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const textBeforeCursor = userjs.slice(0, cursorPosition);
+        const textAfterCursor = userjs.slice(cursorPosition+word.length);
+        const newText = textBeforeCursor + '\''+ codeName + '\''+ textAfterCursor;
+        setuserJs(newText);
+      } else {
+        console.log('reuseableSvgPieceList is undefined or empty');
+      }
+    }
+
+    if (word == 'coordauto'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
