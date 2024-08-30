@@ -25,8 +25,8 @@ const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  var currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
-  //console.log('check svglist', currentreuseableElementList)
+  var currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
+  //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
   
@@ -59,12 +59,12 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     // setVersions(prevVersions => {
     //   const updatedVersions = prevVersions.map(version => {
     //     if (version.id === currentVersionId) {
-    //       return { ...version, modifySVGPieceList: [] };
+    //       return { ...version, previousSelectedSVGPieceList: [] };
     //     }
     //     return version;
     //   });
 
-    //   console.log('reuseableSvgPieceList emptied for version:', currentVersionId);
+    //   console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
     //   return updatedVersions;
     // });
 
@@ -86,37 +86,37 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              const updatedReuseableElementList = version.reuseableElementList.map(element =>
+              const updatedreuseableSVGElementList = version.reuseableSVGElementList.map(element =>
                 element.codeName === newElement.codeName ? newElement : element
               );
   
-              if (!updatedReuseableElementList.some(element => element.codeName === newElement.codeName)) {
-                updatedReuseableElementList.push(newElement);
+              if (!updatedreuseableSVGElementList.some(element => element.codeName === newElement.codeName)) {
+                updatedreuseableSVGElementList.push(newElement);
               }
   
-              return { ...version, reuseableElementList: updatedReuseableElementList };
+              return { ...version, reuseableSVGElementList: updatedreuseableSVGElementList };
             }
             return version;
           });
   
-          // Now check if the `currentreuseableElementList` has been updated correctly
-          const currentreuseableElementList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableElementList;
+          // Now check if the `currentreuseableSVGElementList` has been updated correctly
+          const currentreuseableSVGElementList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
   
-          console.log('check currentreuseableElementList', currentreuseableElementList, updatedVersions);
+          console.log('check currentreuseableSVGElementList', currentreuseableSVGElementList, updatedVersions);
   
-          if (currentreuseableElementList && currentreuseableElementList.some(element => element.codeName === event.data.codename)) {
+          if (currentreuseableSVGElementList && currentreuseableSVGElementList.some(element => element.codeName === event.data.codename)) {
             iframeRef.current.contentWindow.postMessage(
               {
                 type: 'UPDATE_REUSEABLE_CONFIRMED',
                 codename: event.data.codename,
-                reuseableElementList: currentreuseableElementList,
+                reuseableSVGElementList: currentreuseableSVGElementList,
               },
               '*'
             );
             console.log(
               'posted UPDATE_REUSEABLE_CONFIRMED to iframe',
-              currentreuseableElementList,
-              updatedVersions.find(version => version.id === currentVersionId)?.reuseableElementList
+              currentreuseableSVGElementList,
+              updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList
             );
           }
   
@@ -125,38 +125,38 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       }
 
       if (event.data.type === 'EMPTY_SVGPIECE') {
-        // Empty the reuseableSvgPieceList of the current version
+        // Empty the highlightedSVGPieceList of the current version
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              return { ...version, reuseableSvgPieceList: [] };
+              return { ...version, highlightedSVGPieceList: [] };
             }
             return version;
           });
   
-          console.log('reuseableSvgPieceList emptied for version:', currentVersionId);
+          console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
           return updatedVersions;
         });
       }
 
       if (event.data.type === 'REMOVE_SVGPIECE') {
         console.log('removing svg:', event.data.codetext)
-        // Remove a specific SVG piece from the reuseableSvgPieceList by matching codeText
+        // Remove a specific SVG piece from the highlightedSVGPieceList by matching codeText
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.filter(
+              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.filter(
                 element => element.codeText !== event.data.codetext
               ) || [];
   
-              return { ...version, reuseableSvgPieceList: updatedReuseableSvgPieceList };
+              return { ...version, highlightedSVGPieceList: updatedhighlightedSVGPieceList };
             }
             return version;
           });
-          // Now check if the `currentreuseableSvgPieceList` has been updated correctly
-          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList;
+          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList;
               
-          console.log('check currentreuseableSvgPieceList', currentreuseableSvgPieceList, updatedVersions);
+          console.log('check currenthighlightedSVGPieceList', currenthighlightedSVGPieceList, updatedVersions);
 
           return updatedVersions;
         });
@@ -164,13 +164,13 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
       }
 
       if (event.data.type === 'GET_SVGPIECELIST') {
-        console.log('GET_SVGPIECELIST returning', versions.find(version => version.id === currentVersionId)?.modifySVGPieceList)
-        const currentreuseableSvgPieceList = versions.find(version => version.id === currentVersionId)?.modifySVGPieceList;
-        if (currentreuseableSvgPieceList) {
+        console.log('GET_SVGPIECELIST returning', versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList)
+        const currenthighlightedSVGPieceList = versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
+        if (currenthighlightedSVGPieceList) {
           iframeRef.current.contentWindow.postMessage(
             {
               type: 'RETURN_SVGPIECELIST',
-              currentreuseableSvgPieceList: currentreuseableSvgPieceList,
+              currenthighlightedSVGPieceList: currenthighlightedSVGPieceList,
             },
             '*'
           );
@@ -192,12 +192,12 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version => {
             if (version.id === currentVersionId) {
-              const updatedReuseableSvgPieceList = version.reuseableSvgPieceList?.slice() || [];
-              const updatedModifySvgPieceList = version.modifySVGPieceList ? [...version.modifySVGPieceList] : []; 
+              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.slice() || [];
+              const updatedpreviousSelectedSVGPieceList = version.previousSelectedSVGPieceList ? [...version.previousSelectedSVGPieceList] : []; 
       
               // Check if there are already elements with the same base name
-              // the naming index is defined by modifySVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
-              const existingElements = updatedModifySvgPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
+              // the naming index is defined by previousSelectedSVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
+              const existingElements = updatedpreviousSelectedSVGPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
       
               if (existingElements.length > 0) {
                 // Find the biggest index after the underscore in the existing elements
@@ -217,23 +217,23 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                 newElement.codeName = newElementName;
               }
       
-              updatedReuseableSvgPieceList.push(newElement);
-              updatedModifySvgPieceList.push(newElement);
+              updatedhighlightedSVGPieceList.push(newElement);
+              updatedpreviousSelectedSVGPieceList.push(newElement);
       
               return { 
                 ...version, 
-                reuseableSvgPieceList: updatedReuseableSvgPieceList, 
-                modifySVGPieceList: updatedModifySvgPieceList 
+                highlightedSVGPieceList: updatedhighlightedSVGPieceList, 
+                previousSelectedSVGPieceList: updatedpreviousSelectedSVGPieceList 
               };
             }
             return version;
           });
       
-          // Now check if the `currentreuseableSvgPieceList` has been updated correctly
-          const currentreuseableSvgPieceList = updatedVersions.find(version => version.id === currentVersionId)?.modifySVGPieceList;
+          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
       
-          console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.reuseableSvgPieceList);
-          console.log('check all previously selected SvgPieceList in update', currentreuseableSvgPieceList);
+          console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList);
+          console.log('check all previously selected SvgPieceList in update', currenthighlightedSVGPieceList);
       
           return updatedVersions;
         });
@@ -394,7 +394,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                   
                   </script>
                   <script>
-                    window.currentreuseableElementList = ${JSON.stringify(currentreuseableElementList)};
+                    window.currentreuseableSVGElementList = ${JSON.stringify(currentreuseableSVGElementList)};
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
                         const canvasContainer = document.getElementById('canvasContainer');
@@ -444,21 +444,21 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                             if(this.refcode){
                               const codename = this.refcode
-                              const codelist = window.currentreuseableElementList
+                              const codelist = window.currentreuseableSVGElementList
                               //const codelist = reuseablecodelist
                               console.log('check codelist in ref', codelist)
                               const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                               console.log('draw with ref code:', existingcode)
 
-                              if (this.piecenames) {
+                              if ((this.piecenames.length)>0) {
                               //get svgpiecelist from react app
                               window.parent.postMessage({ type: 'GET_SVGPIECELIST'}, '*');
-                              let currentreuseableSvgPieceList = []
+                              let currenthighlightedSVGPieceList = []
                               await new Promise((resolve) => {
                                   const messageHandler = (event) => {
                                       if (event.data.type === 'RETURN_SVGPIECELIST') {
-                                          console.log('get returned svglist', event.data.currentreuseableSvgPieceList)
-                                          currentreuseableSvgPieceList = event.data.currentreuseableSvgPieceList
+                                          console.log('get returned svglist', event.data.currenthighlightedSVGPieceList)
+                                          currenthighlightedSVGPieceList = event.data.currenthighlightedSVGPieceList
                                           window.removeEventListener('message', messageHandler);
                                           resolve(); // Resolve the promise to continue execution
                                       }
@@ -470,7 +470,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                                   // Create a new list: piececode by getting codeText using this.piecemodify elements as codeName from window.currentreuseablesvgpieces
                                   let piececode = this.piecenames.map(codeName => {
-                                      const piece = currentreuseableSvgPieceList.find(item => item.codeName === codeName);
+                                      const piece = currenthighlightedSVGPieceList.find(item => item.codeName === codeName);
                                       return piece ? piece.codeText : null;
                                   }).filter(codeText => codeText !== null);
 
@@ -523,7 +523,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           }
 
                         else{
-                            const codelist = window.currentreuseableElementList
+                            const codelist = window.currentreuseableSVGElementList
                             const codename = this.fixcode
                             const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                             console.log('draw with fixed code:', existingcode)
@@ -634,8 +634,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               await new Promise((resolve) => {
                                   const messageHandler = (event) => {
                                       if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                                          window.currentreuseableElementList = event.data.reuseableElementList;
-                                          console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableElementList);
+                                          window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                                          console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
                                           window.removeEventListener('message', messageHandler);
                                           resolve(); // Resolve the promise to continue execution
                                       }
@@ -676,9 +676,9 @@ function toggleHighlight(event) {
         target.removeAttribute('stroke');
         target.removeAttribute('stroke-width');
     }
-    // Also remove from the reuseablesvgpiecelist
+    // Also remove from the highlightedSVGPieceList
     const codename = target.outerHTML.split(' ')[0];
-        // Also remove from the reuseablesvgpiecelist
+        // Also remove from the highlightedSVGPieceList
     const svgString = target.outerHTML
 
     // Send a message to the parent to remove the SVG piece
@@ -695,7 +695,7 @@ function toggleHighlight(event) {
     target.setAttribute('data-highlighted', 'true');
     window.highlightedElements.push(target);
     console.log('heighlighted')
-    // Add the SVG piece to the reuseablesvgpiecelist
+    // Add the SVG piece to the highlightedSVGPieceList
     const codename = target.outerHTML.split(' ')[0];
     const svgString = svgtext
     console.log('posting')

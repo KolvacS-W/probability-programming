@@ -225,18 +225,18 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         return;
       }
   
-      const currentreuseableSVGPieceList = currentVersion.reuseableSvgPieceList;
-      console.log('svgpieces', currentVersion, currentreuseableSVGPieceList);
+      const currenthighlightedSVGPieceList = currentVersion.highlightedSVGPieceList;
+      console.log('svgpieces', currentVersion, currenthighlightedSVGPieceList);
   
-      if (currentreuseableSVGPieceList) {
-        const codeNames = currentreuseableSVGPieceList.map(item => item.codeName).join('\', \'');
+      if (currenthighlightedSVGPieceList) {
+        const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
         const cursorPosition = editorRef.current?.selectionStart || 0;
         const textBeforeCursor = userjs.slice(0, cursorPosition);
         const textAfterCursor = userjs.slice(cursorPosition+word.length);
         const newText = textBeforeCursor + '\''+ codeNames + '\''+ textAfterCursor;
         setuserJs(newText);
       } else {
-        console.log('reuseableSvgPieceList is undefined or empty');
+        console.log('highlightedSVGPieceList is undefined or empty');
       }
     }
 
@@ -248,18 +248,18 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         return;
       }
   
-      const currentreuseableElementList = currentVersion.reuseableElementList;
-      console.log('svgpieces', currentVersion, currentreuseableElementList);
+      const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+      console.log('svgpieces', currentVersion, currentreuseableSVGElementList);
   
-      if (currentreuseableElementList) {
-        const codeName = currentreuseableElementList.find(item => item.selected === true).codeName;;
+      if (currentreuseableSVGElementList) {
+        const codeName = currentreuseableSVGElementList.find(item => item.selected === true).codeName;;
         const cursorPosition = editorRef.current?.selectionStart || 0;
         const textBeforeCursor = userjs.slice(0, cursorPosition);
         const textAfterCursor = userjs.slice(cursorPosition+word.length);
         const newText = textBeforeCursor + '\''+ codeName + '\''+ textAfterCursor;
         setuserJs(newText);
       } else {
-        console.log('reuseableSvgPieceList is undefined or empty');
+        console.log('highlightedSVGPieceList is undefined or empty');
       }
     }
 
@@ -415,10 +415,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   };
 
   const handleExistingCode = async (hint: string, levelIndex = 0) => {
-    const currentreuseableElementList = versions.find(version => version.id === currentVersionId)?.reuseableElementList;
+    const currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
     
-    if (currentreuseableElementList) {
-      const codenamelist = currentreuseableElementList.map(item => item.codeName)
+    if (currentreuseableSVGElementList) {
+      const codenamelist = currentreuseableSVGElementList.map(item => item.codeName)
       const options = codenamelist;
       console.log('codelist', options)
       setShowAutocomplete(true)

@@ -29,7 +29,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
     setVersions(prevVersions => {
       const updatedVersions = prevVersions.map(version =>
         version.id === versionId
-          ? { ...version, reuseableElementList: version.reuseableElementList.filter(element => element.codeName !== codeName) }
+          ? { ...version, reuseableSVGElementList: version.reuseableSVGElementList.filter(element => element.codeName !== codeName) }
           : version
       );
       return updatedVersions;
@@ -99,7 +99,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version =>
             version.id === currentVersionId
-              ? { ...version, reuseableElementList: [...version.reuseableElementList, ...newElements] }
+              ? { ...version, reuseableSVGElementList: [...version.reuseableSVGElementList, ...newElements] }
               : version
           );
           return updatedVersions;
@@ -135,7 +135,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
         version.id === versionId
           ? {
               ...version,
-              reuseableElementList: version.reuseableElementList.map(element =>
+              reuseableSVGElementList: version.reuseableSVGElementList.map(element =>
                 element.codeName === codeName
                   ? { ...element, selected: !element.selected }
                   : element
@@ -165,7 +165,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
             {loading ? 'Loading...' : 'Add'}
           </button>
         </div>
-        {currentVersionId !== null && versions.find(version => version.id === currentVersionId)!.reuseableElementList.map((element, index) => (
+        {currentVersionId !== null && versions.find(version => version.id === currentVersionId)!.reuseableSVGElementList.map((element, index) => (
         <div
           key={index}
           className={`reusable-element-item ${element.selected ? 'selected' : ''}`}

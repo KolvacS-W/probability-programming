@@ -197,8 +197,8 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
       return updatedVersions;
     });
 
-    const selectedElementcodeName = version?.reuseableElementList.filter(element => element.selected).map(element => element.codeName).join('\n') || '';
-    const selectedElementcodeText = version?.reuseableElementList.filter(element => element.selected).map(element => element.codeText).join('\n') || '';
+    const selectedElementcodeName = version?.reuseableSVGElementList.filter(element => element.selected).map(element => element.codeName).join('\n') || '';
+    const selectedElementcodeText = version?.reuseableSVGElementList.filter(element => element.selected).map(element => element.codeText).join('\n') || '';
 
     let prompt = `Create an animation using anime.js based on the given instruction. 
     Make the result animation on a square page that can fit and center on any page.
@@ -386,8 +386,8 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
       return updatedVersions;
     });
 
-    const selectedElementcodeName = version?.reuseableElementList.filter(element => element.selected).map(element => element.codeName).join('\n') || '';
-    const selectedElementcodeText = version?.reuseableElementList.filter(element => element.selected).map(element => element.codeText).join('\n') || '';
+    const selectedElementcodeName = version?.reuseableSVGElementList.filter(element => element.selected).map(element => element.codeName).join('\n') || '';
+    const selectedElementcodeText = version?.reuseableSVGElementList.filter(element => element.selected).map(element => element.codeText).join('\n') || '';
 
     let prompt = `Based on the following old code and its old description, I am showing you an updated description and you will provide an updated code. \\
     Old code: HTML: \`\`\`html${savedOldCode.html}\`\`\` CSS: \`\`\`css${savedOldCode.css}\`\`\` JS: \`\`\`js${savedOldCode.js}\`\`\` \\
@@ -591,7 +591,7 @@ const DescriptionEditor: React.FC<DescriptionEditorProps> = ({
               formatDescriptionHtml:'',
               specificParamList: [], // Added
               paramCheckEnabled: false, // Added
-              reuseableElementList: [], // Added
+              reuseableSVGElementList: [], // Added
             });
           });
           return updatedVersions;

@@ -65,7 +65,7 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)
       formatDescriptionHtml:'',
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
-      reuseableElementList: [], // Added
+      reuseableSVGElementList: [], // Added
     };
   
     setVersions([baseVersion]);
@@ -214,7 +214,7 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)
     setVersions((prevVersions) => {
       const updatedVersions = prevVersions.map(version =>
         version.id === currentVersionId
-          ? { ...version, usercode: newuserCode, reuseableSVGPieceList: []}
+          ? { ...version, usercode: newuserCode, highlightedSVGPieceList: []}
           : version
       );
       return updatedVersions;
@@ -341,9 +341,9 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)
       formatDescriptionHtml:'',
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
-      reuseableElementList: [], // Added
-      reuseableSVGPieceList: [],
-      modifySVGPieceList: []
+      reuseableSVGElementList: [], // Added
+      highlightedSVGPieceList: [],
+      previousSelectedSVGPieceList: []
     };
 
     setVersions([...versions, newVersion]);
@@ -420,7 +420,7 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)
       formatDescriptionHtml:'',
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
-      reuseableElementList: currentVersion.reuseableElementList, // Added
+      reuseableSVGElementList: currentVersion.reuseableSVGElementList, // Added
     };
   
     setVersions([...versions, newVersion]);
@@ -431,7 +431,7 @@ myCanvas.draw(car, {x: 50, y: 43}, 1)
     setVersions(prevVersions => {
       const updatedVersions = prevVersions.map(version =>
         version.id === versionId
-          ? { ...version, reuseableElementList: version.reuseableElementList.filter(element => element.codeName !== codeName) }
+          ? { ...version, reuseableSVGElementList: version.reuseableSVGElementList.filter(element => element.codeName !== codeName) }
           : version
       );
       return updatedVersions;

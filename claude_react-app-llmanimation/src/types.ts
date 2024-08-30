@@ -34,9 +34,9 @@ export interface KeywordNode {
     paramCheckEnabled: boolean;  // 
     history?: Version;  // Added for undo functionality
     detailtargetext?: string[],
-    reuseableElementList: { codeName: string, codeText: string, selected: boolean }[];
-    reuseableSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//use to maintain highlight info
-    modifySVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//use to query when modifying 
+    reuseableSVGElementList: { codeName: string, codeText: string, selected: boolean }[];
+    highlightedSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//only highlighted, use to maintain highlight info
+    previousSelectedSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//all ever selected, use to query when modifying 
     storedcoordinate?: { x: number, y: number };
   }
   
