@@ -42,12 +42,17 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `
-const myCanvas = new whole_canvas('azure');
-// Example usage to draw a car
-const car = new Generate('a large blue truck');
+      usercode: { js: `const myCanvas = new whole_canvas('azure');
 
-myCanvas.draw(car, {x: 50, y: 43}, 1)
+const carrule = new Rule('a blue car')
+
+// carrule.useobj.objname = 'car1'
+
+// carrule.modifyobj = {objname: 'car2', objpiece: [], pieceprompts: []}
+
+console.log(carrule)
+
+const Carobj = carrule.generateandDrawObj('car3', myCanvas, {x: 34, y: 67}, 1.2)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [

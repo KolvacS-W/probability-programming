@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://d307-35-230-114-216.ngrok-free.app';
+const ngrok_url = 'https://d28c-35-236-253-128.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -403,55 +403,37 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                     }
 
                     // Check if the Generate class has already been defined
-                    if (!window.Generate) {
-                      class Generate {
-                        constructor(name) {
+                    if (!window.Rule) {
+                      class Rule {
+                        constructor(prompt) {
                           this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
-                          this.basic_prompt = name;
-                          this.detail_prompt = '';
-                          this.refcode = '';
-                          this.fixcode = '';
+                          this.basic_prompt = prompt;
+                          this.useobj = {objname: ''}
+                          this.modifyobj = {objname: '', piecenames: [], pieceprompts: []}
                           this.piecenames = [];
                           this.piecenamemodify = [];
-                          console.log('object created:', name);
-                        }
-
-                        // detail(detail) {
-                        //   this.detail_prompt = detail;
-                        //   console.log('detail added:', detail);
-                        // }
-
-                        refsvg(code) {
-                          this.refcode = code;
-                          console.log('svg code reference:', code);
-                        }
-                        
-                        usesvg(code) {
-                          this.fixcode = code;
-                          console.log('svg code fixed:', code);
-                        }
-
-                        modify(piecenames,piecenamemodify){
-                          this.piecenames = piecenames;
-                          this.piecenamemodify = piecenamemodify;
+                          this.drawQueue = Promise.resolve();
+                          console.log('rule created:', prompt);
                         }
 
                         async draw(coord, canvas, reuseablecodelist, scale = 1) {
                           console.log('object draw called', this.basic_prompt);
 
-                          if (!(this.fixcode)){
+                          if (!(this.useobj.objname)){
                             var APIprompt = '';
 
-                            if(this.refcode){
-                              const codename = this.refcode
+                            if(this.modifyobj.objname){
+                              console.log('modify obj')
+                              const codename = this.modifyobj.objname
                               const codelist = window.currentreuseableSVGElementList
                               //const codelist = reuseablecodelist
                               console.log('check codelist in ref', codelist)
                               const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                               console.log('draw with ref code:', existingcode)
 
-                              if ((this.piecenames.length)>0) {
+                              if ((this.modifyobj.piecenames.length)>0) {
                               //get svgpiecelist from react app
+                              console.log('modify obj and modify pieces')
                               window.parent.postMessage({ type: 'GET_SVGPIECELIST'}, '*');
                               let currenthighlightedSVGPieceList = []
                               await new Promise((resolve) => {
@@ -469,7 +451,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
 
                                   // Create a new list: piececode by getting codeText using this.piecemodify elements as codeName from window.currentreuseablesvgpieces
-                                  let piececode = this.piecenames.map(codeName => {
+                                  let piececode = this.modifyobj.piecenames.map(codeName => {
                                       const piece = currenthighlightedSVGPieceList.find(item => item.codeName === codeName);
                                       return piece ? piece.codeText : null;
                                   }).filter(codeText => codeText !== null);
@@ -479,13 +461,14 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                                   // For each element A in piececode and element B in piecemodify, create a prompt
                                   piececode.forEach((codePiece, index) => {
-                                      const modification = this.piecenamemodify[index];
+                                      const modification = this.modifyobj.pieceprompts[index];
                                       modifyprompt += \`Make modification:\` +  modification + \` to svg code piece:\` + codePiece+\`. \`;
                                   });
                                   APIprompt = 'Modify an existing svg code: '+existingcode+ '. Only Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';                                
                               }
 
                                 else{
+                                    console.log('useobj, fix code')
                                     APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '. If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                                 }
                               }
@@ -524,7 +507,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                         else{
                             const codelist = window.currentreuseableSVGElementList
-                            const codename = this.fixcode
+                            const codename = this.useobj.objname
                             const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                             console.log('draw with fixed code:', existingcode)
                             const content = existingcode;
@@ -564,10 +547,200 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
                           return svgElement;
                         }
+
+async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
+  console.log('generateandDrawObj called', ifcode2desc);
+
+  // Add the draw operation to the queue
+  this.drawQueue = this.drawQueue.then(async () => {
+    const svgElement = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, scale);
+    if (svgElement) {
+      console.log('SVG content added to canvasContainer');
+      this.updateHTMLString(canvas, svgElement, this.basic_prompt, coord, scale, ifcode2desc); // Pass the codename and code
+      const svgHTML = svgElement.outerHTML;
+      const codename = name;
+    // Send the message to update the reusable element list
+    window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+    console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+    // Wait for the confirmation after sending the message
+    await new Promise((resolve) => {
+        const messageHandler = (event) => {
+            if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+                window.removeEventListener('message', messageHandler);
+                resolve(); // Resolve the promise to continue execution
+            }
+        };
+        window.addEventListener('message', messageHandler);
+    });
+      // Function to highlight or unhighlight the clicked SVG element
+      // Array to keep track of all highlighted elements
+      window.highlightedElements = [];
+      window.original
+      // Function to toggle highlight on an SVG element by modifying its attributes
+      function toggleHighlight(event) {
+      console.log('clicked on svg', event.currentTarget);
+      event.stopPropagation();
+
+      const target = event.currentTarget;
+
+      // Check if the element is already highlighted
+      const svgtext = target.outerHTML
+      const isHighlighted = target.getAttribute('data-highlighted') === 'true';
+
+      if (isHighlighted) {
+      // If already highlighted, reset to original attributes and remove from the list
+      const originalStroke = target.getAttribute('data-original-stroke') || 'none';
+      const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
+
+      // Set the stroke and stroke-width back to their original values
+      target.setAttribute('stroke', originalStroke);
+      target.setAttribute('stroke-width', originalStrokeWidth);
+
+      target.removeAttribute('data-highlighted');
+      target.removeAttribute('data-original-stroke-width'); // Remove the custom stroke-width
+      target.removeAttribute('data-original-stroke'); // Remove the custom stroke-width
+      window.highlightedElements = window.highlightedElements.filter(el => el !== target);
+
+      // If the stroke is 'none' and stroke-width is '0', remove these attributes
+      if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
+      target.removeAttribute('stroke');
+      target.removeAttribute('stroke-width');
+      }
+      // Also remove from the highlightedSVGPieceList
+      const codename = target.outerHTML.split(' ')[0];
+      // Also remove from the highlightedSVGPieceList
+      const svgString = target.outerHTML
+
+      // Send a message to the parent to remove the SVG piece
+      window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
+      } else {
+      // If not highlighted, store original attributes, apply highlight, and add to the list
+      const originalStroke = target.getAttribute('stroke') || 'none';
+      const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
+
+      target.setAttribute('data-original-stroke', originalStroke);
+      target.setAttribute('data-original-stroke-width', originalStrokeWidth);
+      target.setAttribute('stroke', 'yellow');
+      target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
+      target.setAttribute('data-highlighted', 'true');
+      window.highlightedElements.push(target);
+      console.log('heighlighted')
+      // Add the SVG piece to the highlightedSVGPieceList
+      const codename = target.outerHTML.split(' ')[0];
+      const svgString = svgtext
+      console.log('posting')
+      // Send the updated SVG piece to the parent
+      window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: codename, codetext: svgString }, '*');
+      }
+
+      // Trigger the re-render
+      reRenderCanvas();
+      }
+
+      // Function to re-render the canvas without rerunning user.js
+      function reRenderCanvas() {
+      console.log('Re-rendering canvas');
+
+      const canvasContainer = document.getElementById('canvasContainer');
+
+      if (canvasContainer) {
+      const svgElements = Array.from(canvasContainer.querySelectorAll('svg'));
+
+      // Clear the canvas
+      while (canvasContainer.firstChild) {
+      canvasContainer.removeChild(canvasContainer.firstChild);
+      }
+
+      // Re-append the saved SVG elements
+      svgElements.forEach(svg => {
+      canvasContainer.appendChild(svg);
+      });
+      }
+      }
+
+      // Function to remove highlights from all elements in the highlightedElements array
+      function removeAllHighlights() {
+      window.highlightedElements.forEach(element => {
+      element.setAttribute('stroke', element.getAttribute('data-original-stroke') || 'none');
+      element.setAttribute('stroke-width', element.getAttribute('data-original-stroke-width') || '1');
+      element.removeAttribute('data-highlighted');
+      });
+
+      // Clear the list after removing highlights
+      window.highlightedElements = [];
+
+      // Trigger the re-render
+      reRenderCanvas();
+      }
+
+      function attachHighlightListeners(svgElement) {
+      // Remove any existing listeners to prevent duplication
+      svgElement.removeEventListener('click', toggleHighlight);
+      console.log('toggleHighlight added')
+      // Attach the new click event listener
+      svgElement.addEventListener('click', toggleHighlight);
+      console.log('toggleHighlight deleted')
+      }
+
+      //attach click listener to the svg that is generated in this draw call call
+      svgElement.querySelectorAll('*').forEach(svgChildElement => {
+      svgChildElement.addEventListener('click', toggleHighlight);
+      });
+      console.log('added listener for ', svgElement.outerHTML)
+
+      // If the user clicks outside of an SVG element, remove highlights from all highlighted elements
+      document.body.addEventListener('click', function(event) {
+      if (!event.target.closest('svg *')) {
+      removeAllHighlights();
+      window.parent.postMessage({ type: 'EMPTY_SVGPIECE'}, '*');
+      }
+      });
+
+      return codename; // Return the codename
+    }
+  }).catch(error => {
+    console.error('Error in canvas draw sequence:', error);
+  });
+  
+  return this.drawQueue.then(() => this.basic_prompt); // Ensure the codename is returned
+}
+
+updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
+  console.log('in updatedhtmlstring', ifcode2desc)
+  // Convert the SVG element to its outer HTML
+  svgElement.setAttribute('name', codename); // Add this line to set the name attribute
+  const svgHTML = svgElement.outerHTML;
+  //console.log('svgHtml:', svgElement, svgHTML);
+
+  // Construct the div containing the SVG element with positioning
+  const positionedSvgHTML = \`<div>\`
+      +svgHTML+
+  \`</div>\`;
+
+  // Update backendhtmlString by appending the new positioned SVG's HTML
+  canvas.backendhtmlString = canvas.backendhtmlString.replace('</body>', positionedSvgHTML + '</body>');
+
+  // Post the updated HTML back to the parent component
+  window.parent.postMessage({ type: 'UPDATE_HTML', html: canvas.backendhtmlString }, '*');
+
+  //console.log("updateHTMLString with positioned SVG:", positionedSvgHTML);
+
+  if(ifcode2desc){
+    // Add the svgHTML to the reusable element list with codename
+    console.log('need code2desc')
+    window.parent.postMessage({ type: 'CODE2DESC', code: canvas.backendhtmlString}, '*');
+  }
+
+}
+
+                        //end of class 
                       }
 
                       // Assign the class to the global window object
-                      window.Generate = Generate;
+                      window.Rule = Rule;
                     }
 
                     // Another class
@@ -614,194 +787,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 // Initialize the queue as a resolved Promise to maintain order
                                 this.drawQueue = Promise.resolve();
                               }
-
-                          async draw(generateObject, coord, scale = 1, ifcode2desc = false) {
-                            console.log('canvas draw called', generateObject, ifcode2desc);
-
-                            // Add the draw operation to the queue
-                            this.drawQueue = this.drawQueue.then(async () => {
-                              const svgElement = await generateObject.draw(coord, this.canvasContainer, this.reuseablecodelist, scale);
-                              if (svgElement) {
-                                console.log('SVG content added to canvasContainer');
-                                this.updateHTMLString(svgElement, generateObject.basic_prompt, coord, scale, ifcode2desc); // Pass the codename and code
-                                const svgHTML = svgElement.outerHTML;
-                                const codename = generateObject.basic_prompt;
-                              // Send the message to update the reusable element list
-                              window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
-                              console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
-
-                              // Wait for the confirmation after sending the message
-                              await new Promise((resolve) => {
-                                  const messageHandler = (event) => {
-                                      if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                                          window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
-                                          console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
-                                          window.removeEventListener('message', messageHandler);
-                                          resolve(); // Resolve the promise to continue execution
-                                      }
-                                  };
-                                  window.addEventListener('message', messageHandler);
-                              });
-                                // Function to highlight or unhighlight the clicked SVG element
-// Array to keep track of all highlighted elements
-window.highlightedElements = [];
-window.original
-// Function to toggle highlight on an SVG element by modifying its attributes
-function toggleHighlight(event) {
-  console.log('clicked on svg', event.currentTarget);
-  event.stopPropagation();
-
-  const target = event.currentTarget;
-
-  // Check if the element is already highlighted
-  const svgtext = target.outerHTML
-  const isHighlighted = target.getAttribute('data-highlighted') === 'true';
-
-  if (isHighlighted) {
-    // If already highlighted, reset to original attributes and remove from the list
-    const originalStroke = target.getAttribute('data-original-stroke') || 'none';
-    const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
-
-    // Set the stroke and stroke-width back to their original values
-    target.setAttribute('stroke', originalStroke);
-    target.setAttribute('stroke-width', originalStrokeWidth);
-
-    target.removeAttribute('data-highlighted');
-    target.removeAttribute('data-original-stroke-width'); // Remove the custom stroke-width
-    target.removeAttribute('data-original-stroke'); // Remove the custom stroke-width
-    window.highlightedElements = window.highlightedElements.filter(el => el !== target);
-
-        // If the stroke is 'none' and stroke-width is '0', remove these attributes
-    if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
-        target.removeAttribute('stroke');
-        target.removeAttribute('stroke-width');
-    }
-    // Also remove from the highlightedSVGPieceList
-    const codename = target.outerHTML.split(' ')[0];
-        // Also remove from the highlightedSVGPieceList
-    const svgString = target.outerHTML
-
-    // Send a message to the parent to remove the SVG piece
-    window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
-  } else {
-    // If not highlighted, store original attributes, apply highlight, and add to the list
-    const originalStroke = target.getAttribute('stroke') || 'none';
-    const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
-
-    target.setAttribute('data-original-stroke', originalStroke);
-    target.setAttribute('data-original-stroke-width', originalStrokeWidth);
-    target.setAttribute('stroke', 'yellow');
-    target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
-    target.setAttribute('data-highlighted', 'true');
-    window.highlightedElements.push(target);
-    console.log('heighlighted')
-    // Add the SVG piece to the highlightedSVGPieceList
-    const codename = target.outerHTML.split(' ')[0];
-    const svgString = svgtext
-    console.log('posting')
-    // Send the updated SVG piece to the parent
-    window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: codename, codetext: svgString }, '*');
-  }
-
-  // Trigger the re-render
-  reRenderCanvas();
-}
-
-// Function to re-render the canvas without rerunning user.js
-function reRenderCanvas() {
-  console.log('Re-rendering canvas');
-  
-  const canvasContainer = document.getElementById('canvasContainer');
-  
-  if (canvasContainer) {
-    const svgElements = Array.from(canvasContainer.querySelectorAll('svg'));
-
-    // Clear the canvas
-    while (canvasContainer.firstChild) {
-      canvasContainer.removeChild(canvasContainer.firstChild);
-    }
-
-    // Re-append the saved SVG elements
-    svgElements.forEach(svg => {
-      canvasContainer.appendChild(svg);
-    });
-  }
-}
-
-// Function to remove highlights from all elements in the highlightedElements array
-function removeAllHighlights() {
-  window.highlightedElements.forEach(element => {
-    element.setAttribute('stroke', element.getAttribute('data-original-stroke') || 'none');
-    element.setAttribute('stroke-width', element.getAttribute('data-original-stroke-width') || '1');
-    element.removeAttribute('data-highlighted');
-  });
-
-  // Clear the list after removing highlights
-  window.highlightedElements = [];
-
-  // Trigger the re-render
-  reRenderCanvas();
-}
-
-function attachHighlightListeners(svgElement) {
-  // Remove any existing listeners to prevent duplication
-  svgElement.removeEventListener('click', toggleHighlight);
-  console.log('toggleHighlight added')
-  // Attach the new click event listener
-  svgElement.addEventListener('click', toggleHighlight);
-  console.log('toggleHighlight deleted')
-}
-
-//attach click listener to the svg that is generated in this draw call call
-svgElement.querySelectorAll('*').forEach(svgChildElement => {
-      svgChildElement.addEventListener('click', toggleHighlight);
-    });
-    console.log('added listener for ', svgElement.outerHTML)
-
-// If the user clicks outside of an SVG element, remove highlights from all highlighted elements
-document.body.addEventListener('click', function(event) {
-  if (!event.target.closest('svg *')) {
-    removeAllHighlights();
-    window.parent.postMessage({ type: 'EMPTY_SVGPIECE'}, '*');
-  }
-});
-
-                                return codename; // Return the codename
-                              }
-                            }).catch(error => {
-                              console.error('Error in canvas draw sequence:', error);
-                            });
-                            
-                            return this.drawQueue.then(() => generateObject.basic_prompt); // Ensure the codename is returned
-                          }
-
-                          updateHTMLString(svgElement, codename, coord, scale, ifcode2desc) {
-                            console.log('in updatedhtmlstring', ifcode2desc)
-                            // Convert the SVG element to its outer HTML
-                            svgElement.setAttribute('name', codename); // Add this line to set the name attribute
-                            const svgHTML = svgElement.outerHTML;
-                            console.log('svgHtml:', svgElement, svgHTML);
-
-                            // Construct the div containing the SVG element with positioning
-                            const positionedSvgHTML = \`<div>\`
-                                +svgHTML+
-                            \`</div>\`;
-
-                            // Update backendhtmlString by appending the new positioned SVG's HTML
-                            this.backendhtmlString = this.backendhtmlString.replace('</body>', positionedSvgHTML + '</body>');
-
-                            // Post the updated HTML back to the parent component
-                            window.parent.postMessage({ type: 'UPDATE_HTML', html: this.backendhtmlString }, '*');
-
-                            console.log("updateHTMLString with positioned SVG:", positionedSvgHTML);
-
-                            if(ifcode2desc){
-                              // Add the svgHTML to the reusable element list with codename
-                              console.log('need code2desc')
-                              window.parent.postMessage({ type: 'CODE2DESC', code: this.backendhtmlString}, '*');
-                            }
-
-                          }
                       }  
                       window.whole_canvas = whole_canvas;
                     }
