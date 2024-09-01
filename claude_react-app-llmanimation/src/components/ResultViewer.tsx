@@ -464,7 +464,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                       const modification = this.modifyobj.pieceprompts[index];
                                       modifyprompt += \`Make modification:\` +  modification + \` to svg code piece:\` + codePiece+\`. \`;
                                   });
-                                  APIprompt = 'Modify an existing svg code: '+existingcode+ '. Only Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';                                
+                                  APIprompt = 'Modify an existing svg code: '+existingcode+ ', to create a ' + this.basic_prompt +'. Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';                                
                               }
 
                                 else{
@@ -550,6 +550,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
 
 async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
   console.log('generateandDrawObj called', ifcode2desc);
+  // Define obj at the function scope
+  let obj;
 
   // Add the draw operation to the queue
   this.drawQueue = this.drawQueue.then(async () => {
@@ -698,14 +700,16 @@ async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
       window.parent.postMessage({ type: 'EMPTY_SVGPIECE'}, '*');
       }
       });
-
-      return codename; // Return the codename
+      
+      obj = {objname: codename, rule: this}
+      console.log('returning obj:', obj.objname, obj.rule)
+      return obj; // Return the codename
     }
   }).catch(error => {
     console.error('Error in canvas draw sequence:', error);
   });
   
-  return this.drawQueue.then(() => this.basic_prompt); // Ensure the codename is returned
+  return this.drawQueue.then(() => obj); // Ensure the codename is returned
 }
 
 updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {

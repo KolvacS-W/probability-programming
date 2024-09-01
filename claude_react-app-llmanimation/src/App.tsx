@@ -52,7 +52,9 @@ const carrule = new Rule('a blue car')
 
 console.log(carrule)
 
-const Carobj = carrule.generateandDrawObj('car3', myCanvas, {x: 34, y: 67}, 1.2)
+const Carobj = await carrule.generateandDrawObj('car3', myCanvas, {x: 34, y: 67}, 1.2)
+
+console.log('check obj', Carobj)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
