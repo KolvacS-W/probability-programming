@@ -24,6 +24,7 @@ const ngrok_url_sonnet = ngrok_url + '/api/message';
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);
   var currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
   //console.log('check svglist', currentreuseableSVGElementList)

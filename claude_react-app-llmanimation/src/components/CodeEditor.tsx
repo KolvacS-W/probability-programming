@@ -58,14 +58,14 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [boldOptions, setBoldOptions] = useState<string[]>([]);
   const version = currentVersionId !== null ? versions.find((version) => version.id === currentVersionId) : null;
   const loading = version ? version.loading : false;
-  // const highlightEnabled = version ? version.highlightEnabled : true;
-  // const piecesToHighlightLevel1 = version ? version.piecesToHighlightLevel1 : [];
-  // const piecesToHighlightLevel2 = version ? version.piecesToHighlightLevel2 : [];
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
-  // New state to track which generate function was last called
-  // const [lastGenerateFunction, setLastGenerateFunction] = useState<(() => Promise<void>) | null>(null);
   const [buttonchoice, setButtonchoice] = useState('');
-  // const [originalhint, setOriginalhint] = useState('');
+
+  //for modifyobjwidget
+  const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
+  // const [selectedCodeText, setSelectedCodeText] = useState('');
+  // const [svgCodeText, setSvgCodeText] = useState('');
+
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
@@ -106,9 +106,15 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     setuserJs(usercode.js);
   }, [usercode, backendcode]);
 
+  // useEffect(() => {
+  //   console.log('showModifyObjWidget changed:', showModifyObjWidget);
+  // }, [showModifyObjWidget]);
+  
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       let clickedOutside = true;
+      console.log('handleclick outside', showModifyObjWidget)
   
       // Check if the click is inside any of the autocomplete widgets
       optionLevels.forEach((_, levelIndex) => {
@@ -138,7 +144,14 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
-  
+      // Check if the click is inside the modify object widget (if it's shown)
+      if (showModifyObjWidget) {
+        console.log('check showModifyObjWidget')
+        const modifyObjWidgetElement = document.querySelector('.modify-obj-widget');
+        if (modifyObjWidgetElement && modifyObjWidgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      }
       // If the click was outside all widgets, close them
       if (clickedOutside) {
         console.log('Clicked outside');
@@ -146,6 +159,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowAutocomplete(false);
         setShowGenerateOption(false);
         setShowCoordcomplete(false);
+        setShowModifyObjWidget(false);
         setButtonchoice('');
       }
     };
@@ -154,7 +168,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [showModifyObjWidget, optionLevels, showAutocomplete, showGenerateOption, showCoordcomplete]);
 
   // const saveVersionToHistory = (currentVersionId: string) => {
   //   setVersions((prevVersions) => {
@@ -184,7 +198,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
   };
 
-
+  //auto completion
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const selection = window.getSelection();
     const word = selection?.toString().trim();
@@ -216,6 +230,29 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const handleDoubleClick = (event: React.MouseEvent) => {
     const selection = window.getSelection();
     const word = selection?.toString().trim();
+    
+      if (word === 'modifyobj') {
+        console.log('double-clicked on modifyobjhh');
+        const currentVersion = versions.find(version => version.id === currentVersionId);
+        if (!currentVersion) {
+          console.log('No current version found');
+          return;
+        }
+    
+        const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+        console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
+    
+        if (currentreuseableSVGElementList) {
+          const cursorPosition = editorRef.current?.selectionStart || 0;
+          const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+          setAutocompletePosition({ top: position.top + 50, left: position.left });
+          setShowModifyObjWidget(true); // Show the widget
+          //setSelectedCodeText(''); // Reset the selected code text
+          console.log('clicked on modifyobj', showModifyObjWidget)
+        } else {
+          console.log('reuseableSVGElementList is undefined or empty');
+        }
+      }
 
     if (word === 'modifyauto') {
       console.log('double-clicked on piece');
@@ -270,7 +307,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       setCoordcompletePosition({ top: position.top + 50, left: position.left });
       setShowCoordcomplete(true);
     }
-    else if(word){
+    else if(word != 'modifyobj'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
@@ -443,6 +480,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const textBeforeCursor = currentValue.slice(0, cursorPosition).replace(new RegExp(`${hintText}$`), '');
     const textAfterCursor = currentValue.slice(cursorPosition + hintText.length);
     const newText = textBeforeCursor + option + textAfterCursor;
+    console.log('handleAutocompleteOptionClick, new text', newText)
     setuserJs(newText);
     setShowAutocomplete(false);
     setShowGenerateOption(false);
@@ -662,9 +700,153 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       </div>
     );
   };
+
+  const ModifyObjWidget = () => {
+    const currentVersion = versions.find((version) => version.id === currentVersionId);
+    const currentreuseableSVGElementList = currentVersion?.reuseableSVGElementList || [];
   
-
-
+    const [svgCodeText, setSvgCodeText] = useState('');
+  
+    const createHTMLStructureWithSVG = (svgCode: string) => {
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SVG Render</title>
+        </head>
+        <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              overflow: hidden;
+            }
+            #canvasContainer {
+              position: relative;
+              width: 100%;
+              height: 100%;
+            }
+            svg {
+              width: 100%;
+              height: 100%;
+            }
+          </style>
+        <body>
+            <div id="canvasContainer">${svgCode}</div>
+        </body>
+        </html>`;
+      return htmlContent;
+    };
+  
+    const handleRenderSVGClick = (codeText: string) => {
+      setSvgCodeText(codeText);
+    };
+  
+    const handleApplyClick = () => {
+      // Implement the logic for applying the selected SVG or any other functionality
+      console.log("Apply button clicked for:", svgCodeText);
+    };
+  
+    return (
+      <div
+        className="modify-obj-widget"
+        style={{
+          position: 'absolute',
+          top: autocompletePosition.top,
+          left: autocompletePosition.left,
+          zIndex: 1000,
+          backgroundColor: 'white',
+          border: '1px solid #ccc',
+          padding: '10px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex', // To position elements side by side
+          fontSize: '14px', // Smaller font size
+        }}
+      >
+        <div
+          className="code-name-list"
+          style={{
+            marginRight: '10px', // Add some space between the list and the canvas
+            maxHeight: '200px', // Fix the height to keep it consistent with the canvas
+            overflowY: 'auto', // Add scroll if content overflows
+          }}
+        >
+          <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+            {currentreuseableSVGElementList.map((item, index) => (
+              <li
+                key={index}
+                className="autocomplete-option"
+                style={{
+                  padding: '5px',
+                  cursor: 'pointer',
+                  whiteSpace: 'pre-wrap', // Allow text to wrap onto the next line
+                  overflow: 'hidden', // Hide overflow text
+                  textOverflow: 'ellipsis', // Show ellipsis for overflowing text
+                  wordWrap: 'break-word', // Ensure words break to the next line if they are too long
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <span onClick={() => handleAutocompleteOptionClick(item.codeName, '')} style={{ flexGrow: 1 }}>
+                  {item.codeName}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent the click event from propagating to the list item
+                    handleRenderSVGClick(item.codeText); // Render SVG code in the widget
+                  }}
+                  style={{
+                    marginLeft: '10px',
+                    padding: '2px 5px',
+                    fontSize: '10px',
+                  }}
+                >
+                  ...
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div
+            style={{
+              width: '200px', // Fixed width for the canvas
+              height: '200px', // Fixed height for the canvas
+              border: '1px solid #ccc', // Add a border to the canvas
+              marginBottom: '10px', // Space between the canvas and the button
+            }}
+          >
+            {svgCodeText && (
+              <iframe
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                srcDoc={createHTMLStructureWithSVG(svgCodeText)}
+              />
+            )}
+          </div>
+          <button
+            onClick={handleApplyClick}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
   
   
   
@@ -805,7 +987,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
         </button>
       </div>
-  
+      {showModifyObjWidget && <ModifyObjWidget />}
       {showGenerateOption && optionLevels.length === 0 && <GenerateOptionWidget hintKeywords={hintKeywords} />}
       {showAutocomplete && optionLevels.map((level, index) => (
         <AutocompleteWidget key={index} options={level.options} levelIndex={index} />
