@@ -406,10 +406,19 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                     // Check if the Generate class has already been defined
                     if (!window.Rule) {
                       class Rule {
-                        constructor(prompt = '', useobj = {objname: ''}) {
-                          this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
-                          this.basic_prompt = prompt;
-                          this.useobj = {objname: ''}
+                        constructor(arg1 = '', arg2 = {}) {
+                                    // If the first argument is a string, treat it as the prompt
+        if (typeof arg1 === 'string') {
+            this.basic_prompt = arg1;
+            this.useobj = arg2.useobj || {objname: ''}; // Handle useobj if passed as second argument
+        } 
+        // If the first argument is an object, handle named parameters
+        else if (typeof arg1 === 'object') {
+            this.basic_prompt = arg1.prompt || '';
+            this.useobj = arg1.useobj || {objname: ''};
+        }                          this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
+                          // this.basic_prompt = prompt;
+                          // this.useobj = {objname: ''}
                           this.modifyobj = {objname: '', piecenames: [], pieceprompts: []}
                           this.piecenames = [];
                           this.piecenamemodify = [];

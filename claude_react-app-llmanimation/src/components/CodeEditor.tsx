@@ -745,7 +745,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const textBeforeCursor = userjs.slice(0, cursorPosition+word.length);
       const textAfterCursor = userjs.slice(cursorPosition+word.length);
-      const newText = textBeforeCursor + '= {objname: \'' + option + '\'}'+ textAfterCursor;
+      const newText = textBeforeCursor + ': {objname: \'' + option + '\'}'+ textAfterCursor;
       setuserJs(newText);
       setShowModifyObjWidget(false)
 
