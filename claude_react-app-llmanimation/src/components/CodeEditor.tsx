@@ -65,9 +65,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
   const [currentSelectedSVG, setCurrentSelectedSVG] = useState(''); // State to store the current codeName
   const [showmodifyobjbutton, setShowModifyObjButton] = useState(false);
-  //for checksvgwidget
+  //for checksvgpiecewidget
   const [showCheckSVGPieceWidget, setShowCheckSVGPieceWidget] = useState(false)
-const [svgCodeText_check, setSvgCodeText_check] = useState('');
+  const [svgCodeText_checkpiece, setSvgCodeText_checkpiece] = useState('');
+  //for checkwholesvgwidget
+  const [showCheckWholeSVGWidget, setShowCheckWholeSVGWidget] = useState(false)
+  const [svgCodeText_checkwholesvg, setSvgCodeText_checkwholesvg] = useState('');
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
@@ -161,6 +164,13 @@ const [svgCodeText_check, setSvgCodeText_check] = useState('');
           clickedOutside = false;
         }
       }
+      if (showCheckWholeSVGWidget) {
+        console.log('check showCheckWholeSVGWidget')
+        const showCheckWholeSVGWidgetElement = document.querySelector('.check-svg-piece-widget');
+        if (showCheckWholeSVGWidgetElement && showCheckWholeSVGWidgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      }
       // If the click was outside all widgets, close them
       if (clickedOutside) {
         console.log('Clicked outside');
@@ -170,6 +180,8 @@ const [svgCodeText_check, setSvgCodeText_check] = useState('');
         setShowCoordcomplete(false);
         setShowModifyObjWidget(false);
         setShowCheckSVGPieceWidget(false);
+        setShowCheckWholeSVGWidget(false);
+        setShowModifyObjButton(false)
         setButtonchoice('');
       }
     };
@@ -246,18 +258,35 @@ const [svgCodeText_check, setSvgCodeText_check] = useState('');
       console.log('No current version found');
       return;
     }
+
+    //for showing the svg piece with widgets
     const piece = currentVersion.previousSelectedSVGPieceList?.find(item => item.codeName === word);
-    console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+    //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
 
     if (piece) {
       const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
-      console.log('parent svg:', parentSVG)
+      //console.log('parent svg:', parentSVG)
       if (parentSVG) {
-        setSvgCodeText_check(parentSVG.codeText);
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+        setAutocompletePosition({ top: position.top + 50, left: position.left });
+        setSvgCodeText_checkpiece(parentSVG.codeText);
         setCurrentSelectedSVG(piece.codeName);
         setShowCheckSVGPieceWidget(true); // Show the CheckSVGPieceWidget
         return;
       }
+    }
+    //for showing svgname with widgets
+    const svg = currentVersion.reuseableSVGElementList?.find(item => item.codeName === word)?.codeText;
+    //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+
+    if (svg) {
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+        setAutocompletePosition({ top: position.top + 50, left: position.left });
+        setSvgCodeText_checkwholesvg(svg);
+        setShowCheckWholeSVGWidget(true); // Show the CheckSVGPieceWidget
+        return;
     }
     
       if (word === 'modifyobj') {
@@ -1062,6 +1091,7 @@ const [svgCodeText_check, setSvgCodeText_check] = useState('');
           setuserJs(newText);
           setShowModifyObjWidget(false)
           setSvgCodeText('')
+          setShowModifyObjButton(false)
         } else {
           console.log('highlightedSVGPieceList is undefined or empty');
         }
@@ -1316,6 +1346,100 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
   );
 };
 
+const CheckWholeSVGWidget = ({ svgCode, pieceCodeName }: { svgCode: string, pieceCodeName: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+      const iframe = iframeRef.current;
+      if (iframe) {
+          const iframeDocument = iframe.contentDocument;
+          if (iframeDocument) {
+              iframeDocument.write(`
+              <!DOCTYPE html>
+              <html lang="en">
+              <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>SVG Render</title>
+                  <style>
+                      html, body {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        overflow: hidden;
+                      }
+                      #canvasContainer {
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                      }
+                      svg {
+                        width: 100%;
+                        height: 100%;
+                      }
+                  </style>
+              </head>
+              <body>
+                  <div id="canvasContainer"></div>
+              </body>
+              </html>
+              `);
+              iframeDocument.close(); // Ensure the document is closed after writing
+              const canvasContainer = iframeDocument.getElementById('canvasContainer');
+              if (canvasContainer) {
+                  appendSVGToContainer(canvasContainer, svgCode);
+              }
+          }
+      }
+  }, [svgCode]);
+
+  const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
+      const svgElement = new DOMParser().parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
+      // console.log('updated element', svgCode, svgElement)
+      container.appendChild(svgElement);
+  };
+
+
+  return (
+      <div
+          className="check-whole-svg-widget"
+          style={{
+              position: 'absolute',
+              top: autocompletePosition.top,
+              left: autocompletePosition.left,
+              zIndex: 1000,
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              padding: '10px',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              fontSize: '14px',
+          }}
+      >
+          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div
+                  style={{
+                      width: '200px',
+                      height: '200px',
+                      border: '1px solid #ccc',
+                      marginBottom: '10px',
+                  }}
+              >
+                  {svgCode && (
+                      <iframe
+                          ref={iframeRef}
+                          style={{ width: '100%', height: '100%', border: 'none' }}
+                      />
+                  )}
+              </div>
+          </div>
+      </div>
+  );
+};
 
   
   
@@ -1457,7 +1581,8 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
           Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
         </button>
       </div>
-      {showCheckSVGPieceWidget && <CheckSVGPieceWidget svgCode={svgCodeText_check} pieceCodeName={currentSelectedSVG} />}
+      {showCheckSVGPieceWidget && <CheckSVGPieceWidget svgCode={svgCodeText_checkpiece} pieceCodeName={currentSelectedSVG} />}
+      {showCheckWholeSVGWidget && <CheckWholeSVGWidget svgCode={svgCodeText_checkwholesvg} pieceCodeName={currentSelectedSVG} />}
       {showModifyObjWidget && <ModifyObjWidget />}
       {showGenerateOption && optionLevels.length === 0 && <GenerateOptionWidget hintKeywords={hintKeywords} />}
       {showAutocomplete && optionLevels.map((level, index) => (
