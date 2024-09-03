@@ -18,13 +18,13 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://d28c-35-236-253-128.ngrok-free.app';
+const ngrok_url = 'https://d833-34-125-117-110.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
 const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  console.log('iframeref', iframeRef)
+  // console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);
   var currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
   //console.log('check svglist', currentreuseableSVGElementList)

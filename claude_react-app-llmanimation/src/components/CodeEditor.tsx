@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://d28c-35-236-253-128.ngrok-free.app';
+const ngrok_url = 'https://d833-34-125-117-110.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -706,146 +706,217 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const currentreuseableSVGElementList = currentVersion?.reuseableSVGElementList || [];
   
     const [svgCodeText, setSvgCodeText] = useState('');
-  
-    const createHTMLStructureWithSVG = (svgCode: string) => {
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>SVG Render</title>
-        </head>
-        <style>
-            html, body {
-              margin: 0;
-              padding: 0;
-              width: 100%;
-              height: 100%;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              overflow: hidden;
-            }
-            #canvasContainer {
-              position: relative;
-              width: 100%;
-              height: 100%;
-            }
-            svg {
-              width: 100%;
-              height: 100%;
-            }
-          </style>
-        <body>
-            <div id="canvasContainer">${svgCode}</div>
-        </body>
-        </html>`;
-      return htmlContent;
+
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    useEffect(() => {
+        
+        const iframe = iframeRef.current;
+        if(iframe){
+          const iframeDocument = iframe.contentDocument;
+          iframeDocument?.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>SVG Render</title>
+                <style>
+                    html, body {
+                      margin: 0;
+                      padding: 0;
+                      width: 100%;
+                      height: 100%;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      overflow: hidden;
+                    }
+                    #canvasContainer {
+                      position: relative;
+                      width: 100%;
+                      height: 100%;
+                    }
+                    svg {
+                      width: 100%;
+                      height: 100%;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="canvasContainer"></div>
+                <script>
+                </script>
+            </body>
+            </html>
+        `)
+          console.log('in useeffect', iframeRef, iframeDocument)
+              if (iframeDocument) {
+                  const canvasContainer = iframeDocument.getElementById('canvasContainer');
+                  if (canvasContainer) {
+                      appendSVGToContainer(canvasContainer, svgCodeText);
+                  }
+              }
+        }
+
+    }, [svgCodeText]);
+
+    const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
+        const svgElement = new DOMParser().parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
+        if (svgElement) {
+            attachHighlightListeners(svgElement);
+            container.appendChild(svgElement);
+        }
     };
-  
+
+    const attachHighlightListeners = (svgElement: SVGElement) => {
+        svgElement.querySelectorAll('*').forEach(svgChildElement => {
+            svgChildElement.addEventListener('click', toggleHighlight);
+        });
+    };
+
+    const toggleHighlight = (event: MouseEvent) => {
+        event.stopPropagation();
+        const target = event.currentTarget as SVGElement;
+        const isHighlighted = target.getAttribute('data-highlighted') === 'true';
+
+        if (isHighlighted) {
+            const originalStroke = target.getAttribute('data-original-stroke') || 'none';
+            const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
+            target.setAttribute('stroke', originalStroke);
+            target.setAttribute('stroke-width', originalStrokeWidth);
+            target.removeAttribute('data-highlighted');
+            target.removeAttribute('data-original-stroke-width');
+            target.removeAttribute('data-original-stroke');
+            //window.highlightedElements = window.highlightedElements.filter(el => el !== target);
+
+            if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
+                target.removeAttribute('stroke');
+                target.removeAttribute('stroke-width');
+            }
+            const svgString = target.outerHTML;
+            window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
+        } else {
+            const originalStroke = target.getAttribute('stroke') || 'none';
+            const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
+            target.setAttribute('data-original-stroke', originalStroke);
+            target.setAttribute('data-original-stroke-width', originalStrokeWidth);
+            target.setAttribute('stroke', 'yellow');
+            target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
+            target.setAttribute('data-highlighted', 'true');
+            //window.highlightedElements.push(target);
+            const svgString = target.outerHTML;
+            console.log('iframe before postmessage', iframeRef.current.contentDocument, svgCodeText)
+            window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: svgString.split(' ')[0], codetext: svgString }, '*');
+            console.log('iframe after postmessage', iframeRef.current.contentDocument, svgCodeText)
+        }
+    };
+
     const handleRenderSVGClick = (codeText: string) => {
-      setSvgCodeText(codeText);
+        setSvgCodeText(codeText);
     };
-  
+
     const handleApplyClick = () => {
-      // Implement the logic for applying the selected SVG or any other functionality
-      console.log("Apply button clicked for:", svgCodeText);
+        // Implement the logic for applying the selected SVG or any other functionality
+        console.log("Apply button clicked for:", svgCodeText);
     };
-  
+
     return (
-      <div
-        className="modify-obj-widget"
-        style={{
-          position: 'absolute',
-          top: autocompletePosition.top,
-          left: autocompletePosition.left,
-          zIndex: 1000,
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
-          padding: '10px',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          display: 'flex', // To position elements side by side
-          fontSize: '14px', // Smaller font size
-        }}
-      >
         <div
-          className="code-name-list"
-          style={{
-            marginRight: '10px', // Add some space between the list and the canvas
-            maxHeight: '200px', // Fix the height to keep it consistent with the canvas
-            overflowY: 'auto', // Add scroll if content overflows
-          }}
+            className="modify-obj-widget"
+            style={{
+                position: 'absolute',
+                top: autocompletePosition.top,
+                left: autocompletePosition.left,
+                zIndex: 1000,
+                backgroundColor: 'white',
+                border: '1px solid #ccc',
+                padding: '10px',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                display: 'flex', // To position elements side by side
+                fontSize: '14px', // Smaller font size
+            }}
         >
-          <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
-            {currentreuseableSVGElementList.map((item, index) => (
-              <li
-                key={index}
-                className="autocomplete-option"
+            <div
+                className="code-name-list"
                 style={{
-                  padding: '5px',
-                  cursor: 'pointer',
-                  whiteSpace: 'pre-wrap', // Allow text to wrap onto the next line
-                  overflow: 'hidden', // Hide overflow text
-                  textOverflow: 'ellipsis', // Show ellipsis for overflowing text
-                  wordWrap: 'break-word', // Ensure words break to the next line if they are too long
-                  display: 'flex',
-                  alignItems: 'center',
+                    marginRight: '10px', // Add some space between the list and the canvas
+                    maxHeight: '200px', // Fix the height to keep it consistent with the canvas
+                    overflowY: 'auto', // Add scroll if content overflows
                 }}
-              >
-                <span onClick={() => handleAutocompleteOptionClick(item.codeName, '')} style={{ flexGrow: 1 }}>
-                  {item.codeName}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent the click event from propagating to the list item
-                    handleRenderSVGClick(item.codeText); // Render SVG code in the widget
-                  }}
-                  style={{
-                    marginLeft: '10px',
-                    padding: '2px 5px',
-                    fontSize: '10px',
-                  }}
+            >
+                <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+                    {currentreuseableSVGElementList.map((item, index) => (
+                        <li
+                            key={index}
+                            className="autocomplete-option"
+                            style={{
+                                padding: '5px',
+                                cursor: 'pointer',
+                                whiteSpace: 'pre-wrap', // Allow text to wrap onto the next line
+                                overflow: 'hidden', // Hide overflow text
+                                textOverflow: 'ellipsis', // Show ellipsis for overflowing text
+                                wordWrap: 'break-word', // Ensure words break to the next line if they are too long
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <span onClick={() => handleAutocompleteOptionClick(item.codeName, '')} style={{ flexGrow: 1 }}>
+                                {item.codeName}
+                            </span>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent the click event from propagating to the list item
+                                    handleRenderSVGClick(item.codeText); // Render SVG code in the widget
+                                }}
+                                style={{
+                                    marginLeft: '10px',
+                                    padding: '2px 5px',
+                                    fontSize: '10px',
+                                }}
+                            >
+                                ...
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div
+                    style={{
+                        width: '200px', // Fixed width for the canvas
+                        height: '200px', // Fixed height for the canvas
+                        border: '1px solid #ccc', // Add a border to the canvas
+                        marginBottom: '10px', // Space between the canvas and the button
+                    }}
                 >
-                  ...
+                    {svgCodeText && (
+                        <iframe
+                            ref={iframeRef}
+                            style={{ width: '100%', height: '100%', border: 'none' }}
+                            // srcDoc={createHTMLStructure(svgCodeText)}
+                        />
+                    )}
+                </div>
+                <button
+                    onClick={handleApplyClick}
+                    style={{
+                        padding: '5px 10px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Apply
                 </button>
-              </li>
-            ))}
-          </ul>
+            </div>
         </div>
-        <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div
-            style={{
-              width: '200px', // Fixed width for the canvas
-              height: '200px', // Fixed height for the canvas
-              border: '1px solid #ccc', // Add a border to the canvas
-              marginBottom: '10px', // Space between the canvas and the button
-            }}
-          >
-            {svgCodeText && (
-              <iframe
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                srcDoc={createHTMLStructureWithSVG(svgCodeText)}
-              />
-            )}
-          </div>
-          <button
-            onClick={handleApplyClick}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-            }}
-          >
-            Apply
-          </button>
-        </div>
-      </div>
     );
-  };
+};
+
+  
   
   
   
