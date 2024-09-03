@@ -36,7 +36,7 @@ export interface KeywordNode {
     detailtargetext?: string[],
     reuseableSVGElementList: { codeName: string, codeText: string, selected: boolean }[];
     highlightedSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//only highlighted, use to maintain highlight info
-    previousSelectedSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//all ever selected, use to query when modifying 
+    previousSelectedSVGPieceList: { codeName: string, codeText: string, selected: boolean, parentSVG: string }[];//all ever selected, use to query when modifying 
     storedcoordinate?: { x: number, y: number };
   }
   

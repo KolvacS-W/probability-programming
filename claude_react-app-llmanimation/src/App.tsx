@@ -50,6 +50,10 @@ console.log(carrule)
 
 const carobj = await carrule.generateandDrawObj('blue car', myCanvas, {x: 34, y: 67}, 1.2)
 
+
+modifyobj
+
+
 console.log('check obj', carobj)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [

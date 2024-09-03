@@ -65,9 +65,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
   const [currentSelectedSVG, setCurrentSelectedSVG] = useState(''); // State to store the current codeName
   const [showmodifyobjbutton, setShowModifyObjButton] = useState(false);
-  // const [selectedCodeText, setSelectedCodeText] = useState('');
-  // const [svgCodeText, setSvgCodeText] = useState('');
-
+  //for checksvgwidget
+  const [showCheckSVGPieceWidget, setShowCheckSVGPieceWidget] = useState(false)
+const [svgCodeText_check, setSvgCodeText_check] = useState('');
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
@@ -154,6 +154,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+      if (showCheckSVGPieceWidget) {
+        console.log('check showCheckSVGPieceWidget')
+        const CheckSVGPieceWidgetElement = document.querySelector('.check-svg-piece-widget');
+        if (CheckSVGPieceWidgetElement && CheckSVGPieceWidgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      }
       // If the click was outside all widgets, close them
       if (clickedOutside) {
         console.log('Clicked outside');
@@ -162,6 +169,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowGenerateOption(false);
         setShowCoordcomplete(false);
         setShowModifyObjWidget(false);
+        setShowCheckSVGPieceWidget(false);
         setButtonchoice('');
       }
     };
@@ -170,7 +178,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showModifyObjWidget, optionLevels, showAutocomplete, showGenerateOption, showCoordcomplete]);
+  }, [showModifyObjWidget, showCheckSVGPieceWidget, optionLevels, showAutocomplete, showGenerateOption, showCoordcomplete]);
 
   // const saveVersionToHistory = (currentVersionId: string) => {
   //   setVersions((prevVersions) => {
@@ -232,6 +240,25 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const handleDoubleClick = (event: React.MouseEvent) => {
     const selection = window.getSelection();
     const word = selection?.toString().trim();
+
+    const currentVersion = versions.find(version => version.id === currentVersionId);
+    if (!currentVersion) {
+      console.log('No current version found');
+      return;
+    }
+    const piece = currentVersion.previousSelectedSVGPieceList?.find(item => item.codeName === word);
+    console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+
+    if (piece) {
+      const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
+      console.log('parent svg:', parentSVG)
+      if (parentSVG) {
+        setSvgCodeText_check(parentSVG.codeText);
+        setCurrentSelectedSVG(piece.codeName);
+        setShowCheckSVGPieceWidget(true); // Show the CheckSVGPieceWidget
+        return;
+      }
+    }
     
       if (word === 'modifyobj') {
         console.log('double-clicked on modifyobjhh');
@@ -829,6 +856,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           codeName: newElementName,
           codeText: codetext,
           selected: false,
+          parentSVG: currentSelectedSVG
         };
       
         // Update the reusable SVG piece list and then check the updated list
@@ -929,8 +957,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         const isHighlighted = target.getAttribute('data-highlighted') === 'true';
 
         if (isHighlighted) {
-            const svgString = target.outerHTML;
-            remove_svgpiece(svgString)
             const originalStroke = target.getAttribute('data-original-stroke') || 'none';
             const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
             target.setAttribute('stroke', originalStroke);
@@ -942,10 +968,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 target.removeAttribute('stroke');
                 target.removeAttribute('stroke-width');
             }
+            const svgString = target.outerHTML;
+            remove_svgpiece(svgString)
             setSvgCodeText(target.parentElement.parentElement.outerHTML)
             //window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
             
         } else {
+            const clonedTarget = target.cloneNode(true);
             const originalStroke = target.getAttribute('stroke') || 'none';
             const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
             target.setAttribute('data-original-stroke', originalStroke);
@@ -953,9 +982,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             target.setAttribute('stroke', 'yellow');
             target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
             target.setAttribute('data-highlighted', 'true');
-            const svgString = target.outerHTML;
+            const svgString = clonedTarget.outerHTML;
             //console.log('before update', svgCodeText)
-            update_svgpiece(svgString.split(' ')[0], svgString)
+            update_svgpiece(svgString.split(' ')[0].split('<')[1], svgString)
             setSvgCodeText(target.parentElement.parentElement.outerHTML) 
             //console.log('done update', svgString, target.parentElement.parentElement)
         }
@@ -972,8 +1001,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
               const isHighlighted = target.getAttribute('data-highlighted') === 'true';
   
               if (isHighlighted) {
-                  const svgString = target.outerHTML;
-                  remove_svgpiece(svgString); // Remove the piece from the list
   
                   const originalStroke = target.getAttribute('data-original-stroke') || 'none';
                   const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
@@ -989,6 +1016,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                       target.removeAttribute('stroke');
                       target.removeAttribute('stroke-width');
                   }
+                  const svgString = target.outerHTML;
+                  remove_svgpiece(svgString); // Remove the piece from the list
               }
           });
   
@@ -1032,6 +1061,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           const newText = textBeforeCursor + '= {objname: \'' + currentSelectedSVG + '\', piecenames: [\''+ codeNames + '\' ], pieceprompts: []}'+ textAfterCursor;
           setuserJs(newText);
           setShowModifyObjWidget(false)
+          setSvgCodeText('')
         } else {
           console.log('highlightedSVGPieceList is undefined or empty');
         }
@@ -1142,7 +1172,151 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
 
   
-  
+const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, pieceCodeName: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+      const iframe = iframeRef.current;
+      if (iframe) {
+          const iframeDocument = iframe.contentDocument;
+          if (iframeDocument) {
+              iframeDocument.write(`
+              <!DOCTYPE html>
+              <html lang="en">
+              <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>SVG Render</title>
+                  <style>
+                      html, body {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        overflow: hidden;
+                      }
+                      #canvasContainer {
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                      }
+                      svg {
+                        width: 100%;
+                        height: 100%;
+                      }
+                  </style>
+              </head>
+              <body>
+                  <div id="canvasContainer"></div>
+              </body>
+              </html>
+              `);
+              iframeDocument.close(); // Ensure the document is closed after writing
+              const canvasContainer = iframeDocument.getElementById('canvasContainer');
+              if (canvasContainer) {
+                  appendSVGToContainer(canvasContainer, svgCode);
+              }
+          }
+      }
+  }, [svgCode]);
+
+  const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
+      console.log('in appendSVGToContainer', svgCode, pieceCodeName)
+      const updatedSvgCode = highlightPiece(svgCode, pieceCodeName);
+      const svgElement = new DOMParser().parseFromString(updatedSvgCode, 'image/svg+xml').querySelector('svg');
+      console.log('updated element', updatedSvgCode, svgElement)
+      container.appendChild(svgElement);
+  };
+
+  function highlightAndReplaceSVG(svgText: string, pieceText: string): string {
+    // Step 1: Find the matching piece in svgText
+    const placeholder = '[placeholder]';
+    const matchedPiece = svgText.includes(pieceText) ? pieceText : '';
+
+    if (!matchedPiece) {
+        console.log('No matching piece found in the SVG.', svgText, pieceText);
+        return svgText;
+    }
+
+    // Step 2: Replace the match string with [placeholder]
+    const updatedSVGText = svgText.replace(matchedPiece, placeholder);
+
+    // Step 3: Turn pieceText into a DOM element (pieceElement)
+    const parser = new DOMParser();
+    const pieceDoc = parser.parseFromString(pieceText, 'image/svg+xml');
+    const pieceElement = pieceDoc.querySelector('path'); // Adjust selector if pieceText could be something other than a path
+
+    if (pieceElement) {
+        // Step 4: Highlight the piece
+        const originalStroke = pieceElement.getAttribute('stroke') || 'none';
+        const originalStrokeWidth = pieceElement.getAttribute('stroke-width') || '0';
+        pieceElement.setAttribute('data-original-stroke', originalStroke);
+        pieceElement.setAttribute('data-original-stroke-width', originalStrokeWidth);
+        pieceElement.setAttribute('stroke', 'yellow');
+        pieceElement.setAttribute('stroke-width', (parseFloat(originalStrokeWidth) + 10).toString());
+        pieceElement.setAttribute('data-highlighted', 'true');
+
+        // Step 5: Get the updated piece text
+        const updatedPieceText = pieceElement.outerHTML;
+
+        // Step 6: Replace the placeholder with updatedPieceText
+        const finalSVGText = updatedSVGText.replace(placeholder, updatedPieceText);
+
+        return finalSVGText;
+    }
+
+    console.log('Failed to parse the piece element.');
+    return svgText;
+}
+  const highlightPiece = (svgCode: string, pieceCodeName: string) => {
+      // Find the matching SVG element by comparing codeText with the pieceName
+      const currentVersion = versions.find(version => version.id === currentVersionId);
+      const pieceText = currentVersion?.previousSelectedSVGPieceList.find(item => item.codeName === pieceCodeName)?.codeText;
+      const updatedSvgCode = highlightAndReplaceSVG(svgCode, pieceText)
+      return updatedSvgCode
+  };
+
+  return (
+      <div
+          className="check-svg-piece-widget"
+          style={{
+              position: 'absolute',
+              top: autocompletePosition.top,
+              left: autocompletePosition.left,
+              zIndex: 1000,
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              padding: '10px',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              fontSize: '14px',
+          }}
+      >
+          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div
+                  style={{
+                      width: '200px',
+                      height: '200px',
+                      border: '1px solid #ccc',
+                      marginBottom: '10px',
+                  }}
+              >
+                  {svgCode && (
+                      <iframe
+                          ref={iframeRef}
+                          style={{ width: '100%', height: '100%', border: 'none' }}
+                      />
+                  )}
+              </div>
+          </div>
+      </div>
+  );
+};
+
+
   
   
   
@@ -1283,6 +1457,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           Switch to {activeTab === 'js' ? 'Backend HTML' : 'User JS'}
         </button>
       </div>
+      {showCheckSVGPieceWidget && <CheckSVGPieceWidget svgCode={svgCodeText_check} pieceCodeName={currentSelectedSVG} />}
       {showModifyObjWidget && <ModifyObjWidget />}
       {showGenerateOption && optionLevels.length === 0 && <GenerateOptionWidget hintKeywords={hintKeywords} />}
       {showAutocomplete && optionLevels.map((level, index) => (
