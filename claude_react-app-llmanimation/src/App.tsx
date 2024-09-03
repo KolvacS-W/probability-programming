@@ -46,16 +46,11 @@ const App: React.FC = () => {
 
 const carrule = new Rule('a blue car')
 
-// carrule.useobj.objname = 'car1'
-
-// carrule.modifyobj = {objname: 'car2', objpiece: [], pieceprompts: []}
-
 console.log(carrule)
 
-const Carobj = await carrule.generateandDrawObj('car3', myCanvas, {x: 34, y: 67}, 1.2)
+const carobj = await carrule.generateandDrawObj('blue car', myCanvas, {x: 34, y: 67}, 1.2)
 
-console.log('check obj', Carobj)
-` },
+console.log('check obj', carobj)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },

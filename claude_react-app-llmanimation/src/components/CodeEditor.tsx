@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://d833-34-125-117-110.ngrok-free.app';
+const ngrok_url = 'https://5843-34-48-16-227.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -61,10 +61,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
   const [buttonchoice, setButtonchoice] = useState('');
   //for modifyobjwidget
-  const [svgCodeText, setSvgCodeText] = useState('hhh');
+  const [svgCodeText, setSvgCodeText] = useState('');
   const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
   const [currentSelectedSVG, setCurrentSelectedSVG] = useState(''); // State to store the current codeName
-
+  const [showmodifyobjbutton, setShowModifyObjButton] = useState(false);
   // const [selectedCodeText, setSelectedCodeText] = useState('');
   // const [svgCodeText, setSvgCodeText] = useState('');
 
@@ -235,6 +235,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     
       if (word === 'modifyobj') {
         console.log('double-clicked on modifyobjhh');
+        setShowModifyObjButton(true)
         const currentVersion = versions.find(version => version.id === currentVersionId);
         if (!currentVersion) {
           console.log('No current version found');
@@ -256,59 +257,82 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
       }
 
-    if (word === 'modifyauto') {
-      console.log('double-clicked on piece');
-      const currentVersion = versions.find(version => version.id === currentVersionId);
-      if (!currentVersion) {
-        console.log('No current version found');
-        return;
+      if (word === 'useobj') {
+        console.log('double-clicked on useobjhh');
+        const currentVersion = versions.find(version => version.id === currentVersionId);
+        if (!currentVersion) {
+          console.log('No current version found');
+          return;
+        }
+    
+        const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+        console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
+    
+        if (currentreuseableSVGElementList) {
+          const cursorPosition = editorRef.current?.selectionStart || 0;
+          const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+          setAutocompletePosition({ top: position.top + 50, left: position.left });
+          setShowModifyObjWidget(true); // Show the widget
+          //setSelectedCodeText(''); // Reset the selected code text
+          console.log('clicked on modifyobj', showModifyObjWidget)
+        } else {
+          console.log('reuseableSVGElementList is undefined or empty');
+        }
       }
-  
-      const currenthighlightedSVGPieceList = currentVersion.highlightedSVGPieceList;
-      console.log('svgpieces', currentVersion, currenthighlightedSVGPieceList);
-  
-      if (currenthighlightedSVGPieceList) {
-        const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
-        const cursorPosition = editorRef.current?.selectionStart || 0;
-        const textBeforeCursor = userjs.slice(0, cursorPosition);
-        const textAfterCursor = userjs.slice(cursorPosition+word.length);
-        const newText = textBeforeCursor + '\''+ codeNames + '\''+ textAfterCursor;
-        setuserJs(newText);
-      } else {
-        console.log('highlightedSVGPieceList is undefined or empty');
-      }
-    }
 
-    if (word === 'refauto') {
-      console.log('double-clicked on ref');
-      const currentVersion = versions.find(version => version.id === currentVersionId);
-      if (!currentVersion) {
-        console.log('No current version found');
-        return;
-      }
+    // if (word === 'modifyauto') {
+    //   console.log('double-clicked on piece');
+    //   const currentVersion = versions.find(version => version.id === currentVersionId);
+    //   if (!currentVersion) {
+    //     console.log('No current version found');
+    //     return;
+    //   }
   
-      const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
-      console.log('svgpieces', currentVersion, currentreuseableSVGElementList);
+    //   const currenthighlightedSVGPieceList = currentVersion.highlightedSVGPieceList;
+    //   console.log('svgpieces', currentVersion, currenthighlightedSVGPieceList);
   
-      if (currentreuseableSVGElementList) {
-        const codeName = currentreuseableSVGElementList.find(item => item.selected === true).codeName;;
-        const cursorPosition = editorRef.current?.selectionStart || 0;
-        const textBeforeCursor = userjs.slice(0, cursorPosition);
-        const textAfterCursor = userjs.slice(cursorPosition+word.length);
-        const newText = textBeforeCursor + '\''+ codeName + '\''+ textAfterCursor;
-        setuserJs(newText);
-      } else {
-        console.log('highlightedSVGPieceList is undefined or empty');
-      }
-    }
+    //   if (currenthighlightedSVGPieceList) {
+    //     const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
+    //     const cursorPosition = editorRef.current?.selectionStart || 0;
+    //     const textBeforeCursor = userjs.slice(0, cursorPosition);
+    //     const textAfterCursor = userjs.slice(cursorPosition+word.length);
+    //     const newText = textBeforeCursor + '\''+ codeNames + '\''+ textAfterCursor;
+    //     setuserJs(newText);
+    //   } else {
+    //     console.log('highlightedSVGPieceList is undefined or empty');
+    //   }
+    // }
 
-    if (word == 'coordauto'){
-      setHintKeywords(word);
-      const cursorPosition = editorRef.current?.selectionStart || 0;
-      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-      setCoordcompletePosition({ top: position.top + 50, left: position.left });
-      setShowCoordcomplete(true);
-    }
+    // if (word === 'refauto') {
+    //   console.log('double-clicked on ref');
+    //   const currentVersion = versions.find(version => version.id === currentVersionId);
+    //   if (!currentVersion) {
+    //     console.log('No current version found');
+    //     return;
+    //   }
+  
+    //   const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+    //   console.log('svgpieces', currentVersion, currentreuseableSVGElementList);
+  
+    //   if (currentreuseableSVGElementList) {
+    //     const codeName = currentreuseableSVGElementList.find(item => item.selected === true).codeName;;
+    //     const cursorPosition = editorRef.current?.selectionStart || 0;
+    //     const textBeforeCursor = userjs.slice(0, cursorPosition);
+    //     const textAfterCursor = userjs.slice(cursorPosition+word.length);
+    //     const newText = textBeforeCursor + '\''+ codeName + '\''+ textAfterCursor;
+    //     setuserJs(newText);
+    //   } else {
+    //     console.log('highlightedSVGPieceList is undefined or empty');
+    //   }
+    // }
+
+    // if (word == 'coordauto'){
+    //   setHintKeywords(word);
+    //   const cursorPosition = editorRef.current?.selectionStart || 0;
+    //   const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+    //   setCoordcompletePosition({ top: position.top + 50, left: position.left });
+    //   setShowCoordcomplete(true);
+    // }
     else if(word != 'modifyobj'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
@@ -703,6 +727,29 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     );
   };
 
+  const handleModifyobjOptionClick = (option: string, hintText: string) => {
+    const word = 'modifyobj'
+      //const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const textBeforeCursor = userjs.slice(0, cursorPosition+word.length);
+      const textAfterCursor = userjs.slice(cursorPosition+word.length);
+      const newText = textBeforeCursor + '= {objname: \'' + option + '\', piecenames: [], pieceprompts: []}'+ textAfterCursor;
+      setuserJs(newText);
+      setShowModifyObjWidget(false)
+
+  };
+
+  const handleUseobjOptionClick = (option: string, hintText: string) => {
+    const word = 'useobj'
+      //const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const textBeforeCursor = userjs.slice(0, cursorPosition+word.length);
+      const textAfterCursor = userjs.slice(cursorPosition+word.length);
+      const newText = textBeforeCursor + '= {objname: \'' + option + '\'}'+ textAfterCursor;
+      setuserJs(newText);
+      setShowModifyObjWidget(false)
+
+  };
   
   const ModifyObjWidget = () => {
     const currentVersion = versions.find((version) => version.id === currentVersionId);
@@ -835,6 +882,21 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         });
     }
 
+    // const empty_svgpiece = () =>{
+    //     // Empty the highlightedSVGPieceList of the current version
+    //     setVersions(prevVersions => {
+    //       const updatedVersions = prevVersions.map(version => {
+    //         if (version.id === currentVersionId) {
+    //           return { ...version, highlightedSVGPieceList: [] };
+    //         }
+    //         return version;
+    //       });
+  
+    //       console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
+    //       return updatedVersions;
+    //     });      
+    // }
+
     const remove_svgpiece = (codetext:string) => {
         console.log('removing svg:', codetext)
         // Remove a specific SVG piece from the highlightedSVGPieceList by matching codeText
@@ -899,6 +961,46 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
     };
 
+    // Function to remove highlights from all elements in the highlightedElements array
+    const removeAllHighlights = () => {
+      const iframe = iframeRef.current;
+      if (iframe) {
+          const iframeDocument = iframe.contentDocument;
+          const svgElements = iframeDocument?.querySelectorAll('svg *');
+  
+          svgElements?.forEach((target) => {
+              const isHighlighted = target.getAttribute('data-highlighted') === 'true';
+  
+              if (isHighlighted) {
+                  const svgString = target.outerHTML;
+                  remove_svgpiece(svgString); // Remove the piece from the list
+  
+                  const originalStroke = target.getAttribute('data-original-stroke') || 'none';
+                  const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
+  
+                  target.setAttribute('stroke', originalStroke);
+                  target.setAttribute('stroke-width', originalStrokeWidth);
+  
+                  target.removeAttribute('data-highlighted');
+                  target.removeAttribute('data-original-stroke-width');
+                  target.removeAttribute('data-original-stroke');
+  
+                  if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
+                      target.removeAttribute('stroke');
+                      target.removeAttribute('stroke-width');
+                  }
+              }
+          });
+  
+          // Update the SVG code in the editor
+          const svgRootElement = iframeDocument?.querySelector('svg');
+          if (svgRootElement) {
+              setSvgCodeText(svgRootElement.outerHTML);
+          }
+      }
+  };
+  
+
     const handleRenderSVGClick = (codeName: string, codeText: string) => {
         setSvgCodeText(codeText);
         setCurrentSelectedSVG(codeName)
@@ -906,6 +1008,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
     const handleApplyClick = () => {
         console.log("Apply button clicked for:", currentSelectedSVG);
+        //deal with highlight
+        //empty_svgpiece();
+        removeAllHighlights();
+        setSvgCodeText('');
+
+        //deal with auto completion
         const word = 'modifyobj'
         const currentVersion = versions.find(version => version.id === currentVersionId);
         if (!currentVersion) {
@@ -969,10 +1077,19 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                                 alignItems: 'center',
                             }}
                         >
-                            <span onClick={() => handleAutocompleteOptionClick(item.codeName, '')} style={{ flexGrow: 1 }}>
+                        <span 
+                            onClick={() => {
+                                if (showmodifyobjbutton) {
+                                    handleModifyobjOptionClick(item.codeName, '');
+                                } else {
+                                  handleUseobjOptionClick(item.codeName, '');
+                                }
+                            }}
+                            style={{ flexGrow: 1 }}
+                        >
                                 {item.codeName}
                             </span>
-                            <button
+                            {showmodifyobjbutton && <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleRenderSVGClick(item.codeName, item.codeText);
@@ -984,12 +1101,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                                 }}
                             >
                                 ...
-                            </button>
+                            </button>}
                         </li>
                     ))}
                 </ul>
             </div>
-            <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {svgCodeText &&<div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div
                     style={{
                         width: '200px',
@@ -1018,7 +1135,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 >
                     Apply
                 </button>
-            </div>
+            </div>}
         </div>
     );
 };

@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://d833-34-125-117-110.ngrok-free.app';
+const ngrok_url = 'https://5843-34-48-16-227.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -406,7 +406,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                     // Check if the Generate class has already been defined
                     if (!window.Rule) {
                       class Rule {
-                        constructor(prompt) {
+                        constructor(prompt = '', useobj = {objname: ''}) {
                           this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
                           this.basic_prompt = prompt;
                           this.useobj = {objname: ''}
