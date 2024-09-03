@@ -60,7 +60,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const loading = version ? version.loading : false;
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
   const [buttonchoice, setButtonchoice] = useState('');
-
+  const [svgCodeText, setSvgCodeText] = useState('hhh');
   //for modifyobjwidget
   const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
   // const [selectedCodeText, setSelectedCodeText] = useState('');
@@ -701,20 +701,20 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     );
   };
 
+  
   const ModifyObjWidget = () => {
     const currentVersion = versions.find((version) => version.id === currentVersionId);
     const currentreuseableSVGElementList = currentVersion?.reuseableSVGElementList || [];
   
-    const [svgCodeText, setSvgCodeText] = useState('');
 
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
-        
+        //console.log('in useeffect', svgCodeText, iframeRef.current)
         const iframe = iframeRef.current;
-        if(iframe){
-          const iframeDocument = iframe.contentDocument;
-          iframeDocument?.write(`
+        if (iframe) {
+            const iframeDocument = iframe.contentDocument;
+            iframeDocument?.write(`
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -745,20 +745,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             </head>
             <body>
                 <div id="canvasContainer"></div>
-                <script>
-                </script>
             </body>
             </html>
-        `)
-          console.log('in useeffect', iframeRef, iframeDocument)
-              if (iframeDocument) {
-                  const canvasContainer = iframeDocument.getElementById('canvasContainer');
-                  if (canvasContainer) {
-                      appendSVGToContainer(canvasContainer, svgCodeText);
-                  }
-              }
+            `);
+            iframeDocument?.close(); // Make sure to close the document to complete writing
+            const canvasContainer = iframeDocument?.getElementById('canvasContainer');
+            if (canvasContainer) {
+                appendSVGToContainer(canvasContainer, svgCodeText);
+                //console.log('appendSVGToContainer', svgCodeText)
+            }
         }
-
     }, [svgCodeText]);
 
     const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
@@ -775,9 +771,97 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         });
     };
 
+    const update_svgpiece = (codename: string, codetext:string) =>{
+
+      console.log('added svg:', codetext);
+        const newElementBaseName = codename;
+        let newElementName = newElementBaseName;
+        const newElement = {
+          codeName: newElementName,
+          codeText: codetext,
+          selected: false,
+        };
+      
+        // Update the reusable SVG piece list and then check the updated list
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.slice() || [];
+              const updatedpreviousSelectedSVGPieceList = version.previousSelectedSVGPieceList ? [...version.previousSelectedSVGPieceList] : []; 
+      
+              // Check if there are already elements with the same base name
+              // the naming index is defined by previousSelectedSVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
+              const existingElements = updatedpreviousSelectedSVGPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
+      
+              if (existingElements.length > 0) {
+                // Find the biggest index after the underscore in the existing elements
+                const maxIndex = existingElements
+                  .map(element => {
+                    const parts = element.codeName.split('_');
+                    return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : 0;
+                  })
+                  .reduce((max, current) => Math.max(max, current), -1);
+      
+                // Set the new codename with the incremented index
+                newElementName = `${newElementBaseName}_${maxIndex + 1}`;
+                newElement.codeName = newElementName;
+              } else {
+                // No elements with the same base name, use basename_0
+                newElementName = `${newElementBaseName}_0`;
+                newElement.codeName = newElementName;
+              }
+      
+              updatedhighlightedSVGPieceList.push(newElement);
+              updatedpreviousSelectedSVGPieceList.push(newElement);
+      
+              return { 
+                ...version, 
+                highlightedSVGPieceList: updatedhighlightedSVGPieceList, 
+                previousSelectedSVGPieceList: updatedpreviousSelectedSVGPieceList 
+              };
+            }
+            return version;
+          });
+      
+          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
+      
+          console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList);
+          console.log('check all previously selected SvgPieceList in update', currenthighlightedSVGPieceList);
+      
+          return updatedVersions;
+        });
+    }
+
+    const remove_svgpiece = (codetext:string) => {
+        console.log('removing svg:', codetext)
+        // Remove a specific SVG piece from the highlightedSVGPieceList by matching codeText
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            if (version.id === currentVersionId) {
+              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.filter(
+                element => element.codeText !== codetext
+              ) || [];
+  
+              return { ...version, highlightedSVGPieceList: updatedhighlightedSVGPieceList };
+            }
+            return version;
+          });
+          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList;
+              
+          console.log('check currenthighlightedSVGPieceList', currenthighlightedSVGPieceList, updatedVersions);
+
+          return updatedVersions;
+        });
+        
+    }
+
+
     const toggleHighlight = (event: MouseEvent) => {
         event.stopPropagation();
         const target = event.currentTarget as SVGElement;
+        console.log('target:', target, target.outerHTML)
         const isHighlighted = target.getAttribute('data-highlighted') === 'true';
 
         if (isHighlighted) {
@@ -788,14 +872,14 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             target.removeAttribute('data-highlighted');
             target.removeAttribute('data-original-stroke-width');
             target.removeAttribute('data-original-stroke');
-            //window.highlightedElements = window.highlightedElements.filter(el => el !== target);
-
             if (originalStroke === 'none' && parseFloat(originalStrokeWidth) === 0) {
                 target.removeAttribute('stroke');
                 target.removeAttribute('stroke-width');
             }
             const svgString = target.outerHTML;
-            window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
+            setSvgCodeText(target.parentElement.parentElement.outerHTML)
+            //window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
+            remove_svgpiece(svgString)
         } else {
             const originalStroke = target.getAttribute('stroke') || 'none';
             const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
@@ -804,11 +888,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             target.setAttribute('stroke', 'yellow');
             target.setAttribute('stroke-width', parseFloat(originalStrokeWidth) + 10);
             target.setAttribute('data-highlighted', 'true');
-            //window.highlightedElements.push(target);
             const svgString = target.outerHTML;
-            console.log('iframe before postmessage', iframeRef.current.contentDocument, svgCodeText)
-            window.parent.postMessage({ type: 'UPDATE_SVGPIECE', codename: svgString.split(' ')[0], codetext: svgString }, '*');
-            console.log('iframe after postmessage', iframeRef.current.contentDocument, svgCodeText)
+            //console.log('before update', svgCodeText)
+            update_svgpiece(svgString.split(' ')[0], svgString)
+            //console.log('after update', svgCodeText)
+            setSvgCodeText(target.parentElement.parentElement.outerHTML)
+            //console.log('done update', svgString, target.parentElement.parentElement)
         }
     };
 
@@ -817,7 +902,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     };
 
     const handleApplyClick = () => {
-        // Implement the logic for applying the selected SVG or any other functionality
         console.log("Apply button clicked for:", svgCodeText);
     };
 
@@ -833,16 +917,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 border: '1px solid #ccc',
                 padding: '10px',
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                display: 'flex', // To position elements side by side
-                fontSize: '14px', // Smaller font size
+                display: 'flex',
+                fontSize: '14px',
             }}
         >
             <div
                 className="code-name-list"
                 style={{
-                    marginRight: '10px', // Add some space between the list and the canvas
-                    maxHeight: '200px', // Fix the height to keep it consistent with the canvas
-                    overflowY: 'auto', // Add scroll if content overflows
+                    marginRight: '10px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
                 }}
             >
                 <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
@@ -853,10 +937,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                             style={{
                                 padding: '5px',
                                 cursor: 'pointer',
-                                whiteSpace: 'pre-wrap', // Allow text to wrap onto the next line
-                                overflow: 'hidden', // Hide overflow text
-                                textOverflow: 'ellipsis', // Show ellipsis for overflowing text
-                                wordWrap: 'break-word', // Ensure words break to the next line if they are too long
+                                whiteSpace: 'pre-wrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                wordWrap: 'break-word',
                                 display: 'flex',
                                 alignItems: 'center',
                             }}
@@ -866,8 +950,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                             </span>
                             <button
                                 onClick={(e) => {
-                                    e.stopPropagation(); // Prevent the click event from propagating to the list item
-                                    handleRenderSVGClick(item.codeText); // Render SVG code in the widget
+                                    e.stopPropagation();
+                                    handleRenderSVGClick(item.codeText);
                                 }}
                                 style={{
                                     marginLeft: '10px',
@@ -884,17 +968,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div
                     style={{
-                        width: '200px', // Fixed width for the canvas
-                        height: '200px', // Fixed height for the canvas
-                        border: '1px solid #ccc', // Add a border to the canvas
-                        marginBottom: '10px', // Space between the canvas and the button
+                        width: '200px',
+                        height: '200px',
+                        border: '1px solid #ccc',
+                        marginBottom: '10px',
                     }}
                 >
                     {svgCodeText && (
                         <iframe
                             ref={iframeRef}
                             style={{ width: '100%', height: '100%', border: 'none' }}
-                            // srcDoc={createHTMLStructure(svgCodeText)}
                         />
                     )}
                 </div>
@@ -915,6 +998,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         </div>
     );
 };
+
 
   
   
