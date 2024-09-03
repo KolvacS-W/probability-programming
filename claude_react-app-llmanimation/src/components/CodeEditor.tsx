@@ -60,9 +60,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const loading = version ? version.loading : false;
   const [optionLevels, setOptionLevels] = useState<{ options: string[]; position: { top: number; left: number } }[]>([]);
   const [buttonchoice, setButtonchoice] = useState('');
-  const [svgCodeText, setSvgCodeText] = useState('hhh');
   //for modifyobjwidget
+  const [svgCodeText, setSvgCodeText] = useState('hhh');
   const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
+  const [currentSelectedSVG, setCurrentSelectedSVG] = useState(''); // State to store the current codeName
+
   // const [selectedCodeText, setSelectedCodeText] = useState('');
   // const [svgCodeText, setSvgCodeText] = useState('');
 
@@ -705,7 +707,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const ModifyObjWidget = () => {
     const currentVersion = versions.find((version) => version.id === currentVersionId);
     const currentreuseableSVGElementList = currentVersion?.reuseableSVGElementList || [];
-  
+
 
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -865,6 +867,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         const isHighlighted = target.getAttribute('data-highlighted') === 'true';
 
         if (isHighlighted) {
+            const svgString = target.outerHTML;
+            remove_svgpiece(svgString)
             const originalStroke = target.getAttribute('data-original-stroke') || 'none';
             const originalStrokeWidth = target.getAttribute('data-original-stroke-width') || '1';
             target.setAttribute('stroke', originalStroke);
@@ -876,10 +880,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 target.removeAttribute('stroke');
                 target.removeAttribute('stroke-width');
             }
-            const svgString = target.outerHTML;
             setSvgCodeText(target.parentElement.parentElement.outerHTML)
             //window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
-            remove_svgpiece(svgString)
+            
         } else {
             const originalStroke = target.getAttribute('stroke') || 'none';
             const originalStrokeWidth = target.getAttribute('stroke-width') || '0';
@@ -891,18 +894,39 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             const svgString = target.outerHTML;
             //console.log('before update', svgCodeText)
             update_svgpiece(svgString.split(' ')[0], svgString)
-            //console.log('after update', svgCodeText)
-            setSvgCodeText(target.parentElement.parentElement.outerHTML)
+            setSvgCodeText(target.parentElement.parentElement.outerHTML) 
             //console.log('done update', svgString, target.parentElement.parentElement)
         }
     };
 
-    const handleRenderSVGClick = (codeText: string) => {
+    const handleRenderSVGClick = (codeName: string, codeText: string) => {
         setSvgCodeText(codeText);
+        setCurrentSelectedSVG(codeName)
     };
 
     const handleApplyClick = () => {
-        console.log("Apply button clicked for:", svgCodeText);
+        console.log("Apply button clicked for:", currentSelectedSVG);
+        const word = 'modifyobj'
+        const currentVersion = versions.find(version => version.id === currentVersionId);
+        if (!currentVersion) {
+          console.log('No current version found');
+          return;
+        }
+    
+        const currenthighlightedSVGPieceList = currentVersion.highlightedSVGPieceList;
+        console.log('svgpieces', currentVersion, currenthighlightedSVGPieceList);
+    
+        if (currenthighlightedSVGPieceList) {
+          const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
+          const cursorPosition = editorRef.current?.selectionStart || 0;
+          const textBeforeCursor = userjs.slice(0, cursorPosition+word.length);
+          const textAfterCursor = userjs.slice(cursorPosition+word.length);
+          const newText = textBeforeCursor + '= {objname: \'' + currentSelectedSVG + '\', piecenames: [\''+ codeNames + '\' ], pieceprompts: []}'+ textAfterCursor;
+          setuserJs(newText);
+          setShowModifyObjWidget(false)
+        } else {
+          console.log('highlightedSVGPieceList is undefined or empty');
+        }
     };
 
     return (
@@ -951,7 +975,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleRenderSVGClick(item.codeText);
+                                    handleRenderSVGClick(item.codeName, item.codeText);
                                 }}
                                 style={{
                                     marginLeft: '10px',
