@@ -187,3 +187,63 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
   }
 
 }
+
+function generateObj(name, parameterContents = []) {
+let obj;
+
+// Add the draw operation to the queue
+this.drawQueue = this.drawQueue.then(async () => {
+  var svgElement;
+  var svgHTML;
+  if(parameterContents.length >0){
+    // need to parameterize
+    const parameters = this.parameters;
+  
+    // Replace the placeholders in the SVG string with actual parameter contents
+    svgElement = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, scale);
+    const svgString = svgElement.outerHTML;
+    let updatedSvg = svgString;
+    parameters.forEach((param, index) => {
+        const regex = new RegExp(`{${param}}`, 'g');
+        updatedSvg = updatedSvg.replace(regex, parameterContents[index]);
+    });
+    svgHTML = updatedSvg
+
+  }
+  else{
+    //no parameter needed
+    svgElement = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, scale);
+    svgHTML = svgElement.outerHTML
+  }
+  
+  if (svgHTML) {
+    const svgHTML = svgElement.outerHTML;
+    const codename = name;
+  // Send the message to update the reusable element list
+  window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+  console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+  // Wait for the confirmation after sending the message
+  await new Promise((resolve) => {
+      const messageHandler = (event) => {
+          if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+              window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+              console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+              window.removeEventListener('message', messageHandler);
+              resolve(); // Resolve the promise to continue execution
+          }
+      };
+      window.addEventListener('message', messageHandler);
+  });
+    
+    obj = new Object(codename, svgHTML, this)
+    console.log('returning obj:', obj)
+    return obj; // Return the codename
+  }
+}).catch(error => {
+  console.error('Error in canvas draw sequence:', error);
+});
+
+return this.drawQueue.then(() => obj); // Ensure the codename is returned
+
+}

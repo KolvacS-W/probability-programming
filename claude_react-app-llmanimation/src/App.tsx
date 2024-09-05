@@ -42,17 +42,25 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `const myCanvas = new whole_canvas('azure');
+      usercode: { js: `const canvas = new whole_canvas('azure');
 
-const carrule = new Rule('a plump Persian cat with a flat face gently pawing at a tangled yarn ball on a tiled kitchen floor')
-carrule.parameters = ['cat eye color', 'ball size']
+const carrule = new Rule('a snowy owl with heart-shaped face resting on a pine branch')
+carrule.parameters = ['owl eye color', 'wing size']
 
 console.log('check rule', carrule, carrule.paramters)
-const carobj = await carrule.generateObj('catty',myCanvas,['blue', 30],)
+const carobj = await carrule.generateObj('catt_blue', canvas, ['blue', 30],)
 
-modifyobj
+console.log('check template', carobj.template)
+const carobj2 =await carobj.template.createObj('catt_green',['green', 40],)
 
-console.log('check obj', carobj)` },
+const carobj3 = await carobj.template.createObj('catt_red',['red', 50],)
+
+console.log('check obj', carobj, carobj2, carobj3)
+
+carobj.placeObj(canvas,{x: 20, y: 30}, 1)
+carobj2.placeObj(canvas,{x: 40, y: 50}, 1)
+carobj3.placeObj(canvas,{x: 60, y: 60}, 1)
+` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },

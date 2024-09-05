@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://8f44-34-125-100-46.ngrok-free.app';
+const ngrok_url = 'https://abec-34-141-218-107.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -498,7 +498,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
                                 </svg>.
                                 
-                                Notice that only one parameter name and nothing else can be inside {}. Return svg code template for this parameter list:\` + this.parameters.join(', ')+\`. Do not include any background in generated svg. 
+                                Notice that only one parameter name and nothing else can be inside {}. Replace the whole parameter (e.g., fill = "#e0d0c0" to fill = "{parameter name}") instead of just part of it (e.g., fill = "#e0d0c0" to fill = "#{parameter name}"). Return svg code template for this parameter list:\` + this.parameters.join(', ')+\`. Do not include any background in generated svg. 
                                 Make sure donot include anything other than the final svg code template in your response.\`;
                               }
                               else{
@@ -551,33 +551,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           }                          
                         }
 
-                        createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
-                          const svgWrapper = document.createElement('div');
-                          svgWrapper.innerHTML = svgContent.trim();
-                          const svgElement = svgWrapper.firstElementChild;
-
-                          // Get the original dimensions of the SVG
-                          const viewBox = svgElement.viewBox.baseVal;
-                          const originalWidth = viewBox.width;
-                          const originalHeight = viewBox.height;
-
-                          // Calculate the scaled dimensions
-                          const scaledWidth = originalWidth * scale;
-                          const scaledHeight = originalHeight * scale;
-
-                          // Calculate the percentage-based coordinates
-                          const leftPercent = (coord.x );
-                          const topPercent = (coord.y );
-
-                          // Position the SVG so that it is centered at the given coordinates
-                          svgElement.style.position = 'absolute';
-                          svgElement.style.left = \`\${leftPercent}%\`;
-                          svgElement.style.top = \`\${topPercent}%\`;
-                          svgElement.style.transform = \`translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
-
-                          return svgElement;
-                        }
-
 async generateObj(name, canvas, parameterContents = []) {
 let obj;
 
@@ -585,6 +558,7 @@ let obj;
 this.drawQueue = this.drawQueue.then(async () => {
   var svgElement;
   var svgHTML;
+  var svgHTMLtemplate;
   const coord = null;
   if(parameterContents.length >0){
     // need to parameterize
@@ -593,6 +567,8 @@ this.drawQueue = this.drawQueue.then(async () => {
     // Replace the placeholders in the SVG string with actual parameter contents
     svgHTML = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, 1);
     // const svgString = svgElement.outerHTML;
+
+    svgHTMLtemplate = svgHTML
 
     parameters.forEach((param, index) => {
         const placeholder = '{' + param + '}';
@@ -628,7 +604,7 @@ this.drawQueue = this.drawQueue.then(async () => {
       window.addEventListener('message', messageHandler);
   });
     
-    obj = new GeneratedOject(codename, svgHTML, this)
+    obj = new GeneratedObject(codename, svgHTML, svgHTMLtemplate, this)
     console.log('returning obj:', obj)
     return obj; // Return the codename
   }
@@ -639,6 +615,8 @@ this.drawQueue = this.drawQueue.then(async () => {
 return this.drawQueue.then(() => obj); // Ensure the codename is returned
 
 }
+
+
 async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
   console.log('generateandDrawObj called', ifcode2desc);
   // Define obj at the function scope
@@ -716,16 +694,97 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                     }
 
                     //another class
-                    if (!window.GeneratedOject) {
-                      class GeneratedOject {
-                            constructor(objname, svgcode, rule) {
+                    if (!window.GeneratedObject) {
+                      class GeneratedObject {
+                            constructor(objname, svgcode, templatecode, rule) {
                               this.objname = objname
                               this.svgcode = svgcode
+                              this.template = new ObjectTemplate(templatecode, rule)
                               this.rule = rule
                             }
+                            
+                            placeObj(canvas, coord, scale = 1) {
+                                const content = this.svgcode
+                                const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                                canvas.canvasContainer.appendChild(svgElement);
+                            }
+                                                    createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
+                          const svgWrapper = document.createElement('div');
+                          svgWrapper.innerHTML = svgContent.trim();
+                          const svgElement = svgWrapper.firstElementChild;
+
+                          // Get the original dimensions of the SVG
+                          const viewBox = svgElement.viewBox.baseVal;
+                          const originalWidth = viewBox.width;
+                          const originalHeight = viewBox.height;
+
+                          // Calculate the scaled dimensions
+                          const scaledWidth = originalWidth * scale;
+                          const scaledHeight = originalHeight * scale;
+
+                          // Calculate the percentage-based coordinates
+                          const leftPercent = (coord.x );
+                          const topPercent = (coord.y );
+
+                          // Position the SVG so that it is centered at the given coordinates
+                          svgElement.style.position = 'absolute';
+                          svgElement.style.left = \`\${leftPercent}%\`;
+                          svgElement.style.top = \`\${topPercent}%\`;
+                          svgElement.style.transform = \`translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
+
+                          return svgElement;
+                        }
                       }  
-                      window.GeneratedOject = GeneratedOject;
+                      window.GeneratedObject = GeneratedObject;
                     }
+                    //another class
+                    if (!window.ObjectTemplate) {
+                      class ObjectTemplate {
+                            constructor(templatecode, rule) {
+                              this.templatecode = templatecode
+                              this.rule = rule
+                            }
+                            async createObj(name, parameterContents = []){
+                                var obj;
+                                // need to parameterize
+                                const parameters = this.rule.parameters;
+                              
+                                // Replace the placeholders in the SVG string with actual parameter contents
+                                var svgHTML = this.templatecode
+                                // const svgString = svgElement.outerHTML;
+
+                                parameters.forEach((param, index) => {
+                                    const placeholder = '{' + param + '}';
+                                    svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
+                                });
+
+                                //save the new obj to app
+                                const codename = name;
+                                // Send the message to update the reusable element list
+                                window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+                                console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+                                // Wait for the confirmation after sending the message
+                                await new Promise((resolve) => {
+                                    const messageHandler = (event) => {
+                                        if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                                            window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                                            console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+                                            window.removeEventListener('message', messageHandler);
+                                            resolve(); // Resolve the promise to continue execution
+                                        }
+                                    };
+                                    window.addEventListener('message', messageHandler);
+                                });
+                                //create obj instance
+                                //console.log('creating obj in template.createobj', this.rule)
+                                obj = new GeneratedObject(name, svgHTML, this.templatecode, this.rule)
+                                //console.log('returning obj:', obj)
+                                return obj; // Return the codename
+                            }
+                      }  
+                      window.ObjectTemplate = ObjectTemplate;
+                    }                    
 
                     // Another class
                     if (!window.whole_canvas) {
