@@ -45,14 +45,10 @@ const App: React.FC = () => {
       usercode: { js: `const myCanvas = new whole_canvas('azure');
 
 const carrule = new Rule('a blue car')
+carrule.parameters = ['wheel size', 'car height']
 
-console.log(carrule)
-
-const carobj = await carrule.generateandDrawObj('blue car', myCanvas, {x: 34, y: 67}, 1.2)
-
-
-modifyobj
-
+console.log('check rule', carrule, carrule.paramters)
+const carobj = await carrule.generateObj('blue_car', [10, 40], myCanvas)
 
 console.log('check obj', carobj)` },
       savedOldCode: { html: '', css: '', js: '' },

@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://5843-34-48-16-227.ngrok-free.app';
+const ngrok_url = 'https://8f44-34-125-100-46.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -422,6 +422,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           this.modifyobj = {objname: '', piecenames: [], pieceprompts: []}
                           this.piecenames = [];
                           this.piecenamemodify = [];
+                          this.parameters = [];
                           this.drawQueue = Promise.resolve();
                           console.log('rule created:', prompt);
                         }
@@ -484,8 +485,23 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               }
                         
                             else{
-                              console.log('no existing code')
-                              APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                              console.log('no existing code', this.parameters)
+                              if(this.parameters.length >0){
+                                APIprompt = \`write me svg code to create a svg image of \` + this.basic_prompt +\`. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response. Also, given a parameter list, make the returned svg code a template with certain parameters as text placeholders. 
+                                For example, parameter list: roof height, window color; resulting svg template:
+                                <svg viewBox="0 0 200 200">
+                                <rect x="50" y="70" width="100" height="80" fill="brown" /> <!-- House body -->
+                                <polygon points="50,70 100,{roof height} 150,70" fill="red" /> <!-- Roof -->
+                                <rect x="65" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 1 -->
+                                <rect x="115" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 2 -->
+                                <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
+                                </svg>
+                                
+                                return svg code template for this parameter list:\` + this.parameters.join(', ');
+                              }
+                              else{
+                                APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                              }
                             }
 
                             console.log('api prompt', APIprompt);
@@ -505,10 +521,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               console.log('Content from API call:', content);
 
                               if (content) {
-                                const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
-                                canvas.appendChild(svgElement);
-                                console.log('svgElement is', svgElement);
-                                return svgElement;
+                                // const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                                // canvas.appendChild(svgElement);
+                                // console.log('svgElement is', svgElement);
+                                // return svgElement;
+                                return content
                               }
                             } catch (error) {
                               console.error('Error drawing the shape:', error);
@@ -523,10 +540,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             const content = existingcode;
 
                             if (content) {
-                              const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
-                              canvas.appendChild(svgElement);
-                              console.log('svgElement is', svgElement);
-                              return svgElement;
+                              // const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                              // canvas.appendChild(svgElement);
+                              // console.log('svgElement is', svgElement);
+                              // return svgElement;
+                              return content
                             }                            
                           }                          
                         }
@@ -558,6 +576,67 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           return svgElement;
                         }
 
+async generateObj(name, canvas, parameterContents = []) {
+let obj;
+
+// Add the draw operation to the queue
+this.drawQueue = this.drawQueue.then(async () => {
+  var svgElement;
+  var svgHTML;
+  const coord = null;
+  if(parameterContents.length >0){
+    // need to parameterize
+    const parameters = this.parameters;
+  
+    // Replace the placeholders in the SVG string with actual parameter contents
+    svgHTML = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, 1);
+    // const svgString = svgElement.outerHTML;
+
+    parameters.forEach((param, index) => {
+        const placeholder = param;
+        svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
+    });
+
+    console.log('have param', svgHTML)
+
+  }
+  else{
+    //no parameter needed
+    svgHTML = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, 1);
+    console.log('no param', svgHTML)
+  }
+  
+  if (svgHTML) {
+    //const svgHTML = svgElement.outerHTML;
+    const codename = name;
+  // Send the message to update the reusable element list
+  window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+  console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+  // Wait for the confirmation after sending the message
+  await new Promise((resolve) => {
+      const messageHandler = (event) => {
+          if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+              window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+              console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+              window.removeEventListener('message', messageHandler);
+              resolve(); // Resolve the promise to continue execution
+          }
+      };
+      window.addEventListener('message', messageHandler);
+  });
+    
+    obj = new GeneratedOject(codename, svgHTML, this)
+    console.log('returning obj:', obj)
+    return obj; // Return the codename
+  }
+}).catch(error => {
+  console.error('Error in canvas draw sequence:', error);
+});
+
+return this.drawQueue.then(() => obj); // Ensure the codename is returned
+
+}
 async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
   console.log('generateandDrawObj called', ifcode2desc);
   // Define obj at the function scope
@@ -632,6 +711,18 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 
                       // Assign the class to the global window object
                       window.Rule = Rule;
+                    }
+
+                    //another class
+                    if (!window.GeneratedOject) {
+                      class GeneratedOject {
+                            constructor(objname, svgcode, rule) {
+                              this.objname = objname
+                              this.svgcode = svgcode
+                              this.rule = rule
+                            }
+                      }  
+                      window.GeneratedOject = GeneratedOject;
                     }
 
                     // Another class

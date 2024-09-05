@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://5843-34-48-16-227.ngrok-free.app';
+const ngrok_url = 'https://8f44-34-125-100-46.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -1277,7 +1277,7 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
     // Step 3: Turn pieceText into a DOM element (pieceElement)
     const parser = new DOMParser();
     const pieceDoc = parser.parseFromString(pieceText, 'image/svg+xml');
-    const pieceElement = pieceDoc.querySelector('path'); // Adjust selector if pieceText could be something other than a path
+    const pieceElement = pieceDoc.querySelector('*');  // Adjust selector if pieceText could be something other than a path
 
     if (pieceElement) {
         // Step 4: Highlight the piece
