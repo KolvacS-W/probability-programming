@@ -44,11 +44,13 @@ const App: React.FC = () => {
 </html>`},
       usercode: { js: `const myCanvas = new whole_canvas('azure');
 
-const carrule = new Rule('a blue car')
-carrule.parameters = ['wheel size', 'car height']
+const carrule = new Rule('a plump Persian cat with a flat face gently pawing at a tangled yarn ball on a tiled kitchen floor')
+carrule.parameters = ['cat eye color', 'ball size']
 
 console.log('check rule', carrule, carrule.paramters)
-const carobj = await carrule.generateObj('blue_car',myCanvas,[10, 40],)
+const carobj = await carrule.generateObj('catty',myCanvas,['blue', 30],)
+
+modifyobj
 
 console.log('check obj', carobj)` },
       savedOldCode: { html: '', css: '', js: '' },

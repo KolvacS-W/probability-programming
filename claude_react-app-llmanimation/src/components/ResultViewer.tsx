@@ -487,8 +487,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                             else{
                               console.log('no existing code', this.parameters)
                               if(this.parameters.length >0){
-                                APIprompt = \`write me svg code to create a svg image of \` + this.basic_prompt +\`. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response. 
-                                Also, given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
+                                APIprompt = \`write me svg code to create a svg image of \` + this.basic_prompt +\`. Make the svg image as detailed as possible and as close to the description as possible.  
+                                Furthermore, process the generated svg code into a svg code template, with the given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
                                 For example, parameter list: roof height, window color; resulting svg template:
                                 <svg viewBox="0 0 200 200">
                                 <rect x="50" y="70" width="100" height="80" fill="brown" /> <!-- House body -->
@@ -498,7 +498,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                 <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
                                 </svg>.
                                 
-                                Notice that only one parameter name and nothing else can be inside {}. Return svg code template for this parameter list:\` + this.parameters.join(', ');
+                                Notice that only one parameter name and nothing else can be inside {}. Return svg code template for this parameter list:\` + this.parameters.join(', ')+\`. Do not include any background in generated svg. 
+                                Make sure donot include anything other than the final svg code template in your response.\`;
                               }
                               else{
                                 APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
