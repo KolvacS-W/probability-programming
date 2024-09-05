@@ -48,7 +48,7 @@ const carrule = new Rule('a blue car')
 carrule.parameters = ['wheel size', 'car height']
 
 console.log('check rule', carrule, carrule.paramters)
-const carobj = await carrule.generateObj('blue_car', [10, 40], myCanvas)
+const carobj = await carrule.generateObj('blue_car',myCanvas,[10, 40],)
 
 console.log('check obj', carobj)` },
       savedOldCode: { html: '', css: '', js: '' },
