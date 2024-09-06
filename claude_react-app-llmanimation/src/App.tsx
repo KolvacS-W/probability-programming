@@ -48,7 +48,7 @@ const carrule = new Rule('a snowy owl with heart-shaped face resting on a pine b
 carrule.parameters = ['owl eye color', 'wing size']
 
 console.log('check rule', carrule, carrule.paramters)
-const carobj = await carrule.generateObj('catt_blue', canvas, ['blue', 30],)
+const carobj = await carrule.generateObj('catt_blue', ['blue', 30],)
 
 console.log('check template', carobj.template)
 const carobj2 =await carobj.template.createObj('catt_green',['green', 40],)

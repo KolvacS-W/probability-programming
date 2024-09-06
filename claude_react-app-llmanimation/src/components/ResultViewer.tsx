@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://abec-34-141-218-107.ngrok-free.app';
+const ngrok_url = 'https://8b25-104-196-138-47.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -427,7 +427,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           console.log('rule created:', prompt);
                         }
 
-                        async draw(coord, canvas, reuseablecodelist, scale = 1) {
+                        async draw() {
                           console.log('object draw called', this.basic_prompt);
 
                           if (!(this.useobj.objname)){
@@ -437,7 +437,6 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                               console.log('modify obj')
                               const codename = this.modifyobj.objname
                               const codelist = window.currentreuseableSVGElementList
-                              //const codelist = reuseablecodelist
                               console.log('check codelist in ref', codelist)
                               const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
                               console.log('draw with ref code:', existingcode)
@@ -551,7 +550,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                           }                          
                         }
 
-async generateObj(name, canvas, parameterContents = []) {
+async generateObj(name, parameterContents = []) {
 let obj;
 
 // Add the draw operation to the queue
@@ -559,13 +558,13 @@ this.drawQueue = this.drawQueue.then(async () => {
   var svgElement;
   var svgHTML;
   var svgHTMLtemplate;
-  const coord = null;
+  // const coord = null;
   if(parameterContents.length >0){
     // need to parameterize
     const parameters = this.parameters;
   
     // Replace the placeholders in the SVG string with actual parameter contents
-    svgHTML = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, 1);
+    svgHTML = await this.draw();
     // const svgString = svgElement.outerHTML;
 
     svgHTMLtemplate = svgHTML
@@ -580,7 +579,7 @@ this.drawQueue = this.drawQueue.then(async () => {
   }
   else{
     //no parameter needed
-    svgHTML = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, 1);
+    svgHTML = await this.draw();
     console.log('no param', svgHTML)
   }
   
