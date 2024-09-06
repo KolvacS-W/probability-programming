@@ -1283,13 +1283,24 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
     const placeholder = '[placeholder]';
 
     //incase the difference of self-closing or not, check both
-    const pieceText_alternative = toggleSvgElementClosure(pieceText);
+    const pieceText2 = toggleSvgElementClosure(pieceText);
+
+    // Step 3: Determine which version (pieceText or pieceText_alternative) contains the self-closing `/>`
+    var pieceText3 = pieceText2.includes('/>') ? pieceText2 : pieceText;
+
+    // Step 4: Check if it contains ` />` (a space before the self-closing tag)
+    if (pieceText3.includes('/>')) {
+        // Replace ` />` with `/>` (remove the space)
+        pieceText3 = pieceText3.replace('/>', ' />');
+    }
 
     const matchedPiece1 = svgText.includes(pieceText) ? pieceText : '';
-    const matchedPiece2 = svgText.includes(pieceText_alternative) ? pieceText_alternative : '';
-    const matchedPiece = matchedPiece1 || matchedPiece2;
+    const matchedPiece2 = svgText.includes(pieceText2) ? pieceText2 : '';
+    const matchedPiece3 = svgText.includes(pieceText3) ? pieceText3 : '';
 
-    console.log('two piece choices', pieceText, pieceText_alternative)
+    const matchedPiece = matchedPiece1 || matchedPiece2 || matchedPiece3;
+
+    console.log('3 piece choices', pieceText, pieceText2, pieceText3)
 
     if (!matchedPiece) {
         console.log('No matching piece found in the SVG.', 'svgtext\n', svgText, 'piecetext\n', pieceText);

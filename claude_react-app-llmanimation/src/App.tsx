@@ -50,9 +50,9 @@ carrule.parameters = ['owl eye color', 'wing size']
 console.log('check rule', carrule, carrule.paramters)
 const carobj = await carrule.generateObj('catt_blue', ['blue', 30],)
 
-console.log('check obj', carobj, carobj2, carobj3)
-
-carobj.placeObj(canvas,{x: 20, y: 30}, 1)
+carobj.placeObj(canvas,{x: 50, y: 50}, 0.5)
+carobj.placeObj(canvas,{x: 30, y: 50}, 0.5)
+carobj.placeObj(canvas,{x: 0, y: 0}, 0.5)
 
 ` },
       savedOldCode: { html: '', css: '', js: '' },

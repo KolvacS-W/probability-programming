@@ -704,7 +704,8 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                             
                             placeObj(canvas, coord, scale = 1) {
                                 const content = this.svgcode
-                                const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+                                const svgElement = this.createSVGElement(content, coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale);
+                                console.log('svgelement placing', coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale, svgElement)
                                 canvas.canvasContainer.appendChild(svgElement);
                             }
                                                     createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
@@ -727,9 +728,9 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 
                           // Position the SVG so that it is centered at the given coordinates
                           svgElement.style.position = 'absolute';
-                          svgElement.style.left = \`\${leftPercent}%\`;
-                          svgElement.style.top = \`\${topPercent}%\`;
-                          svgElement.style.transform = \`translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
+                          // svgElement.style.left = \`\${leftPercent}%\`;
+                          // svgElement.style.top = \`\${topPercent}%\`;
+                          svgElement.style.transform = \`translate(\`+\`\${leftPercent}%\`+\`, \`+\`\${topPercent}%\`+\`) translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
 
                           return svgElement;
                         }
