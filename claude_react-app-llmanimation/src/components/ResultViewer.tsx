@@ -474,7 +474,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
                                       const modification = this.modifyobj.pieceprompts[index];
                                       modifyprompt += \`Make modification:\` +  modification + \` to svg code piece:\` + codePiece+\`. \`;
                                   });
-                                  APIprompt = 'Modify an existing svg code: '+existingcode+ ', to create a ' + this.basic_prompt +'. Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';                                
+                                  APIprompt = 'Modify an existing svg code: '+existingcode+ ', to create a ' + this.basic_prompt +'. Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. As long as the svg follows the description, make as little change as possible other than the specific svg elements mentioned above. Make sure donot include anything other than the svg code in your response.';                                
                               }
 
                                 else{

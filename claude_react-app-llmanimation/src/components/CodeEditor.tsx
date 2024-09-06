@@ -1087,7 +1087,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           const cursorPosition = editorRef.current?.selectionStart || 0;
           const textBeforeCursor = userjs.slice(0, cursorPosition+word.length);
           const textAfterCursor = userjs.slice(cursorPosition+word.length);
-          const newText = textBeforeCursor + '= {objname: \'' + currentSelectedSVG + '\', piecenames: [\''+ codeNames + '\' ], pieceprompts: []}'+ textAfterCursor;
+          var newText
+          if(currenthighlightedSVGPieceList.map(item => item.codeName).length>0){
+            newText = textBeforeCursor + '= {objname: \'' + currentSelectedSVG + '\', piecenames: [\''+ codeNames + '\' ], pieceprompts: []}'+ textAfterCursor;
+          }
+          else{
+            newText = textBeforeCursor + '= {objname: \'' + currentSelectedSVG + '\', piecenames: [], pieceprompts: []}'+ textAfterCursor;
+          }
           setuserJs(newText);
           setShowModifyObjWidget(false)
           setSvgCodeText('')
@@ -1261,13 +1267,32 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
       container.appendChild(svgElement);
   };
 
+  function toggleSvgElementClosure(svgString: string) {
+    // First, check if it's a self-closing tag
+    if (svgString.endsWith('/>')) {
+      // If it's self-closing, change it to an open-and-close tag
+      return svgString.replace('/>', `></${svgString.match(/^<(\w+)/)[1]}>`);
+    } else {
+      // If it's not self-closing, make it self-closing
+      return svgString.replace(/><\/\w+>$/, '/>');
+    }
+  }
+
   function highlightAndReplaceSVG(svgText: string, pieceText: string): string {
     // Step 1: Find the matching piece in svgText
     const placeholder = '[placeholder]';
-    const matchedPiece = svgText.includes(pieceText) ? pieceText : '';
+
+    //incase the difference of self-closing or not, check both
+    const pieceText_alternative = toggleSvgElementClosure(pieceText);
+
+    const matchedPiece1 = svgText.includes(pieceText) ? pieceText : '';
+    const matchedPiece2 = svgText.includes(pieceText_alternative) ? pieceText_alternative : '';
+    const matchedPiece = matchedPiece1 || matchedPiece2;
+
+    console.log('two piece choices', pieceText, pieceText_alternative)
 
     if (!matchedPiece) {
-        console.log('No matching piece found in the SVG.', svgText, pieceText);
+        console.log('No matching piece found in the SVG.', 'svgtext\n', svgText, 'piecetext\n', pieceText);
         return svgText;
     }
 
