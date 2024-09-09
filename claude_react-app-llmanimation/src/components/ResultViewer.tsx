@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://8b25-104-196-138-47.ngrok-free.app';
+const ngrok_url = 'https://cd3a-35-231-168-85.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -30,7 +30,42 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
-  
+  // Function to save window variables to sessionStorage, avoiding circular references and read-only properties
+  function saveWindowVariables() {
+    const windowState: Record<string, any> = {};
+    Object.keys(window).forEach((key) => {
+      try {
+        if (typeof window[key] !== 'function' && typeof window[key] !== 'object') {
+          windowState[key] = window[key];
+        }
+      } catch (error) {
+        // Ignore errors caused by read-only properties
+      }
+    });
+    sessionStorage.setItem('windowState', JSON.stringify(windowState));
+  }
+
+  // Function to load variables from sessionStorage, skipping read-only properties
+  function loadWindowVariables() {
+    const storedWindow = sessionStorage.getItem('windowState');
+    if (storedWindow) {
+      const parsedWindow = JSON.parse(storedWindow);
+      Object.keys(parsedWindow).forEach((key) => {
+        try {
+          if (window[key] !== undefined && typeof window[key] !== 'function') {
+            window[key] = parsedWindow[key];
+          }
+        } catch (error) {
+          // Ignore errors when trying to set read-only properties
+        }
+      });
+
+      // Notify that window variables are loaded
+      window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
+    }
+  }
+
+
   useEffect(() => {
     const handleIframeClick = (event: MessageEvent) => {
       if (event.data.type === 'CLICK_COORDINATES') {
@@ -70,6 +105,18 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     // });
 
     const handleIframeMessage = (event: MessageEvent) => {
+
+        // NEW: Handle saving window state to sessionStorage
+  if (event.data.type === 'SAVE_WINDOW') {
+    console.log('Saving window object');
+    saveWindowVariables();
+  }
+
+  // NEW: Handle loading window state from sessionStorage
+  if (event.data.type === 'LOAD_WINDOW') {
+    console.log('Loading window object');
+    loadWindowVariables();
+  }
       
       if (event.data.type === 'UPDATE_HTML') {
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
@@ -833,11 +880,32 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                       }  
                       window.whole_canvas = whole_canvas;
                     }
-                    (function() {
-                      // Automatically wrap the user code in an async function
-                      (async function() {
-                        ${usercode.js}
-                      })();
+                    window.parent.postMessage({ type: 'LOAD_WINDOW' }, '*');
+
+                    (async function() {
+                      // Wait for window variables to load or timeout after 3 seconds
+                      await new Promise((resolve, reject) => {
+                        let isLoaded = false;
+                        const timeout = setTimeout(() => {
+                          if (!isLoaded) {
+                            console.warn('WINDOW_LOADED event timed out.');
+                            resolve(); // Proceed anyway after timeout
+                          }
+                        }, 3000);
+
+                        window.addEventListener('message', function loadMessage(event) {
+                          if (event.data.type === 'WINDOW_LOADED') {
+                            isLoaded = true;
+                            clearTimeout(timeout);
+                            resolve();
+                            window.removeEventListener('message', loadMessage);
+                          }
+                        });
+                      });
+
+                      ${usercode.js}
+
+                      window.parent.postMessage({ type: 'SAVE_WINDOW' }, '*');
                     })();
                   </script>
               </body>

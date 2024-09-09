@@ -42,19 +42,18 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `const canvas = new whole_canvas('azure');
+      usercode: { js: `console.log('check saved', window.rule)
 
-const carrule = new Rule('a snowy owl with heart-shaped face resting on a pine branch')
-carrule.parameters = ['owl eye color', 'wing size']
+const canvas = new whole_canvas('azure');
+const rule = new Rule('a pig')
 
-console.log('check rule', carrule, carrule.paramters)
-const carobj = await carrule.generateObj('catt_blue', ['blue', 30],)
 
-carobj.placeObj(canvas,{x: 50, y: 50}, 0.5)
-carobj.placeObj(canvas,{x: 30, y: 50}, 0.5)
-carobj.placeObj(canvas,{x: 0, y: 0}, 0.5)
-
-` },
+window.rule = rule
+console.log('saving', window.rule)
+// const obj = await rule.generateObj('catt_blue')
+// obj.placeObj(canvas,{x: 50, y: 50}, 0.5)
+// obj.placeObj(canvas,{x: 40, y: 50}, 0.5)
+// obj.placeObj(canvas,{x: 60, y: 50}, 0.5)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
