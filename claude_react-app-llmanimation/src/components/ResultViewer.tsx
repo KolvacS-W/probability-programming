@@ -30,49 +30,57 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
-  // Function to save window variables to sessionStorage, avoiding circular references and read-only properties
-  function saveWindowVariables() {
-    const windowState: Record<string, any> = {};
-    Object.keys(window).forEach((key) => {
-      try {
-        if (typeof window[key] !== 'function' && typeof window[key] !== 'object') {
-          windowState[key] = window[key];
-        }
-      } catch (error) {
-        // Ignore errors caused by read-only properties
+// Function to save window variables to sessionStorage, avoiding circular references and read-only properties
+function saveWindowVariables() {
+  const windowState: Record<string, any> = {};
+  
+  Object.keys(window).forEach((key) => {
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(window, key);
+      // Only save properties that are writable and configurable
+      if (descriptor && descriptor.writable && descriptor.configurable && typeof window[key] !== 'function') {
+        windowState[key] = window[key];
       }
-    });
-    sessionStorage.setItem('windowState', JSON.stringify(windowState));
-  }
+    } catch (error) {
+      // Ignore errors caused by read-only or non-writable properties
+      console.warn(`Skipping property "${key}" during save:`, error);
+    }
+  });
+
+  sessionStorage.setItem('windowState', JSON.stringify(windowState));
+}
 
 // Function to load variables from sessionStorage, skipping read-only properties
 function loadWindowVariables() {
   const storedWindow = sessionStorage.getItem('windowState');
   if (storedWindow) {
     const parsedWindow = JSON.parse(storedWindow);
+    console.log('stored window', storedWindow)
     
     Object.keys(parsedWindow).forEach((key) => {
       try {
-        // Check if the property is writable or not
-        if (window[key] !== undefined && typeof window[key] !== 'function' && window.hasOwnProperty(key)) {
-          // Attempt to reassign the value
+        const descriptor = Object.getOwnPropertyDescriptor(window, key);
+        // Only load properties that are writable and configurable
+        if (descriptor && descriptor.writable && descriptor.configurable) {
           window[key] = parsedWindow[key];
+          console.log('loading key', key)
         }
       } catch (error) {
         console.warn(`Failed to load property "${key}" from sessionStorage:`, error);
-        // Ignore errors when trying to set read-only properties
+        // Ignore errors when trying to set read-only or non-writable properties
       }
     });
 
-    // Notify that window variables are loaded
-    window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
+    console.log('Window variables loaded from sessionStorage.');
   } else {
-    console.log('No stored window variables found in sessionStorage.');
+    console.warn('No stored window variables found in sessionStorage.');
   }
-      // In case no variables are stored, still post that the window has been "loaded"
-      window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
-      console.log('posted')
+
+  // Always post the WINDOW_LOADED message, whether variables were found or not
+  iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
+  console.log('sent')
 }
+
 
 
 
@@ -893,31 +901,30 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                     }
                     window.parent.postMessage({ type: 'LOAD_WINDOW' }, '*');
 
-(async function() {
-                      // Wait for window variables to load or timeout after 3 seconds
-                      await new Promise((resolve, reject) => {
-                        let isLoaded = false;
-                        const timeout = setTimeout(() => {
-                          if (!isLoaded) {
-                            console.warn('WINDOW_LOADED event timed out.');
-                            resolve(); // Proceed anyway after timeout
-                          }
-                        }, 3000);
+// No timeout, keep waiting for WINDOW_LOADED indefinitely before executing user.js
+(async function () {
+  console.log('Waiting for WINDOW_LOADED event...');
 
-                        window.addEventListener('message', function loadMessage(event) {
-                          if (event.data.type === 'WINDOW_LOADED') {
-                            isLoaded = true;
-                            clearTimeout(timeout);
-                            resolve();
-                            window.removeEventListener('message', loadMessage);
-                          }
-                        });
-                      });
+  await new Promise((resolve) => {
+    const messageHandler = (event) => {
+      if (event.data.type === 'WINDOW_LOADED') {
+        console.log('WINDOW_LOADED event received');
+        resolve();
+        window.removeEventListener('message', messageHandler);
+      }
+    };
 
-                      ${usercode.js}
+    // Keep listening for the WINDOW_LOADED event
+    window.addEventListener('message', messageHandler);
+  });
 
-                      window.parent.postMessage({ type: 'SAVE_WINDOW' }, '*');
-                    })();
+  // Execute user.js only after WINDOW_LOADED is received
+  console.log('Executing user.js');
+  ${usercode.js} // Inject user-provided JS
+
+  // Save the window state after execution
+  window.parent.postMessage({ type: 'SAVE_WINDOW' }, '*');
+})();
                   </script>
               </body>
               </html>

@@ -42,14 +42,14 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `console.log('check saved', window.rule)
+      usercode: { js: `console.log('check saved', window.object1)
 
 const canvas = new whole_canvas('azure');
-const rule = new Rule('a pig')
+const rule = new Rule('a dog')
 
 
-window.rule = rule
-console.log('saving', window.rule)
+window.object1 = 'a pig'
+console.log('saving', window.object1)
 // const obj = await rule.generateObj('catt_blue')
 // obj.placeObj(canvas,{x: 50, y: 50}, 0.5)
 // obj.placeObj(canvas,{x: 40, y: 50}, 0.5)
