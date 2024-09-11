@@ -42,18 +42,20 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `console.log('check saved', window.object1)
+      usercode: { js: `// Retrieve the value from previousobjects
+console.log('check saved', previousobjects.object1);
 
+// Create canvas and rule as usual
 const canvas = new whole_canvas('azure');
-const rule = new Rule('a dog')
+const rule = new Rule('a dog');
 
+// Assign and save the object in previousobjects
+previousobjects.object1 = 'a pig';
+console.log('saving', previousobjects.object1);
 
-window.object1 = 'a pig'
-console.log('saving', window.object1)
-// const obj = await rule.generateObj('catt_blue')
-// obj.placeObj(canvas,{x: 50, y: 50}, 0.5)
-// obj.placeObj(canvas,{x: 40, y: 50}, 0.5)
-// obj.placeObj(canvas,{x: 60, y: 50}, 0.5)` },
+// After this, the value of previousobjects.object1 will be saved 
+// to sessionStorage by the savePreviousObjects function once user.js execution is done
+` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },

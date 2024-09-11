@@ -30,55 +30,39 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
-// Function to save window variables to sessionStorage, avoiding circular references and read-only properties
-function saveWindowVariables() {
-  const windowState: Record<string, any> = {};
-  
-  Object.keys(window).forEach((key) => {
-    try {
-      const descriptor = Object.getOwnPropertyDescriptor(window, key);
-      // Only save properties that are writable and configurable
-      if (descriptor && descriptor.writable && descriptor.configurable && typeof window[key] !== 'function') {
-        windowState[key] = window[key];
-      }
-    } catch (error) {
-      // Ignore errors caused by read-only or non-writable properties
-      console.warn(`Skipping property "${key}" during save:`, error);
-    }
-  });
+// Global object to store previous user-defined objects
+const previousobjects = {};
 
-  sessionStorage.setItem('windowState', JSON.stringify(windowState));
+  // Send the reference of previousObjects to the iframe
+  const sendPreviousObjectsToIframe = () => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'SYNC_PREVIOUS_OBJECTS_REF',
+        previousobjects: previousobjects, // Send the reference
+      }, '*');
+    }
+  };
+
+// Function to save the previousobjects to sessionStorage
+function savePreviousObjects(content: object) {
+  console.log('savePreviousObjects', content)
+  sessionStorage.setItem('previousobjects', JSON.stringify(content));
 }
 
-// Function to load variables from sessionStorage, skipping read-only properties
-function loadWindowVariables() {
-  const storedWindow = sessionStorage.getItem('windowState');
-  if (storedWindow) {
-    const parsedWindow = JSON.parse(storedWindow);
-    console.log('stored window', storedWindow)
-    
-    Object.keys(parsedWindow).forEach((key) => {
-      try {
-        const descriptor = Object.getOwnPropertyDescriptor(window, key);
-        // Only load properties that are writable and configurable
-        if (descriptor && descriptor.writable && descriptor.configurable) {
-          window[key] = parsedWindow[key];
-          console.log('loading key', key)
-        }
-      } catch (error) {
-        console.warn(`Failed to load property "${key}" from sessionStorage:`, error);
-        // Ignore errors when trying to set read-only or non-writable properties
-      }
-    });
-
-    console.log('Window variables loaded from sessionStorage.');
+// Function to load previousobjects from sessionStorage
+function loadPreviousObjects() {
+  const storedObjects = sessionStorage.getItem('previousobjects');
+  console.log('loadPreviousObjects', storedObjects, storedObjects !== 'undefined')
+  if (storedObjects !== 'undefined') {
+    Object.assign(previousobjects, JSON.parse(storedObjects));
+    console.log('Loaded previousobjects:', previousobjects);
   } else {
-    console.warn('No stored window variables found in sessionStorage.');
+    console.warn('No stored previousobjects found in sessionStorage.');
   }
 
-  // Always post the WINDOW_LOADED message, whether variables were found or not
+  // Always post the WINDOW_LOADED message, whether previousobjects were found or not
   iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
-  console.log('sent')
+  console.log('sent WINDOW_LOADED');
 }
 
 
@@ -128,13 +112,14 @@ function loadWindowVariables() {
         // NEW: Handle saving window state to sessionStorage
   if (event.data.type === 'SAVE_WINDOW') {
     console.log('Saving window object');
-    saveWindowVariables();
+    savePreviousObjects(event.data.content);
   }
 
   // NEW: Handle loading window state from sessionStorage
   if (event.data.type === 'LOAD_WINDOW') {
     console.log('Loading window object');
-    loadWindowVariables();
+    loadPreviousObjects();
+    sendPreviousObjectsToIframe();
   }
       
       if (event.data.type === 'UPDATE_HTML') {
@@ -905,12 +890,15 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 (async function () {
   console.log('Waiting for WINDOW_LOADED event...');
 
+  let previousobjects; // Declare as a reference to be assigned
+
+  // Wait for the previousObjectsRef to be provided by the parent (React app)
   await new Promise((resolve) => {
     const messageHandler = (event) => {
-      if (event.data.type === 'WINDOW_LOADED') {
-        console.log('WINDOW_LOADED event received');
+      if (event.data.type === 'SYNC_PREVIOUS_OBJECTS_REF') {
+        console.log('Received previousObjectsRef from parent:', event.data.previousobjects);
+        previousobjects = event.data.previousobjects; // Directly assign the reference
         resolve();
-        window.removeEventListener('message', messageHandler);
       }
     };
 
@@ -923,7 +911,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
   ${usercode.js} // Inject user-provided JS
 
   // Save the window state after execution
-  window.parent.postMessage({ type: 'SAVE_WINDOW' }, '*');
+  window.parent.postMessage({ type: 'SAVE_WINDOW', content: previousobjects }, '*');
 })();
                   </script>
               </body>
