@@ -45,28 +45,39 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
     sessionStorage.setItem('windowState', JSON.stringify(windowState));
   }
 
-  // Function to load variables from sessionStorage, skipping read-only properties
-  function loadWindowVariables() {
-    const storedWindow = sessionStorage.getItem('windowState');
-    if (storedWindow) {
-      const parsedWindow = JSON.parse(storedWindow);
-      Object.keys(parsedWindow).forEach((key) => {
-        try {
-          if (window[key] !== undefined && typeof window[key] !== 'function') {
-            window[key] = parsedWindow[key];
-          }
-        } catch (error) {
-          // Ignore errors when trying to set read-only properties
+// Function to load variables from sessionStorage, skipping read-only properties
+function loadWindowVariables() {
+  const storedWindow = sessionStorage.getItem('windowState');
+  if (storedWindow) {
+    const parsedWindow = JSON.parse(storedWindow);
+    
+    Object.keys(parsedWindow).forEach((key) => {
+      try {
+        // Check if the property is writable or not
+        if (window[key] !== undefined && typeof window[key] !== 'function' && window.hasOwnProperty(key)) {
+          // Attempt to reassign the value
+          window[key] = parsedWindow[key];
         }
-      });
+      } catch (error) {
+        console.warn(`Failed to load property "${key}" from sessionStorage:`, error);
+        // Ignore errors when trying to set read-only properties
+      }
+    });
 
-      // Notify that window variables are loaded
-      window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
-    }
+    // Notify that window variables are loaded
+    window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
+  } else {
+    console.log('No stored window variables found in sessionStorage.');
   }
+      // In case no variables are stored, still post that the window has been "loaded"
+      window.parent.postMessage({ type: 'WINDOW_LOADED' }, '*');
+      console.log('posted')
+}
+
 
 
   useEffect(() => {
+    console.log('useeffect1 called')
     const handleIframeClick = (event: MessageEvent) => {
       if (event.data.type === 'CLICK_COORDINATES') {
         setClickCoordinates({ x: event.data.x, y: event.data.y });
@@ -882,7 +893,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                     }
                     window.parent.postMessage({ type: 'LOAD_WINDOW' }, '*');
 
-                    (async function() {
+(async function() {
                       // Wait for window variables to load or timeout after 3 seconds
                       await new Promise((resolve, reject) => {
                         let isLoaded = false;
