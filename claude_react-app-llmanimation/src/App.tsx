@@ -51,7 +51,7 @@ const rule = new Rule('a dog');
 
 // Assign and save the object in cachedobjects
 cachedobjects.object1 = 'a pig';
-//cachedobjects.rule1 = rule;
+cachedobjects.rule1 = rule;
 
 console.log('saving', cachedobjects);
 

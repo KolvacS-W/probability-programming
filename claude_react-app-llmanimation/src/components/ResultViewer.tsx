@@ -31,45 +31,83 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
 // Global object to store previous user-defined objects
-const cachedobjects = {};
+// const cachedobjects = {};
 
-  // Send the reference of cachedobjects to the iframe
-  const sendcachedobjectsToIframe = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({
-        type: 'SYNC_PREVIOUS_OBJECTS_REF',
-        cachedobjects: cachedobjects, // Send the reference
-      }, '*');
+// Utility to filter out uncloneable types (Promise, function, etc.)
+// Replace Promises with the string 'promise'
+
+const clearSessionStorage = () => {
+  console.log('Clearing sessionStorage on refresh');
+  sessionStorage.clear(); // Clear all session storage data
+};
+
+function replaceUncloneableEntries(obj) {
+  const cloneableObj = {};
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      console.log('value need to save', value)
+      if (typeof value === 'function') {
+        console.warn(`Skipping function value: ${key}`);
+      } else if (value instanceof Promise) {
+        cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
+      } else {
+        cloneableObj[key] = value;
+      }
     }
-  };
-
-// Function to save the cachedobjects to sessionStorage
-function savecachedobjects(content: object) {
-  console.log('savecachedobjects', content)
-  sessionStorage.setItem('cachedobjects', JSON.stringify(content));
-}
-
-// Function to load cachedobjects from sessionStorage
-function loadcachedobjects() {
-  const storedObjects = sessionStorage.getItem('cachedobjects');
-  console.log('loadcachedobjects', storedObjects, storedObjects !== 'undefined')
-  if (storedObjects !== 'undefined') {
-    Object.assign(cachedobjects, JSON.parse(storedObjects));
-    console.log('Loaded cachedobjects:', cachedobjects);
-  } else {
-    console.warn('No stored cachedobjects found in sessionStorage.');
   }
 
-  // Always post the WINDOW_LOADED message, whether cachedobjects were found or not
-  iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
-  console.log('sent WINDOW_LOADED');
+  return cloneableObj;
 }
+
+// Modify the sendcachedobjectsToIframe function to use this replacement
+const sendcachedobjectsToIframe = () => {
+  if (iframeRef.current?.contentWindow) {
+    //const cloneableCachedObjects = replaceUncloneableEntries(sessionStorage.getItem('cachedobjects'));
+    const cloneableCachedObjects = (sessionStorage.getItem('cachedobjects'));
+    console.log('sendcachedobjectsToIframe', cloneableCachedObjects)
+    iframeRef.current.contentWindow.postMessage({
+      type: 'SYNC_PREVIOUS_OBJECTS_REF',
+      cachedobjects: JSON.parse(cloneableCachedObjects), // Send the filtered cloneable reference
+    }, '*');
+  }
+};
+
+// Modify savecachedobjects to replace uncloneable entries before saving
+function savecachedobjects(content: object) {
+  // console.log('savecachedobjects-1', content);
+  //const filteredContent = replaceUncloneableEntries(content);
+  const filteredContent = (content);
+  console.log('savecachedobjects-2', JSON.stringify(filteredContent));
+  sessionStorage.setItem('cachedobjects', JSON.stringify(filteredContent));
+}
+
+
+// Function to load cachedobjects from sessionStorage
+// function loadcachedobjects() {
+//   const storedObjects = sessionStorage.getItem('cachedobjects');
+//   console.log('loadcachedobjects', storedObjects, storedObjects !== 'undefined')
+//   if (storedObjects !== 'undefined') {
+//     Object.assign(cachedobjects, JSON.parse(storedObjects));
+//     console.log('Loaded cachedobjects:', cachedobjects);
+//   } else {
+//     console.warn('No stored cachedobjects found in sessionStorage.');
+//   }
+
+//   // Always post the WINDOW_LOADED message, whether cachedobjects were found or not
+//   iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
+//   console.log('sent WINDOW_LOADED');
+// }
 
 
 
 
   useEffect(() => {
     console.log('useeffect1 called')
+    // Clear sessionStorage on app refresh
+    window.addEventListener('beforeunload', clearSessionStorage);
+
     const handleIframeClick = (event: MessageEvent) => {
       if (event.data.type === 'CLICK_COORDINATES') {
         setClickCoordinates({ x: event.data.x, y: event.data.y });
@@ -94,19 +132,6 @@ function loadcachedobjects() {
   
   useEffect(() => {
 
-    // //this will be emptied everytime code is run:
-    // setVersions(prevVersions => {
-    //   const updatedVersions = prevVersions.map(version => {
-    //     if (version.id === currentVersionId) {
-    //       return { ...version, previousSelectedSVGPieceList: [] };
-    //     }
-    //     return version;
-    //   });
-
-    //   console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
-    //   return updatedVersions;
-    // });
-
     const handleIframeMessage = (event: MessageEvent) => {
 
         // NEW: Handle saving window state to sessionStorage
@@ -118,7 +143,7 @@ function loadcachedobjects() {
   // NEW: Handle loading window state from sessionStorage
   if (event.data.type === 'LOAD_WINDOW') {
     console.log('Loading window object');
-    loadcachedobjects();
+    // loadcachedobjects();
     sendcachedobjectsToIframe();
   }
       
@@ -890,14 +915,16 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 (async function () {
   console.log('Waiting for WINDOW_LOADED event...');
 
-  let cachedobjects; // Declare as a reference to be assigned
+  let cachedobjects = {}; // Declare as a reference to be assigned
 
   // Wait for the cachedobjectsRef to be provided by the parent (React app)
   await new Promise((resolve) => {
     const messageHandler = (event) => {
       if (event.data.type === 'SYNC_PREVIOUS_OBJECTS_REF') {
         console.log('Received cachedobjectsRef from parent:', event.data.cachedobjects);
-        cachedobjects = event.data.cachedobjects; // Directly assign the reference
+        if(event.data.cachedobjects){
+                cachedobjects = event.data.cachedobjects; // Directly assign the reference
+        }
         resolve();
       }
     };
