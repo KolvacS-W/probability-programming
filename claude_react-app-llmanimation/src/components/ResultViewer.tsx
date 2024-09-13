@@ -31,36 +31,36 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, acti
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
 
 // Global object to store previous user-defined objects
-const previousobjects = {};
+const cachedobjects = {};
 
-  // Send the reference of previousObjects to the iframe
-  const sendPreviousObjectsToIframe = () => {
+  // Send the reference of cachedobjects to the iframe
+  const sendcachedobjectsToIframe = () => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({
         type: 'SYNC_PREVIOUS_OBJECTS_REF',
-        previousobjects: previousobjects, // Send the reference
+        cachedobjects: cachedobjects, // Send the reference
       }, '*');
     }
   };
 
-// Function to save the previousobjects to sessionStorage
-function savePreviousObjects(content: object) {
-  console.log('savePreviousObjects', content)
-  sessionStorage.setItem('previousobjects', JSON.stringify(content));
+// Function to save the cachedobjects to sessionStorage
+function savecachedobjects(content: object) {
+  console.log('savecachedobjects', content)
+  sessionStorage.setItem('cachedobjects', JSON.stringify(content));
 }
 
-// Function to load previousobjects from sessionStorage
-function loadPreviousObjects() {
-  const storedObjects = sessionStorage.getItem('previousobjects');
-  console.log('loadPreviousObjects', storedObjects, storedObjects !== 'undefined')
+// Function to load cachedobjects from sessionStorage
+function loadcachedobjects() {
+  const storedObjects = sessionStorage.getItem('cachedobjects');
+  console.log('loadcachedobjects', storedObjects, storedObjects !== 'undefined')
   if (storedObjects !== 'undefined') {
-    Object.assign(previousobjects, JSON.parse(storedObjects));
-    console.log('Loaded previousobjects:', previousobjects);
+    Object.assign(cachedobjects, JSON.parse(storedObjects));
+    console.log('Loaded cachedobjects:', cachedobjects);
   } else {
-    console.warn('No stored previousobjects found in sessionStorage.');
+    console.warn('No stored cachedobjects found in sessionStorage.');
   }
 
-  // Always post the WINDOW_LOADED message, whether previousobjects were found or not
+  // Always post the WINDOW_LOADED message, whether cachedobjects were found or not
   iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
   console.log('sent WINDOW_LOADED');
 }
@@ -112,14 +112,14 @@ function loadPreviousObjects() {
         // NEW: Handle saving window state to sessionStorage
   if (event.data.type === 'SAVE_WINDOW') {
     console.log('Saving window object');
-    savePreviousObjects(event.data.content);
+    savecachedobjects(event.data.content);
   }
 
   // NEW: Handle loading window state from sessionStorage
   if (event.data.type === 'LOAD_WINDOW') {
     console.log('Loading window object');
-    loadPreviousObjects();
-    sendPreviousObjectsToIframe();
+    loadcachedobjects();
+    sendcachedobjectsToIframe();
   }
       
       if (event.data.type === 'UPDATE_HTML') {
@@ -890,14 +890,14 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 (async function () {
   console.log('Waiting for WINDOW_LOADED event...');
 
-  let previousobjects; // Declare as a reference to be assigned
+  let cachedobjects; // Declare as a reference to be assigned
 
-  // Wait for the previousObjectsRef to be provided by the parent (React app)
+  // Wait for the cachedobjectsRef to be provided by the parent (React app)
   await new Promise((resolve) => {
     const messageHandler = (event) => {
       if (event.data.type === 'SYNC_PREVIOUS_OBJECTS_REF') {
-        console.log('Received previousObjectsRef from parent:', event.data.previousobjects);
-        previousobjects = event.data.previousobjects; // Directly assign the reference
+        console.log('Received cachedobjectsRef from parent:', event.data.cachedobjects);
+        cachedobjects = event.data.cachedobjects; // Directly assign the reference
         resolve();
       }
     };
@@ -911,7 +911,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
   ${usercode.js} // Inject user-provided JS
 
   // Save the window state after execution
-  window.parent.postMessage({ type: 'SAVE_WINDOW', content: previousobjects }, '*');
+  window.parent.postMessage({ type: 'SAVE_WINDOW', content: cachedobjects }, '*');
 })();
                   </script>
               </body>

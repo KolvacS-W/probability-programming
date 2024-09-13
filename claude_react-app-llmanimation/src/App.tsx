@@ -42,19 +42,21 @@ const App: React.FC = () => {
 <body>
 </body>
 </html>`},
-      usercode: { js: `// Retrieve the value from previousobjects
-console.log('check saved', previousobjects.object1);
+      usercode: { js: `// Retrieve the value from cachedobjects
+console.log('check saved', cachedobjects);
 
 // Create canvas and rule as usual
 const canvas = new whole_canvas('azure');
 const rule = new Rule('a dog');
 
-// Assign and save the object in previousobjects
-previousobjects.object1 = 'a pig';
-console.log('saving', previousobjects.object1);
+// Assign and save the object in cachedobjects
+cachedobjects.object1 = 'a pig';
+//cachedobjects.rule1 = rule;
 
-// After this, the value of previousobjects.object1 will be saved 
-// to sessionStorage by the savePreviousObjects function once user.js execution is done
+console.log('saving', cachedobjects);
+
+// After this, the value of cachedobjects.object1 will be saved 
+// to sessionStorage by the savecachedobjects function once user.js execution is done
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
