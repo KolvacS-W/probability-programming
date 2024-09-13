@@ -95,9 +95,9 @@ function savecachedobjects(content: object) {
 //     console.warn('No stored cachedobjects found in sessionStorage.');
 //   }
 
-//   // Always post the WINDOW_LOADED message, whether cachedobjects were found or not
-//   iframeRef.current.contentWindow.postMessage({ type: 'WINDOW_LOADED' }, '*');
-//   console.log('sent WINDOW_LOADED');
+//   // Always post the CACHEDOBJECT_LOADED message, whether cachedobjects were found or not
+//   iframeRef.current.contentWindow.postMessage({ type: 'CACHEDOBJECT_LOADED' }, '*');
+//   console.log('sent CACHEDOBJECT_LOADED');
 // }
 
 
@@ -141,7 +141,7 @@ function savecachedobjects(content: object) {
   }
 
   // NEW: Handle loading window state from sessionStorage
-  if (event.data.type === 'LOAD_WINDOW') {
+  if (event.data.type === 'LOAD_CACHEDOBJECT') {
     console.log('Loading window object');
     // loadcachedobjects();
     sendcachedobjectsToIframe();
@@ -909,12 +909,12 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                       }  
                       window.whole_canvas = whole_canvas;
                     }
-                    window.parent.postMessage({ type: 'LOAD_WINDOW' }, '*');
+                    window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
 
-// No timeout, keep waiting for WINDOW_LOADED indefinitely before executing user.js
+// No timeout, keep waiting for CACHEDOBJECT_LOADED indefinitely before executing user.js
 (async function () {
-  console.log('Waiting for WINDOW_LOADED event...');
-
+  console.log('Waiting for CACHEDOBJECT_LOADED event...');
+  
   let cachedobjects = {}; // Declare as a reference to be assigned
 
   // Wait for the cachedobjectsRef to be provided by the parent (React app)
@@ -929,16 +929,39 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
       }
     };
 
-    // Keep listening for the WINDOW_LOADED event
+    // Keep listening for the CACHEDOBJECT_LOADED event
     window.addEventListener('message', messageHandler);
   });
 
-  // Execute user.js only after WINDOW_LOADED is received
+  // Function to replace promises with the string 'promise'
+function replacePromisesInObject(obj) {
+  const clonedObject = {};
+  
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      if (obj[key] instanceof Promise) {
+        clonedObject[key] = 'placeholder';
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        // Recursively replace promises in nested objects
+        clonedObject[key] = replacePromisesInObject(obj[key]);
+      } else {
+        clonedObject[key] = obj[key];
+      }
+    }
+  }
+  
+  return clonedObject;
+}
+
+//   // Execute user.js only after CACHEDOBJECT_LOADED is received
   console.log('Executing user.js');
   ${usercode.js} // Inject user-provided JS
 
-  // Save the window state after execution
-  window.parent.postMessage({ type: 'SAVE_WINDOW', content: cachedobjects }, '*');
+// Replace promises with the string 'promise' before saving
+const cleanedCachedObjects = replacePromisesInObject(cachedobjects);
+
+// Save the window state after execution
+window.parent.postMessage({ type: 'SAVE_WINDOW', content: cleanedCachedObjects }, '*');
 })();
                   </script>
               </body>

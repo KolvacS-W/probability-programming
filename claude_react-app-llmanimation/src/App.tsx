@@ -43,7 +43,7 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `// Retrieve the value from cachedobjects
-console.log('check saved', cachedobjects);
+console.log('check saved', cachedobjects.object1, cachedobjects.rule1);
 
 // Create canvas and rule as usual
 const canvas = new whole_canvas('azure');
