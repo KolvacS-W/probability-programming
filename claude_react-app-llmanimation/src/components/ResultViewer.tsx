@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://cd3a-35-231-168-85.ngrok-free.app';
+const ngrok_url = 'https://1599-34-23-145-229.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -776,6 +776,9 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               this.svgcode = svgcode
                               this.template = new ObjectTemplate(templatecode, rule)
                               this.rule = rule
+
+                              // Automatically save the generated object into cachedobjects using codename
+                              window.cachedobjects[objname] = this;
                             }
                             
                             placeObj(canvas, coord, scale = 1) {
@@ -915,7 +918,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
 (async function () {
   console.log('Waiting for CACHEDOBJECT_LOADED event...');
   
-  let cachedobjects = {}; // Declare as a reference to be assigned
+  window.cachedobjects = {}; // Declare as a reference to be assigned
 
   // Wait for the cachedobjectsRef to be provided by the parent (React app)
   await new Promise((resolve) => {
@@ -923,7 +926,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
       if (event.data.type === 'SYNC_PREVIOUS_OBJECTS_REF') {
         console.log('Received cachedobjectsRef from parent:', event.data.cachedobjects);
         if(event.data.cachedobjects){
-                cachedobjects = event.data.cachedobjects; // Directly assign the reference
+                window.cachedobjects = event.data.cachedobjects; // Directly assign the reference
         }
         resolve();
       }
@@ -958,7 +961,7 @@ function replacePromisesInObject(obj) {
   ${usercode.js} // Inject user-provided JS
 
 // Replace promises with the string 'promise' before saving
-const cleanedCachedObjects = replacePromisesInObject(cachedobjects);
+const cleanedCachedObjects = replacePromisesInObject(window.cachedobjects);
 
 // Save the window state after execution
 window.parent.postMessage({ type: 'SAVE_WINDOW', content: cleanedCachedObjects }, '*');

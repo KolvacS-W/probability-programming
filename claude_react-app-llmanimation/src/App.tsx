@@ -43,17 +43,19 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `// Retrieve the value from cachedobjects
-console.log('check saved', cachedobjects.object1, cachedobjects.rule1);
+console.log('check saved', window.cachedobjects);
 
 // Create canvas and rule as usual
 const canvas = new whole_canvas('azure');
-const rule = new Rule('a dog');
+const rule = new Rule('a dog with long legs');
+
+await rule.generateObj('dog1')
 
 // Assign and save the object in cachedobjects
-cachedobjects.object1 = 'a pig';
-cachedobjects.rule1 = rule;
+window.cachedobjects.object1 = 'a pig';
+window.cachedobjects.rule1 = rule;
 
-console.log('saving', cachedobjects);
+console.log('saving', window.cachedobjects);
 
 // After this, the value of cachedobjects.object1 will be saved 
 // to sessionStorage by the savecachedobjects function once user.js execution is done
