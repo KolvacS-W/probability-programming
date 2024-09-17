@@ -123,7 +123,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       let clickedOutside = true;
       console.log('handleclick outside', showModifyObjWidget)
-  
+    
       // Check if the click is inside any of the autocomplete widgets
       optionLevels.forEach((_, levelIndex) => {
         const widgetElement = document.getElementById(`autocomplete-widget-${levelIndex}`);
@@ -131,12 +131,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       });
-  
+    
       // Check if the click is inside the generate option widget
       if (widgetRef.current && widgetRef.current.contains(event.target as Node)) {
         clickedOutside = false;
       }
-  
+    
       // Check if the click is inside any of the autocomplete widgets
       const autocompleteWidgets = document.querySelectorAll('.autocomplete-widget');
       autocompleteWidgets.forEach((widget) => {
@@ -144,7 +144,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       });
-  
+    
       // Check if the click is inside the coordinate widget (if it's shown)
       if (showCoordcomplete) {
         const coordWidgetElement = widgetRef.current;
@@ -152,6 +152,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+    
       // Check if the click is inside the modify object widget (if it's shown)
       if (showModifyObjWidget) {
         console.log('check showModifyObjWidget')
@@ -160,6 +161,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+    
       if (showCheckSVGPieceWidget) {
         console.log('check showCheckSVGPieceWidget')
         const CheckSVGPieceWidgetElement = document.querySelector('.check-svg-piece-widget');
@@ -167,6 +169,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+    
       if (showCheckWholeSVGWidget) {
         console.log('check showCheckWholeSVGWidget')
         const showCheckWholeSVGWidgetElement = document.querySelector('.check-svg-piece-widget');
@@ -174,14 +177,19 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+    
+      // Check if the click is outside the cached object widget (and only close if the click is outside)
       if (showCachedObjWidget) {
         console.log('check showcachedobjwidget')
         const showCachedObjWidgetElement = document.querySelector('.cached-obj-widget');
         if (showCachedObjWidgetElement && showCachedObjWidgetElement.contains(event.target as Node)) {
           clickedOutside = false;
+        } else {
+          setShowCachedObjWidget(false);
         }
       }
-      // If the click was outside all widgets, close them
+    
+      // If the click was outside all widgets, close the others
       if (clickedOutside) {
         console.log('Clicked outside');
         setOptionLevels([]);
@@ -192,10 +200,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowCheckSVGPieceWidget(false);
         setShowCheckWholeSVGWidget(false);
         setShowModifyObjButton(false);
-        //setShowCachedObjWidget(false);
         setButtonchoice('');
       }
     };
+    
+    
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -1525,7 +1534,6 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
   // Find the current version and access its cachedobjectslog
   const currentVersion = versions.find((version) => version.id === currentVersionId);
   const cachedObjectsLog = currentVersion?.cachedobjectslog || {}; // Assuming cachedobjectslog is an object
-  console.log('in CachedObjWidget', currentVersion?.cachedobjectslog);
 
   // Function to toggle the expansion of an object or sub-object
   const toggleExpand = (key: string) => {
@@ -1534,52 +1542,68 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
     );
   };
 
-  // Function to open a new window displaying the expanded object or sub-object
-  const openNewWindow = (content: string) => {
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write('<html><body><pre>' + content + '</pre></body></html>');
-      newWindow.document.close();
-    }
-  };
-
-  // Recursive function to render the object structure with expand/collapse and clickable elements
-  const renderObject = (obj: any, parentKey = ''): JSX.Element => {
+  // Recursive function to render the object structure with a tree-like hierarchy
+  const renderObject = (obj: any, parentKey = '', level = 0): JSX.Element => {
     return (
-      <ul style={{ listStyleType: 'none', paddingLeft: '10px' }}>
+      <ul style={{ listStyleType: 'none', paddingLeft: `${20 * level}px`, position: 'relative' }}>
         {Object.keys(obj).map((key) => {
           const value = obj[key];
           const fullKey = parentKey ? `${parentKey}.${key}` : key; // Create a unique key for nested objects
-
+          
           return (
-            <li key={fullKey} style={{ display: 'flex', alignItems: 'center' }}>
-              <span
-                style={{ cursor: 'pointer', color: 'blue' }}
-                onClick={() => toggleExpand(fullKey)}
+            <li key={fullKey} style={{ position: 'relative' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '5px',
+                  marginBottom: '5px',
+                  cursor: typeof value === 'object' && value !== null ? 'pointer' : 'default',
+                  backgroundColor: typeof value === 'object' && value !== null ? '#e0e0e0' : 'transparent',
+                  position: 'relative',
+                  borderLeft: level > 0 ? '2px solid black' : 'none', // Adds the vertical line for sub-objects
+                }}
+                onClick={typeof value === 'object' && value !== null ? () => toggleExpand(fullKey) : undefined}
               >
-                {expandedKeys.includes(fullKey) ? '-' : '+'} {key}
-              </span>
-              : {typeof value === 'object' && value !== null ? (
+                {typeof value === 'object' && value !== null ? (
+                  <>
+                    <strong
+                      style={{
+                        marginRight: '10px',
+                        flexGrow: 1,
+                        display: 'inline-block',
+                      }}
+                    >
+                      {key}</strong>: {expandedKeys.includes(fullKey) ? '' : '{...}'}
+                    
+                  </>
+                ) : (
+                  <>
+                    <strong style={{ marginRight: '5px' }}>{key}</strong>
+                    : <span>{`${value}`}</span>
+                  </>
+                )}
+
+                {/* Only show tree connection line for expanded objects */}
+                {expandedKeys.includes(fullKey) && typeof value === 'object' && value !== null && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '-20px',
+                      width: '20px',
+                      height: '2px',
+                      backgroundColor: 'black',
+                    }}
+                  ></div>
+                )}
+              </div>
+
+              {/* Recursive rendering of sub-objects */}
+              {expandedKeys.includes(fullKey) && typeof value === 'object' && value !== null && (
                 <>
-                  {expandedKeys.includes(fullKey) ? (
-                    <>
-                      <span>{' {'}</span>
-                      {renderObject(value, fullKey)} {/* Recursive rendering of sub-objects */}
-                      <span>{'}'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span
-                        style={{ cursor: 'pointer', marginLeft: '5px', color: 'blue' }}
-                        onClick={() => openNewWindow(JSON.stringify(value, null, 2))}
-                      >
-                        {' {...}'}
-                      </span>
-                    </>
-                  )}
+                  {renderObject(value, fullKey, level + 1)}
                 </>
-              ) : (
-                <span>{` ${JSON.stringify(value)}`}</span>
               )}
             </li>
           );
@@ -1604,7 +1628,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
         fontSize: '14px',
         maxHeight: '300px',
         overflowY: 'auto',
-        width: '400px',
+        width: '300px',
       }}
     >
       <div style={{ overflowY: 'auto', width: '100%' }}>
@@ -1617,7 +1641,6 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
     </div>
   );
 };
-
 
 
 
