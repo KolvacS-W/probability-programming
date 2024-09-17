@@ -134,18 +134,34 @@ function savecachedobjects(content: object) {
 
     const handleIframeMessage = (event: MessageEvent) => {
 
-        // NEW: Handle saving window state to sessionStorage
-  if (event.data.type === 'SAVE_WINDOW') {
+        // NEW: Handle saving cachedobjects to sessionStorage
+  if (event.data.type === 'SAVE_CACHEDOBJECTS') {
     console.log('Saving window object');
     savecachedobjects(event.data.content);
   }
 
-  // NEW: Handle loading window state from sessionStorage
+  // NEW: Handle loading cachedobjects from sessionStorage
   if (event.data.type === 'LOAD_CACHEDOBJECT') {
     console.log('Loading window object');
     // loadcachedobjects();
     sendcachedobjectsToIframe();
   }
+  //to log cachedobjects in version, for usage in widgets
+  if (event.data.type === 'LOG_CACHEDOBJECTS') {
+    setVersions(prevVersions => {
+      const updatedVersions = prevVersions.map(version => {
+        if (version.id === currentVersionId) {
+          return { ...version, cachedobjectslog: event.data.content  };
+        }
+        return version;
+      });
+
+      console.log('logging cachedobjects into version version:', currentVersionId);
+      return updatedVersions;
+    });
+  }
+
+  
       
       if (event.data.type === 'UPDATE_HTML') {
         updateBackendHtml(event.data.html); // Update the backend HTML in the React app
@@ -956,6 +972,10 @@ function replacePromisesInObject(obj) {
   return clonedObject;
 }
 
+  // Post cachedobjects to parent for saving to cachedobjectslog
+  window.parent.postMessage({ type: 'LOG_CACHEDOBJECTS', content: window.cachedobjects }, '*');
+
+
 //   // Execute user.js only after CACHEDOBJECT_LOADED is received
   console.log('Executing user.js');
   ${usercode.js} // Inject user-provided JS
@@ -964,7 +984,7 @@ function replacePromisesInObject(obj) {
 const cleanedCachedObjects = replacePromisesInObject(window.cachedobjects);
 
 // Save the window state after execution
-window.parent.postMessage({ type: 'SAVE_WINDOW', content: cleanedCachedObjects }, '*');
+window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cleanedCachedObjects }, '*');
 })();
                   </script>
               </body>

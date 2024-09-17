@@ -49,7 +49,7 @@ console.log('check saved', window.cachedobjects);
 const canvas = new whole_canvas('azure');
 const rule = new Rule('a dog with long legs');
 
-await rule.generateObj('dog1')
+//await rule.generateObj('dog1')
 
 // Assign and save the object in cachedobjects
 window.cachedobjects.object1 = 'a pig';
@@ -362,7 +362,8 @@ console.log('saving', window.cachedobjects);
       paramCheckEnabled: false, // Added
       reuseableSVGElementList: [], // Added
       highlightedSVGPieceList: [],
-      previousSelectedSVGPieceList: []
+      previousSelectedSVGPieceList: [],
+      cachedobjectslog:{}
     };
 
     setVersions([...versions, newVersion]);
@@ -440,6 +441,7 @@ console.log('saving', window.cachedobjects);
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
       reuseableSVGElementList: currentVersion.reuseableSVGElementList, // Added
+      cachedobjectslog: {}
     };
   
     setVersions([...versions, newVersion]);

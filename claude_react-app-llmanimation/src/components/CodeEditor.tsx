@@ -71,6 +71,9 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   //for checkwholesvgwidget
   const [showCheckWholeSVGWidget, setShowCheckWholeSVGWidget] = useState(false)
   const [svgCodeText_checkwholesvg, setSvgCodeText_checkwholesvg] = useState('');
+  //for cachedobjectswidget
+  const [showCachedObjWidget, setShowCachedObjWidget] = useState(false)
+
   const handleUpGenerateprompt_word = `Given a word, give me 5 words that are a more abstract and general level of the given word. 
         The more abstract level of a word can be achieved by finding hypernyms of that word.
         For example, “motor vehicle” is one level more abstract than “car”, “self-propelled vehicle” is one level more abstract than “motor vehicle”, “wheeled vehicle” is one level more abstract than “self-propelled vehicle”; “color” is one level more abstract than “blue”.
@@ -171,6 +174,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           clickedOutside = false;
         }
       }
+      if (showCachedObjWidget) {
+        console.log('check showcachedobjwidget')
+        const showCachedObjWidgetElement = document.querySelector('.cached-obj-widget');
+        if (showCachedObjWidgetElement && showCachedObjWidgetElement.contains(event.target as Node)) {
+          clickedOutside = false;
+        }
+      }
       // If the click was outside all widgets, close them
       if (clickedOutside) {
         console.log('Clicked outside');
@@ -181,7 +191,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowModifyObjWidget(false);
         setShowCheckSVGPieceWidget(false);
         setShowCheckWholeSVGWidget(false);
-        setShowModifyObjButton(false)
+        setShowModifyObjButton(false);
+        setShowCachedObjWidget(false);
         setButtonchoice('');
       }
     };
@@ -313,6 +324,36 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
       }
 
+
+      if (word === 'cachedobjects') {
+        console.log('double-clicked on cachedobjects');
+
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+        setAutocompletePosition({ top: position.top + 50, left: position.left });
+        setShowCachedObjWidget(true); // Show the widget
+
+        // const currentVersion = versions.find(version => version.id === currentVersionId);
+        // if (!currentVersion) {
+        //   console.log('No current version found');
+        //   return;
+        // }
+    
+        // const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+        // console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
+    
+        // if (currentreuseableSVGElementList) {
+        //   const cursorPosition = editorRef.current?.selectionStart || 0;
+        //   const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+        //   setAutocompletePosition({ top: position.top + 50, left: position.left });
+        //   setShowModifyObjWidget(true); // Show the widget
+        //   //setSelectedCodeText(''); // Reset the selected code text
+        //   console.log('clicked on modifyobj', showModifyObjWidget)
+        // } else {
+        //   console.log('reuseableSVGElementList is undefined or empty');
+        // }
+      }
+
       if (word === 'useobj') {
         console.log('double-clicked on useobjhh');
         const currentVersion = versions.find(version => version.id === currentVersionId);
@@ -389,7 +430,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     //   setCoordcompletePosition({ top: position.top + 50, left: position.left });
     //   setShowCoordcomplete(true);
     // }
-    else if(word != 'modifyobj'){
+    else if(word != 'modifyobj'&&word != 'cachedobjects'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
@@ -1478,10 +1519,90 @@ const CheckWholeSVGWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
 };
 
   
-  
-  
-  
-  
+const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: string | null, versions: Version[] }) => {
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]); // To track which objects are expanded
+
+  // Find the current version and access its cachedobjectslog
+  const currentVersion = versions.find((version) => version.id === currentVersionId);
+  const cachedObjectsLog = currentVersion?.cachedobjectslog || {}; // Assuming cachedobjectslog is an object
+  console.log('check in CachedObjWidget', currentVersion?.cachedobjectslog, currentVersion)
+  // Toggle the expansion of an object
+  const toggleExpand = (key: string) => {
+    setExpandedKeys((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
+    );
+  };
+
+  // Recursive function to render the object structure
+  const renderObject = (obj: any, parentKey = ''): JSX.Element => {
+    return (
+      <ul style={{ listStyleType: 'none', paddingLeft: '10px' }}>
+        {Object.keys(obj).map((key) => {
+          const value = obj[key];
+          const fullKey = parentKey ? `${parentKey}.${key}` : key; // Create a unique key for nested objects
+
+          return (
+            <li key={fullKey}>
+              <strong>{key}</strong>: {typeof value === 'object' && value !== null ? (
+                <>
+                  {expandedKeys.includes(fullKey) ? (
+                    <>
+                      <button onClick={() => toggleExpand(fullKey)} style={{ marginLeft: '5px' }}>
+                        Hide
+                      </button>
+                      {renderObject(value, fullKey)} {/* Recursive rendering of sub-objects */}
+                    </>
+                  ) : (
+                    <>
+                      <span>{`{...}`}</span>
+                      <button onClick={() => toggleExpand(fullKey)} style={{ marginLeft: '5px' }}>
+                        Expand
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <span>{`${value}`}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
+  return (
+    <div
+      className="cached-obj-widget"
+      style={{
+        position: 'absolute',
+        top: autocompletePosition.top,
+        left: autocompletePosition.left,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        fontSize: '14px',
+        maxHeight: '300px',
+        overflowY: 'auto',
+        width: '300px',
+      }}
+    >
+      <div style={{ overflowY: 'auto', width: '100%' }}>
+        {cachedObjectsLog ? (
+          renderObject(cachedObjectsLog)
+        ) : (
+          <p>No cached objects found.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+
   
 
   const CoordcompleteWidget = () => (
@@ -1625,6 +1746,8 @@ const CheckWholeSVGWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
         <AutocompleteWidget key={index} options={level.options} levelIndex={index} />
       ))}
       {showCoordcomplete && <CoordcompleteWidget />}
+      {showCachedObjWidget && <CachedObjWidget currentVersionId={currentVersionId} versions={versions} />}
+
       {renderEditor()}
       <div className="button-group">
         <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
