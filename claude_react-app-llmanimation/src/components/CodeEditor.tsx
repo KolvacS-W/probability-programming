@@ -1542,13 +1542,31 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
     );
   };
 
+  // Function triggered by right-click with the key and parent keys as parameters
+  const handleClickinCachedObj = (keyPath: string[]) => {
+    //event.preventDefault(); // Prevent the default context menu from opening
+    console.log('Right-clicked on key:', keyPath.join('.'));
+    const combinedText = keyPath.join('.');
+    const currentValue = userjs;
+    const cursorPosition = editorRef.current?.selectionStart || 0;
+    const textBeforeCursor = currentValue.slice(0, cursorPosition+'cachedobjects'.length);
+    const textAfterCursor = currentValue.slice(cursorPosition+'cachedobjects'.length);
+    const newText = textBeforeCursor + '.'+ combinedText + textAfterCursor;
+    setuserJs(newText);
+    setShowCachedObjWidget(false);
+    // You can replace this console.log with the actual function you want to trigger
+    // For example:
+    // myFunction(keyPath);
+  };
+
   // Recursive function to render the object structure with a tree-like hierarchy
-  const renderObject = (obj: any, parentKey = '', level = 0): JSX.Element => {
+  const renderObject = (obj: any, parentKey = '', level = 0, parentKeys: string[] = []): JSX.Element => {
     return (
       <ul style={{ listStyleType: 'none', paddingLeft: `${20 * level}px`, position: 'relative' }}>
         {Object.keys(obj).map((key) => {
           const value = obj[key];
           const fullKey = parentKey ? `${parentKey}.${key}` : key; // Create a unique key for nested objects
+          const currentKeyPath = [...parentKeys, key]; // Accumulate keys up to the current level
           
           return (
             <li key={fullKey} style={{ position: 'relative' }}>
@@ -1563,7 +1581,13 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
                   position: 'relative',
                   borderLeft: level > 0 ? '2px solid black' : 'none', // Adds the vertical line for sub-objects
                 }}
-                onClick={typeof value === 'object' && value !== null ? () => toggleExpand(fullKey) : undefined}
+                onClick={() => handleClickinCachedObj(currentKeyPath)} // Trigger by normal left click
+                onContextMenu={(event) => {
+                  event.preventDefault(); // Prevent the default right-click menu
+                  if (typeof value === 'object' && value !== null) {
+                    toggleExpand(fullKey); // Trigger toggleExpand on right-click
+                  }
+                }}
               >
                 {typeof value === 'object' && value !== null ? (
                   <>
@@ -1574,8 +1598,9 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
                         display: 'inline-block',
                       }}
                     >
-                      {key}</strong>: {expandedKeys.includes(fullKey) ? '' : '{...}'}
-                    
+                      {key}:
+                    </strong> 
+                    {expandedKeys.includes(fullKey) ? '' : '{...}'}
                   </>
                 ) : (
                   <>
@@ -1583,7 +1608,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
                     : <span>{`${value}`}</span>
                   </>
                 )}
-
+  
                 {/* Only show tree connection line for expanded objects */}
                 {expandedKeys.includes(fullKey) && typeof value === 'object' && value !== null && (
                   <div
@@ -1593,16 +1618,16 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
                       left: '-20px',
                       width: '20px',
                       height: '2px',
-                      backgroundColor: 'black',
+                      // backgroundColor: 'black',
                     }}
                   ></div>
                 )}
               </div>
-
+  
               {/* Recursive rendering of sub-objects */}
               {expandedKeys.includes(fullKey) && typeof value === 'object' && value !== null && (
                 <>
-                  {renderObject(value, fullKey, level + 1)}
+                  {renderObject(value, fullKey, level + 1, currentKeyPath)} {/* Pass the accumulated keys */}
                 </>
               )}
             </li>
@@ -1611,6 +1636,8 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
       </ul>
     );
   };
+  
+  
 
   return (
     <div
