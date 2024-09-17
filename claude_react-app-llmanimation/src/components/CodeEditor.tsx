@@ -192,7 +192,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowCheckSVGPieceWidget(false);
         setShowCheckWholeSVGWidget(false);
         setShowModifyObjButton(false);
-        setShowCachedObjWidget(false);
+        //setShowCachedObjWidget(false);
         setButtonchoice('');
       }
     };
@@ -1525,15 +1525,25 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
   // Find the current version and access its cachedobjectslog
   const currentVersion = versions.find((version) => version.id === currentVersionId);
   const cachedObjectsLog = currentVersion?.cachedobjectslog || {}; // Assuming cachedobjectslog is an object
-  console.log('check in CachedObjWidget', currentVersion?.cachedobjectslog, currentVersion)
-  // Toggle the expansion of an object
+  console.log('in CachedObjWidget', currentVersion?.cachedobjectslog);
+
+  // Function to toggle the expansion of an object or sub-object
   const toggleExpand = (key: string) => {
     setExpandedKeys((prev) =>
       prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
     );
   };
 
-  // Recursive function to render the object structure
+  // Function to open a new window displaying the expanded object or sub-object
+  const openNewWindow = (content: string) => {
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write('<html><body><pre>' + content + '</pre></body></html>');
+      newWindow.document.close();
+    }
+  };
+
+  // Recursive function to render the object structure with expand/collapse and clickable elements
   const renderObject = (obj: any, parentKey = ''): JSX.Element => {
     return (
       <ul style={{ listStyleType: 'none', paddingLeft: '10px' }}>
@@ -1542,27 +1552,34 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
           const fullKey = parentKey ? `${parentKey}.${key}` : key; // Create a unique key for nested objects
 
           return (
-            <li key={fullKey}>
-              <strong>{key}</strong>: {typeof value === 'object' && value !== null ? (
+            <li key={fullKey} style={{ display: 'flex', alignItems: 'center' }}>
+              <span
+                style={{ cursor: 'pointer', color: 'blue' }}
+                onClick={() => toggleExpand(fullKey)}
+              >
+                {expandedKeys.includes(fullKey) ? '-' : '+'} {key}
+              </span>
+              : {typeof value === 'object' && value !== null ? (
                 <>
                   {expandedKeys.includes(fullKey) ? (
                     <>
-                      <button onClick={() => toggleExpand(fullKey)} style={{ marginLeft: '5px' }}>
-                        Hide
-                      </button>
+                      <span>{' {'}</span>
                       {renderObject(value, fullKey)} {/* Recursive rendering of sub-objects */}
+                      <span>{'}'}</span>
                     </>
                   ) : (
                     <>
-                      <span>{`{...}`}</span>
-                      <button onClick={() => toggleExpand(fullKey)} style={{ marginLeft: '5px' }}>
-                        Expand
-                      </button>
+                      <span
+                        style={{ cursor: 'pointer', marginLeft: '5px', color: 'blue' }}
+                        onClick={() => openNewWindow(JSON.stringify(value, null, 2))}
+                      >
+                        {' {...}'}
+                      </span>
                     </>
                   )}
                 </>
               ) : (
-                <span>{`${value}`}</span>
+                <span>{` ${JSON.stringify(value)}`}</span>
               )}
             </li>
           );
@@ -1587,7 +1604,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
         fontSize: '14px',
         maxHeight: '300px',
         overflowY: 'auto',
-        width: '300px',
+        width: '400px',
       }}
     >
       <div style={{ overflowY: 'auto', width: '100%' }}>
@@ -1603,7 +1620,6 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
 
 
 
-  
 
   const CoordcompleteWidget = () => (
     <div
