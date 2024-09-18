@@ -41,47 +41,119 @@ const clearSessionStorage = () => {
   sessionStorage.clear(); // Clear all session storage data
 };
 
-function replaceUncloneableEntries(obj) {
-  const cloneableObj = {};
 
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      console.log('value need to save', value)
-      if (typeof value === 'function') {
-        console.warn(`Skipping function value: ${key}`);
-      } else if (value instanceof Promise) {
-        cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
-      } else {
-        cloneableObj[key] = value;
-      }
-    }
-  }
 
-  return cloneableObj;
-}
+// function replaceUncloneableEntries(obj) {
+//   const cloneableObj = {};
 
-// Modify the sendcachedobjectsToIframe function to use this replacement
+//   for (const key in obj) {
+//     if (Object.prototype.hasOwnProperty.call(obj, key)) {
+//       const value = obj[key];
+//       console.log('value need to save', value)
+//       if (typeof value === 'function') {
+//         console.warn(`Skipping function value: ${key}`);
+//       } else if (value instanceof Promise) {
+//         cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
+//       } else {
+//         cloneableObj[key] = value;
+//       }
+//     }
+//   }
+
+//   return cloneableObj;
+// }
+
+// Helper function to serialize objects with their class type
+// Helper function to serialize objects with their class type
+// function serializeForStorage(obj) {
+//   if (obj === null || typeof obj !== 'object') return obj;
+
+//   const cloneableObj = Array.isArray(obj) ? [] : { ...obj, __class__: obj.constructor.name };
+
+//   for (const key in obj) {
+//     if (Object.prototype.hasOwnProperty.call(obj, key)) {
+//       const value = obj[key];
+//       if (typeof value === 'function') {
+//         console.warn(`Skipping function value: ${key}`);
+//       } else if (value instanceof Promise) {
+//         cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
+//       } else {
+//         cloneableObj[key] = serializeForStorage(value); // Recursively serialize
+//       }
+//     }
+//   }
+
+//   return cloneableObj;
+// }
+
+// Helper function to deserialize objects, restoring them to their original class
+// Deserialize objects by referring to their classinfo property
+// function recoverClassFromClassInfo(data) {
+//   if (data === null || typeof data !== 'object') return data;
+
+//   // Handle arrays recursively
+//   if (Array.isArray(data)) {
+//     return data.map(item => recoverClassFromClassInfo(item));
+//   }
+
+//   if (data.classinfo) {
+//     // Check the classinfo property and restore the corresponding class
+//     switch (data.classinfo) {
+//       case 'Rule':
+//         return Object.assign(new Rule(), data);
+//       case 'GeneratedObject':
+//         return Object.assign(new GeneratedObject(), data);
+//       case 'ObjectTemplate':
+//         return Object.assign(new ObjectTemplate(), data);
+//       case 'whole_canvas':
+//         return Object.assign(new whole_canvas(), data);
+//       default:
+//         break;
+//     }
+//   }
+
+//   // Recursively process the object properties
+//   for (const key in data) {
+//     if (data.hasOwnProperty(key) && typeof data[key] === 'object') {
+//       data[key] = recoverClassFromClassInfo(data[key]);
+//     }
+//   }
+
+//   return data;
+// }
+
+// Modify sendcachedobjectsToIframe to deserialize objects when loading from storage
+// Load cachedobjects from sessionStorage and recover class instances
 const sendcachedobjectsToIframe = () => {
   if (iframeRef.current?.contentWindow) {
-    //const cloneableCachedObjects = replaceUncloneableEntries(sessionStorage.getItem('cachedobjects'));
-    const cloneableCachedObjects = (sessionStorage.getItem('cachedobjects'));
-    console.log('sendcachedobjectsToIframe', cloneableCachedObjects)
-    iframeRef.current.contentWindow.postMessage({
-      type: 'SYNC_PREVIOUS_OBJECTS_REF',
-      cachedobjects: JSON.parse(cloneableCachedObjects), // Send the filtered cloneable reference
-    }, '*');
+    const storedObjects = sessionStorage.getItem('cachedobjects');
+    if (storedObjects) {
+      const recoveredObjects = (JSON.parse(storedObjects)); // Recover class instances
+      console.log('Recovered cachedobjects from storage:', recoveredObjects);
+      iframeRef.current.contentWindow.postMessage({
+        type: 'SYNC_PREVIOUS_OBJECTS_REF',
+        cachedobjects: recoveredObjects, // Send the recovered objects
+      }, '*');
+    } else {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'SYNC_PREVIOUS_OBJECTS_REF',
+        cachedobjects: {}, // Send an empty object if no stored objects
+      }, '*');
+    }
   }
 };
 
-// Modify savecachedobjects to replace uncloneable entries before saving
-function savecachedobjects(content: object) {
-  // console.log('savecachedobjects-1', content);
-  //const filteredContent = replaceUncloneableEntries(content);
-  const filteredContent = (content);
-  console.log('savecachedobjects-2', JSON.stringify(filteredContent));
-  sessionStorage.setItem('cachedobjects', JSON.stringify(filteredContent));
+
+
+
+// Modify savecachedobjects to serialize objects before saving
+function savecachedobjects(content) {
+  const serializedContent = (content); // Serialize the content
+  console.log('Serialized cachedobjects for saving:', serializedContent);
+  sessionStorage.setItem('cachedobjects', JSON.stringify(serializedContent)); // Save to sessionStorage
 }
+
+
 
 
 // Function to load cachedobjects from sessionStorage
@@ -136,7 +208,7 @@ function savecachedobjects(content: object) {
 
         // NEW: Handle saving cachedobjects to sessionStorage
   if (event.data.type === 'SAVE_CACHEDOBJECTS') {
-    console.log('Saving window object');
+    console.log('Saving window object', event.data.content.dog1.constructor.name);
     savecachedobjects(event.data.content);
   }
 
@@ -515,7 +587,7 @@ function savecachedobjects(content: object) {
                           this.piecenames = [];
                           this.piecenamemodify = [];
                           this.parameters = [];
-                          this.drawQueue = Promise.resolve();
+                          // this.drawQueue = Promise.resolve();
                           console.log('rule created:', prompt);
                         }
 
@@ -646,7 +718,7 @@ async generateObj(name, parameterContents = []) {
 let obj;
 
 // Add the draw operation to the queue
-this.drawQueue = this.drawQueue.then(async () => {
+// this.drawQueue = this.drawQueue.then(async () => {
   var svgElement;
   var svgHTML;
   var svgHTMLtemplate;
@@ -699,11 +771,11 @@ this.drawQueue = this.drawQueue.then(async () => {
     console.log('returning obj:', obj)
     return obj; // Return the codename
   }
-}).catch(error => {
-  console.error('Error in canvas draw sequence:', error);
-});
+// }).catch(error => {
+//   console.error('Error in canvas draw sequence:', error);
+// });
 
-return this.drawQueue.then(() => obj); // Ensure the codename is returned
+// return this.drawQueue.then(() => obj); // Ensure the codename is returned
 
 }
 
@@ -930,7 +1002,97 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                     }
                     window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
 
-// No timeout, keep waiting for CACHEDOBJECT_LOADED indefinitely before executing user.js
+
+
+
+function recoverClassFromClassInfo(data) {
+  if (data === null || typeof data !== 'object') return data;
+
+  // Handle arrays that were mistakenly serialized as objects with numbered keys
+  if (isSerializedArray(data)) {
+    return Object.values(data);
+  }
+
+  // Handle arrays recursively
+  if (Array.isArray(data)) {
+    return data.map(item => recoverClassFromClassInfo(item));
+  }
+
+  if (data.classinfo) {
+    // Log to see the recovery of classinfo
+    console.log('Recovering', data.classinfo);
+
+    // Check the classinfo property and restore the corresponding class
+    let recoveredInstance;
+    switch (data.classinfo) {
+      case 'Rule': {
+        recoveredInstance = new Rule();
+        Object.assign(recoveredInstance, data);
+        break;
+      }
+      case 'GeneratedObject': {
+        const { objname = '', svgcode = '', templatecode = '', rule = {} } = data;
+        const template = recoverClassFromClassInfo(data.template); // Recover the template properly
+        const ruleInstance = recoverClassFromClassInfo(rule); // Recover the rule as well
+        recoveredInstance = new GeneratedObject(objname, svgcode, template.templatecode, ruleInstance);
+        Object.assign(recoveredInstance, data); // Assign any additional properties
+        break;
+      }
+      case 'ObjectTemplate': {
+        console.log('ObjectTemplate, data:', data);
+        const { templatecode = '', rule = {} } = data;
+        const ruleInstance = recoverClassFromClassInfo(rule); // Recover the rule object
+        recoveredInstance = new ObjectTemplate(templatecode, ruleInstance);
+        Object.assign(recoveredInstance, data); // Assign additional properties if any
+        break;
+      }
+      case 'whole_canvas': {
+        const canvas = new whole_canvas(data.canvas_color || '#FFFFFF');
+        Object.assign(canvas, data);
+        recoveredInstance = canvas;
+        break;
+      }
+      default:
+        recoveredInstance = data; // If no matching class, return the data as-is
+        break;
+    }
+
+    // Remove the classinfo field after the object is recovered
+    delete recoveredInstance.classinfo;
+
+    // Recursively recover subobjects
+    for (const key in recoveredInstance) {
+      if (recoveredInstance.hasOwnProperty(key) && typeof recoveredInstance[key] === 'object') {
+        recoveredInstance[key] = recoverClassFromClassInfo(recoveredInstance[key]);
+      }
+    }
+
+    return recoveredInstance;
+  }
+
+  // If no classinfo is found, continue recursively recovering properties
+  for (const key in data) {
+    if (data.hasOwnProperty(key) && typeof data[key] === 'object') {
+      data[key] = recoverClassFromClassInfo(data[key]);
+    }
+  }
+
+  return data;
+}
+
+// Helper function to check if an object was serialized as an array
+function isSerializedArray(obj) {
+  if (typeof obj !== 'object' || obj === null) return false;
+
+  // Check if all keys are sequential numbers starting from 0
+  const keys = Object.keys(obj);
+  return keys.every((key, index) => Number(key) === index);
+}
+
+
+
+
+                    // No timeout, keep waiting for CACHEDOBJECT_LOADED indefinitely before executing user.js
 (async function () {
   console.log('Waiting for CACHEDOBJECT_LOADED event...');
   
@@ -942,7 +1104,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
       if (event.data.type === 'SYNC_PREVIOUS_OBJECTS_REF') {
         console.log('Received cachedobjectsRef from parent:', event.data.cachedobjects);
         if(event.data.cachedobjects){
-                window.cachedobjects = event.data.cachedobjects; // Directly assign the reference
+                window.cachedobjects = recoverClassFromClassInfo(event.data.cachedobjects); // Directly assign the deserialized reference
         }
         resolve();
       }
@@ -953,24 +1115,31 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
   });
 
   // Function to replace promises with the string 'promise'
-function replacePromisesInObject(obj) {
-  const clonedObject = {};
-  
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      if (obj[key] instanceof Promise) {
-        clonedObject[key] = 'placeholder';
-      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-        // Recursively replace promises in nested objects
-        clonedObject[key] = replacePromisesInObject(obj[key]);
-      } else {
-        clonedObject[key] = obj[key];
-      }
-    }
-  }
-  
-  return clonedObject;
-}
+// Function to replace promises with the string 'promise', while preserving class names
+// Function to replace promises with 'promise', while preserving class names
+// function replacePromisesInObject(obj) {
+//   if (obj === null || typeof obj !== 'object') return obj;
+
+//   const clonedObject = Array.isArray(obj) ? [] : { ...obj, __class__: obj.constructor.name };
+//   console.log('sending cachedobjects to window 3', clonedObject.dog1.constructor.name)
+//   for (const key in obj) {
+//     if (obj.hasOwnProperty(key)) {
+//       if (obj[key] instanceof Promise) {
+//         clonedObject[key] = 'promise';  // Replace Promises with the string 'promise'
+//       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+//         // Recursively replace promises in nested objects
+//         clonedObject[key] = replacePromisesInObject(obj[key]);
+//       } else {
+//         clonedObject[key] = obj[key];
+//       }
+//     }
+//   }
+//   console.log('sending cachedobjects to window 4', clonedObject.dog1.constructor.name)  
+
+//   return clonedObject;
+// }
+
+
 
   // // Post cachedobjects to parent for saving to cachedobjectslog
   // window.parent.postMessage({ type: 'LOG_CACHEDOBJECTS', content: window.cachedobjects }, '*');
@@ -980,11 +1149,38 @@ function replacePromisesInObject(obj) {
   console.log('Executing user.js');
   ${usercode.js} // Inject user-provided JS
 
-// Replace promises with the string 'promise' before saving
-const cleanedCachedObjects = replacePromisesInObject(window.cachedobjects);
+console.log('sending cachedobjects to window', window.cachedobjects.dog1.constructor.name)
 
-// Save the window state after execution
-window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cleanedCachedObjects }, '*');
+// Replace promises with the string 'promise' before saving
+//const cleanedCachedObjects = replacePromisesInObject(window.cachedobjects);
+
+//console.log('sending cachedobjects to window 2', cleanedCachedObjects.dog1.constructor.name)
+
+// Add a classinfo property to each object for serialization
+function addClassInfo(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+
+  // Clone the object and add the classinfo property
+  const objectWithClassInfo = { ...obj, classinfo: obj.constructor.name };
+
+  // Recursively process object properties
+  for (const key in objectWithClassInfo) {
+    if (objectWithClassInfo.hasOwnProperty(key) && typeof objectWithClassInfo[key] === 'object') {
+      objectWithClassInfo[key] = addClassInfo(objectWithClassInfo[key]);
+    }
+  }
+
+  return objectWithClassInfo;
+}
+
+
+  // Serialize cachedobjects with class info before sending to the parent
+const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
+
+  console.log('check cachedObjectsWithClassInfo', cachedObjectsWithClassInfo)
+
+  // Send serialized cached objects back to the parent window
+  window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cachedObjectsWithClassInfo }, '*');
 })();
                   </script>
               </body>

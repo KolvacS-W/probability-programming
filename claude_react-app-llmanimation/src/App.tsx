@@ -48,17 +48,11 @@ console.log('check saved', window.cachedobjects);
 // Create canvas and rule as usual
 const canvas = new whole_canvas('azure');
 const rule = new Rule('a dog with long legs');
+rule.parameters = ['fur color']
+const obj = await rule.generateObj('dog1', ['brown'])
 
-//await rule.generateObj('dog1')
-
-// Assign and save the object in cachedobjects
-window.cachedobjects.object1 = 'a pig';
-window.cachedobjects.rule1 = rule;
-
-console.log('saving', window.cachedobjects);
-
-// After this, the value of cachedobjects.object1 will be saved 
-// to sessionStorage by the savecachedobjects function once user.js execution is done
+console.log('here', obj.constructor.name)
+console.log(obj.template)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
