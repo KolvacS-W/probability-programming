@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://1599-34-23-145-229.ngrok-free.app';
+const ngrok_url = 'https://c0cb-34-23-187-142.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -972,8 +972,8 @@ function replacePromisesInObject(obj) {
   return clonedObject;
 }
 
-  // Post cachedobjects to parent for saving to cachedobjectslog
-  window.parent.postMessage({ type: 'LOG_CACHEDOBJECTS', content: window.cachedobjects }, '*');
+  // // Post cachedobjects to parent for saving to cachedobjectslog
+  // window.parent.postMessage({ type: 'LOG_CACHEDOBJECTS', content: window.cachedobjects }, '*');
 
 
 //   // Execute user.js only after CACHEDOBJECT_LOADED is received

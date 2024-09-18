@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://1599-34-23-145-229.ngrok-free.app';
+const ngrok_url = 'https://c0cb-34-23-187-142.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -1532,9 +1532,10 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]); // To track which objects are expanded
 
   // Find the current version and access its cachedobjectslog
-  const currentVersion = versions.find((version) => version.id === currentVersionId);
-  const cachedObjectsLog = currentVersion?.cachedobjectslog || {}; // Assuming cachedobjectslog is an object
-
+  //const currentVersion = versions.find((version) => version.id === currentVersionId);
+  //const cachedObjectsLog = currentVersion?.cachedobjectslog || {}; // Assuming cachedobjectslog is an object
+  const cachedObjectsLog = JSON.parse((sessionStorage.getItem('cachedobjects')))
+  console.log('check cachedobjectsLog', cachedObjectsLog)
   // Function to toggle the expansion of an object or sub-object
   const toggleExpand = (key: string) => {
     setExpandedKeys((prev) =>
