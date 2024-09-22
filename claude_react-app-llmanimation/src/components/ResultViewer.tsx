@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://c0cb-34-23-187-142.ngrok-free.app';
+const ngrok_url = 'https://c7a0-34-90-230-14.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -208,7 +208,7 @@ function savecachedobjects(content) {
 
         // NEW: Handle saving cachedobjects to sessionStorage
   if (event.data.type === 'SAVE_CACHEDOBJECTS') {
-    console.log('Saving window object', event.data.content.dog1.constructor.name);
+    // console.log('Saving window object', event.data.content.dog1.constructor.name);
     savecachedobjects(event.data.content);
   }
 
@@ -1149,7 +1149,7 @@ function isSerializedArray(obj) {
   console.log('Executing user.js');
   ${usercode.js} // Inject user-provided JS
 
-console.log('sending cachedobjects to window', window.cachedobjects.dog1.constructor.name)
+// console.log('sending cachedobjects to window', window.cachedobjects.dog1.constructor.name)
 
 // Replace promises with the string 'promise' before saving
 //const cleanedCachedObjects = replacePromisesInObject(window.cachedobjects);

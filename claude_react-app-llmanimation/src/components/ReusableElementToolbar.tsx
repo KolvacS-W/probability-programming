@@ -76,25 +76,6 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
           codeText: content,
           selected: false
         }];
-
-        // if (content) {
-        //   // Split the content by 'code piece:'
-        //   const splitContent = content.split('code piece:');
-
-        //   console.log('splited array:', splitContent)
-          
-        //   // Filter the array to include only even index items
-        //   const evenIndexItems = splitContent.filter((item, index) => index % 2 === 1);
-        
-        //   // Join the filtered items back into a string (if needed)
-        //   const filteredContent = evenIndexItems.join('code piece:');
-        
-        //   // Create the newElements array with the filtered content
-        //   const newElements = [{
-        //     codeName: inputValue,
-        //     codeText: filteredContent,
-        //     selected: false
-        //   }];
   
         setVersions(prevVersions => {
           const updatedVersions = prevVersions.map(version =>
@@ -147,6 +128,11 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
     });
   };
 
+  const sanitizeSVG = (svgString: string) => {
+    // Sanitize the SVG string if necessary here
+    return svgString.trim(); // Just a simple trim for now, more sanitization can be added if needed
+  };
+
   return (
     <div
       className={`reusable-element-toolbar ${isMouseOver ? 'expanded' : ''}`}
@@ -174,6 +160,10 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
           onMouseLeave={() => setHoveredElement(null)}
         >
           <span>{element.codeName}</span>
+          <div
+            className="svg-preview"
+            dangerouslySetInnerHTML={{ __html: sanitizeSVG(element.codeText) }} 
+          />
           <button className="delete-icon" onClick={() => handleDeleteReusableElement(currentVersionId, element.codeName)}>🆇</button>
           {hoveredElement === element.codeText && (
             <div className="hovered-element-text">

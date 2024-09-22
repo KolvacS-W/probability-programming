@@ -49,10 +49,8 @@ console.log('check saved', window.cachedobjects);
 const canvas = new whole_canvas('azure');
 const rule = new Rule('a dog with long legs');
 rule.parameters = ['fur color']
-const obj = await rule.generateObj('dog1', ['brown'])
+await rule.generateObj('dog1', ['brown'])
 
-console.log('here', obj.constructor.name)
-console.log(obj.template)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
