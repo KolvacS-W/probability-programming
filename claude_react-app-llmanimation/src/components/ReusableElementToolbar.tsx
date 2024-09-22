@@ -130,7 +130,7 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
 
   const sanitizeSVG = (svgString: string) => {
     // Sanitize the SVG string if necessary here
-    return svgString.trim(); // Just a simple trim for now, more sanitization can be added if needed
+    return svgString.trim().replace('\n', ''); // Just a simple trim for now, more sanitization can be added if needed
   };
 
   return (

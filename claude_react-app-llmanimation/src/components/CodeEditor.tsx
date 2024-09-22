@@ -867,50 +867,60 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     useEffect(() => {
         //console.log('in useeffect', svgCodeText, iframeRef.current)
         const iframe = iframeRef.current;
+        const sanitizeSVG = (svgString) => {
+          // Sanitize the SVG string if necessary here
+          return svgString.trim(); // Simple trim; add more sanitization if needed
+        };
+        
         if (iframe) {
-            const iframeDocument = iframe.contentDocument;
-            iframeDocument?.write(`
+          const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+    
+          iframeDocument.open(); // Open the document for writing
+          iframeDocument.write(`
             <!DOCTYPE html>
             <html lang="en">
             <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>SVG Render</title>
-                <style>
-                    html, body {
-                      margin: 0;
-                      padding: 0;
-                      width: 100%;
-                      height: 100%;
-                      display: flex;
-                      justify-content: center;
-                      align-items: center;
-                      overflow: hidden;
-                    }
-                    #canvasContainer {
-                      position: relative;
-                      width: 100%;
-                      height: 100%;
-                    }
-                    svg {
-                      width: 100%;
-                      height: 100%;
-                    }
-                </style>
+              <!-- head content -->
+              <style>
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  overflow: hidden;
+                }
+                #canvasContainer {
+                  position: relative;
+                  width: 100%;
+                  height: 100%;
+                }
+                svg {
+                  width: 100%;
+                  height: 100%;
+                }
+              </style>
             </head>
             <body>
-                <div id="canvasContainer"></div>
+              <div id="canvasContainer">
+                ${sanitizeSVG(svgCodeText)}
+              </div>
             </body>
             </html>
-            `);
-            iframeDocument?.close(); // Make sure to close the document to complete writing
-            const canvasContainer = iframeDocument?.getElementById('canvasContainer');
-            if (canvasContainer) {
-                appendSVGToContainer(canvasContainer, svgCodeText);
-                //console.log('appendSVGToContainer', svgCodeText)
+          `);
+          iframeDocument.close(); // Close the document to complete writing
+    
+          // Wait for the iframe's content to load before manipulating the SVG elements
+          iframe.onload = () => {
+            const svgElement = iframeDocument.querySelector('svg');
+            if (svgElement) {
+              attachHighlightListeners(svgElement);
             }
+          };
         }
-    }, [svgCodeText]);
+      }, [svgCodeText]);
 
     const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
         const svgElement = new DOMParser().parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
@@ -1260,11 +1270,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   
 const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, pieceCodeName: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
+  const sanitizeSVG = (svgString: string) => {
+    // Sanitize the SVG string if necessary here
+    return svgString.trim(); // Just a simple trim for now, more sanitization can be added if needed
+  };
   useEffect(() => {
       const iframe = iframeRef.current;
       if (iframe) {
           const iframeDocument = iframe.contentDocument;
+          const updatedSvgCode = highlightPiece(svgCode, pieceCodeName);
+
           if (iframeDocument) {
               iframeDocument.write(`
               <!DOCTYPE html>
@@ -1296,26 +1311,28 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
                   </style>
               </head>
               <body>
-                  <div id="canvasContainer"></div>
-              </body>
+              <div id="canvasContainer">
+                  ${sanitizeSVG(updatedSvgCode)}
+              </div>
+        </body>
               </html>
               `);
               iframeDocument.close(); // Ensure the document is closed after writing
-              const canvasContainer = iframeDocument.getElementById('canvasContainer');
-              if (canvasContainer) {
-                  appendSVGToContainer(canvasContainer, svgCode);
-              }
+              // const canvasContainer = iframeDocument.getElementById('canvasContainer');
+              // if (canvasContainer) {
+              //     appendSVGToContainer(canvasContainer, svgCode);
+              // }
           }
       }
   }, [svgCode]);
 
-  const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
-      console.log('in appendSVGToContainer', svgCode, pieceCodeName)
-      const updatedSvgCode = highlightPiece(svgCode, pieceCodeName);
-      const svgElement = new DOMParser().parseFromString(updatedSvgCode, 'image/svg+xml').querySelector('svg');
-      console.log('updated element', updatedSvgCode, svgElement)
-      container.appendChild(svgElement);
-  };
+  // const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
+  //     console.log('in appendSVGToContainer', svgCode, pieceCodeName)
+  //     const updatedSvgCode = highlightPiece(svgCode, pieceCodeName);
+  //     const svgElement = new DOMParser().parseFromString(updatedSvgCode, 'image/svg+xml').querySelector('svg');
+  //     console.log('updated element', updatedSvgCode, svgElement)
+  //     container.appendChild(svgElement);
+  // };
 
   function toggleSvgElementClosure(svgString: string) {
     // First, check if it's a self-closing tag
@@ -1432,98 +1449,99 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
   );
 };
 
-const CheckWholeSVGWidget = ({ svgCode, pieceCodeName }: { svgCode: string, pieceCodeName: string }) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+const CheckWholeSVGWidget = ({ svgCode, pieceCodeName }) => {
+  const iframeRef = useRef(null);
 
-  useEffect(() => {
-      const iframe = iframeRef.current;
-      if (iframe) {
-          const iframeDocument = iframe.contentDocument;
-          if (iframeDocument) {
-              iframeDocument.write(`
-              <!DOCTYPE html>
-              <html lang="en">
-              <head>
-                  <meta charset="UTF-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <title>SVG Render</title>
-                  <style>
-                      html, body {
-                        margin: 0;
-                        padding: 0;
-                        width: 100%;
-                        height: 100%;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        overflow: hidden;
-                      }
-                      #canvasContainer {
-                        position: relative;
-                        width: 100%;
-                        height: 100%;
-                      }
-                      svg {
-                        width: 100%;
-                        height: 100%;
-                      }
-                  </style>
-              </head>
-              <body>
-                  <div id="canvasContainer"></div>
-              </body>
-              </html>
-              `);
-              iframeDocument.close(); // Ensure the document is closed after writing
-              const canvasContainer = iframeDocument.getElementById('canvasContainer');
-              if (canvasContainer) {
-                  appendSVGToContainer(canvasContainer, svgCode);
-              }
-          }
-      }
-  }, [svgCode]);
-
-  const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
-      const svgElement = new DOMParser().parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
-      // console.log('updated element', svgCode, svgElement)
-      container.appendChild(svgElement);
+  const sanitizeSVG = (svgString) => {
+    // Sanitize the SVG string if necessary here
+    return svgString.trim(); // Simple trim; add more sanitization if needed
   };
 
+  useEffect(() => {
+    const iframe = iframeRef.current;
+
+    if (iframe) {
+      const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+      if (iframeDocument) {
+        iframeDocument.open(); // Open the document for writing
+        iframeDocument.write(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>SVG Render</title>
+              <style>
+                  html, body {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    overflow: hidden;
+                  }
+                  #canvasContainer {
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                  }
+                  svg {
+                    width: 100%;
+                    height: 100%;
+                  }
+              </style>
+          </head>
+          <body>
+              <div id="canvasContainer">
+                  ${sanitizeSVG(svgCode)}
+              </div>
+          </body>
+          </html>
+        `);
+        iframeDocument.close(); // Ensure the document is closed after writing
+      }
+    }
+  }, [svgCode]);
 
   return (
+    <div
+      className="check-whole-svg-widget"
+      style={{
+        position: 'absolute',
+        top: autocompletePosition.top,
+        left: autocompletePosition.left,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        fontSize: '14px',
+      }}
+    >
       <div
-          className="check-whole-svg-widget"
-          style={{
-              position: 'absolute',
-              top: autocompletePosition.top,
-              left: autocompletePosition.left,
-              zIndex: 1000,
-              backgroundColor: 'white',
-              border: '1px solid #ccc',
-              padding: '10px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              fontSize: '14px',
-          }}
+        className="svg-preview-container"
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
       >
-          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div
-                  style={{
-                      width: '200px',
-                      height: '200px',
-                      border: '1px solid #ccc',
-                      marginBottom: '10px',
-                  }}
-              >
-                  {svgCode && (
-                      <iframe
-                          ref={iframeRef}
-                          style={{ width: '100%', height: '100%', border: 'none' }}
-                      />
-                  )}
-              </div>
-          </div>
+        <div
+          style={{
+            width: '200px',
+            height: '200px',
+            border: '1px solid #ccc',
+            marginBottom: '10px',
+          }}
+        >
+          {svgCode && (
+            <iframe
+              ref={iframeRef}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+            />
+          )}
+        </div>
       </div>
+    </div>
   );
 };
 
@@ -1656,7 +1674,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
         fontSize: '14px',
         maxHeight: '300px',
         overflowY: 'auto',
-        width: '300px',
+        width: '600px',
       }}
     >
       <div style={{ overflowY: 'auto', width: '100%' }}>

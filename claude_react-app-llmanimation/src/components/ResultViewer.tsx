@@ -662,6 +662,7 @@ function savecachedobjects(content) {
                                 </svg>.
                                 
                                 Notice that only one parameter name and nothing else can be inside {}. Replace the whole parameter (e.g., fill = "#e0d0c0" to fill = "{parameter name}") instead of just part of it (e.g., fill = "#e0d0c0" to fill = "#{parameter name}"). Return svg code template for this parameter list:\` + this.parameters.join(', ')+\`. Do not include any background in generated svg. 
+                                The svg code template must be able to satify the requirements of the parameters by simply replacing the placeholders, instead of other manual modifications (e.g., 'window number' can be modified by simply replacing {window number} to some data, instead of needing to repeat window element manually)
                                 Make sure donot include anything other than the final svg code template in your response.\`;
                               }
                               else{
