@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://c7a0-34-90-230-14.ngrok-free.app';
+const ngrok_url = 'https://b054-34-75-118-6.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -432,13 +432,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     //   }
     // }
 
-    // if (word == 'coordauto'){
-    //   setHintKeywords(word);
-    //   const cursorPosition = editorRef.current?.selectionStart || 0;
-    //   const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-    //   setCoordcompletePosition({ top: position.top + 50, left: position.left });
-    //   setShowCoordcomplete(true);
-    // }
+    if (word == 'coordauto'){
+      setHintKeywords(word);
+      const cursorPosition = editorRef.current?.selectionStart || 0;
+      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+      setCoordcompletePosition({ top: position.top + 50, left: position.left });
+      setShowCoordcomplete(true);
+    }
     else if(word != 'modifyobj'&&word != 'cachedobjects'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;

@@ -18,7 +18,7 @@ interface ResultViewerProps {
 
 }
 
-const ngrok_url = 'https://c7a0-34-90-230-14.ngrok-free.app';
+const ngrok_url = 'https://b054-34-75-118-6.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -870,38 +870,268 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               window.cachedobjects[objname] = this;
                             }
                             
-                            placeObj(canvas, coord, scale = 1) {
-                                const content = this.svgcode
-                                const svgElement = this.createSVGElement(content, coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale);
-                                console.log('svgelement placing', coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale, svgElement)
-                                canvas.canvasContainer.appendChild(svgElement);
-                            }
-                                                    createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
-                          const svgWrapper = document.createElement('div');
-                          svgWrapper.innerHTML = svgContent.trim();
-                          const svgElement = svgWrapper.firstElementChild;
+placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
+    const content = this.svgcode;
+    const svgElement = this.createSVGElement(
+        content,
+        coord,
+        canvas.canvasContainer.offsetWidth,
+        canvas.canvasContainer.offsetHeight,
+        scale,
+        tl,
+        tr,
+        bl,
+        br
+    );
+    console.log(
+        'svgelement placing',
+        coord,
+        canvas.canvasContainer.offsetWidth,
+        canvas.canvasContainer.offsetHeight,
+        scale,
+        svgElement
+    );
+    canvas.canvasContainer.appendChild(svgElement);
+}
 
-                          // Get the original dimensions of the SVG
-                          const viewBox = svgElement.viewBox.baseVal;
-                          const originalWidth = viewBox.width;
-                          const originalHeight = viewBox.height;
+createSVGElement(
+    svgContent,
+    coord = { x: 50, y: 50 },
+    canvasWidth,
+    canvasHeight,
+    scale = 1,
+    tl = null,
+    tr = null,
+    bl = null,
+    br = null
+) {
+    const svgWrapper = document.createElement('div');
+    svgWrapper.innerHTML = svgContent.trim();
+    const svgElement = svgWrapper.firstElementChild;
 
-                          // Calculate the scaled dimensions
-                          const scaledWidth = originalWidth * scale;
-                          const scaledHeight = originalHeight * scale;
+    // Get the original dimensions of the SVG
+    const viewBox = svgElement.viewBox.baseVal;
+    const originalWidth = viewBox.width;
+    const originalHeight = viewBox.height;
 
-                          // Calculate the percentage-based coordinates
-                          const leftPercent = (coord.x );
-                          const topPercent = (coord.y );
+    // Functions to convert percentage to pixels
+    const percentToPixelX = (percent) => (canvasWidth * percent) / 100;
+    const percentToPixelY = (percent) => (canvasHeight * percent) / 100;
 
-                          // Position the SVG so that it is centered at the given coordinates
-                          svgElement.style.position = 'absolute';
-                          // svgElement.style.left = \`\${leftPercent}%\`;
-                          // svgElement.style.top = \`\${topPercent}%\`;
-                          svgElement.style.transform = \`translate(\`+\`\${leftPercent}%\`+\`, \`+\`\${topPercent}%\`+\`) translate(-50%, -50%) scale(\${scale})\`; // Center the SVG element
+    // Collect specified corners
+    const srcPts = [];
+    const dstPts = [];
 
-                          return svgElement;
-                        }
+    // Map corners to source and destination points
+    if (tl) {
+        srcPts.push([0, 0]); // top-left corner of SVG
+        dstPts.push([percentToPixelX(tl.x), percentToPixelY(tl.y)]);
+    }
+    if (tr) {
+        srcPts.push([originalWidth, 0]); // top-right corner of SVG
+        dstPts.push([percentToPixelX(tr.x), percentToPixelY(tr.y)]);
+    }
+    if (bl) {
+        srcPts.push([0, originalHeight]); // bottom-left corner of SVG
+        dstPts.push([percentToPixelX(bl.x), percentToPixelY(bl.y)]);
+    }
+    if (br) {
+        srcPts.push([originalWidth, originalHeight]); // bottom-right corner of SVG
+        dstPts.push([percentToPixelX(br.x), percentToPixelY(br.y)]);
+    }
+
+    if (srcPts.length > 0) {
+        // Attempt to satisfy scale along with the specified corners
+        let matrix;
+        let scaleApplied = true;
+
+        if (srcPts.length === 1) {
+            // One corner specified
+            // Apply scale and position the SVG at the specified corner
+            const [dstX, dstY] = dstPts[0];
+            const scaledWidth = originalWidth * scale;
+            const scaledHeight = originalHeight * scale;
+
+            // Adjust position based on the specified corner
+            let translateX = dstX;
+            let translateY = dstY;
+
+            if (tl) {
+                // No adjustment needed
+            } else if (tr) {
+                translateX -= scaledWidth;
+            } else if (bl) {
+                translateY -= scaledHeight;
+            } else if (br) {
+                translateX -= scaledWidth;
+                translateY -= scaledHeight;
+            }
+
+            svgElement.style.position = 'absolute';
+            svgElement.style.left = \`\${translateX}px\`;
+            svgElement.style.top = \`\${translateY}px\`;
+            svgElement.style.width = \`\${scaledWidth}px\`;
+            svgElement.style.height = \`\${scaledHeight}px\`;
+            svgElement.style.transform = ''; // No additional transform needed
+        } else if (srcPts.length >= 2) {
+            // Two or more corners specified
+            // Calculate the transformation matrix including scale
+
+            // First, compute the scaling factors implied by the specified corners
+            // and compare them with the provided scale
+
+            // Compute distances in source and destination
+            const srcDistances = [];
+            const dstDistances = [];
+
+            for (let i = 0; i < srcPts.length - 1; i++) {
+                for (let j = i + 1; j < srcPts.length; j++) {
+                    const srcDx = srcPts[j][0] - srcPts[i][0];
+                    const srcDy = srcPts[j][1] - srcPts[i][1];
+                    const srcDistance = Math.hypot(srcDx, srcDy);
+                    srcDistances.push(srcDistance);
+
+                    const dstDx = dstPts[j][0] - dstPts[i][0];
+                    const dstDy = dstPts[j][1] - dstPts[i][1];
+                    const dstDistance = Math.hypot(dstDx, dstDy);
+                    dstDistances.push(dstDistance);
+                }
+            }
+
+            // Compute average scaling factor from specified corners
+            let impliedScale = 0;
+            let scaleCount = 0;
+            for (let i = 0; i < srcDistances.length; i++) {
+                if (srcDistances[i] !== 0) {
+                    impliedScale += dstDistances[i] / srcDistances[i];
+                    scaleCount++;
+                }
+            }
+            if (scaleCount > 0) {
+                impliedScale /= scaleCount;
+            } else {
+                impliedScale = scale;
+            }
+
+            // Compare implied scale with provided scale
+            if (Math.abs(impliedScale - scale) > 0.01) {
+                // Scale is in conflict, discard provided scale
+                scaleApplied = false;
+                scale = impliedScale;
+            }
+
+            // Recalculate destination points considering the scale
+            const scaledSrcPts = srcPts.map(([x, y]) => [x * scale, y * scale]);
+
+            if (srcPts.length === 2) {
+                // Compute similarity transformation
+                matrix = this.calculateSimilarityTransform(scaledSrcPts, dstPts);
+            } else if (srcPts.length === 3) {
+                // Compute affine transformation
+                matrix = this.calculateAffineTransform(scaledSrcPts, dstPts);
+            } else if (srcPts.length === 4) {
+                // Compute projective transformation
+                matrix = this.calculateProjectiveTransform(scaledSrcPts, dstPts);
+            }
+
+            svgElement.style.position = 'absolute';
+            svgElement.style.left = '0px';
+            svgElement.style.top = '0px';
+            svgElement.style.transformOrigin = '0 0';
+            svgElement.style.transform = \`matrix3d(\${matrix.join(',')})\`;
+            svgElement.style.width = \`\${originalWidth * scale}px\`;
+            svgElement.style.height = \`\${originalHeight * scale}px\`;
+        }
+    } else {
+        // No corners specified, use coord and scale
+        const scaledWidth = originalWidth * scale;
+        const scaledHeight = originalHeight * scale;
+
+        let leftPixel, topPixel, transform;
+
+        if (coord) {
+            leftPixel = percentToPixelX(coord.x);
+            topPixel = percentToPixelY(coord.y);
+            transform = 'translate(-50%, -50%)';
+        } else {
+            leftPixel = canvasWidth / 2;
+            topPixel = canvasHeight / 2;
+            transform = 'translate(-50%, -50%)';
+        }
+
+        svgElement.style.position = 'absolute';
+        svgElement.style.left = \`\${leftPixel}px\`;
+        svgElement.style.top = \`\${topPixel}px\`;
+        svgElement.style.width = \`\${scaledWidth}px\`;
+        svgElement.style.height = \`\${scaledHeight}px\`;
+        svgElement.style.transform = transform;
+    }
+
+    return svgElement;
+}
+
+// Helper functions remain the same but with slight modifications
+
+calculateSimilarityTransform(srcPts, dstPts, scale) {
+  // srcPts and dstPts are arrays of 2D points: [[x1, y1], [x2, y2]]
+
+  const [x0, y0] = srcPts[0];
+  const [x1, y1] = srcPts[1];
+  const [X0, Y0] = dstPts[0];
+  const [X1, Y1] = dstPts[1];
+
+  // Source vector
+  const dx1 = x1 - x0;
+  const dy1 = y1 - y0;
+  const srcLength = Math.hypot(dx1, dy1);
+
+  // Destination vector
+  const dx2 = X1 - X0;
+  const dy2 = Y1 - Y0;
+  const dstLength = Math.hypot(dx2, dy2);
+
+  if (srcLength === 0 || dstLength === 0) {
+    console.error('Cannot compute similarity transform with zero-length vectors.');
+    return null;
+  }
+
+  // Compute scaling factor
+  const impliedScale = dstLength / srcLength;
+
+  // Compare implied scale with provided scale
+  const usedScale = Math.abs(impliedScale - scale) < 0.01 ? scale : impliedScale;
+
+  // Recalculate source points considering the used scale
+  const scaledX0 = x0 * usedScale;
+  const scaledY0 = y0 * usedScale;
+  const scaledX1 = x1 * usedScale;
+  const scaledY1 = y1 * usedScale;
+
+  // Compute rotation angle
+  const angle1 = Math.atan2(dy1, dx1);
+  const angle2 = Math.atan2(dy2, dx2);
+  const angle = angle2 - angle1;
+
+  // Compute rotation matrix components
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+
+  // Compute translation
+  const tx = X0 - (scaledX0 * cosA - scaledY0 * sinA);
+  const ty = Y0 - (scaledX0 * sinA + scaledY0 * cosA);
+
+  // Construct the transformation matrix
+  const matrix = [
+    cosA * usedScale, sinA * usedScale, 0, 0,
+    -sinA * usedScale, cosA * usedScale, 0, 0,
+    0, 0, 1, 0,
+    tx, ty, 0, 1
+  ];
+
+  return matrix;
+}
+
+
                       }  
                       window.GeneratedObject = GeneratedObject;
                     }
