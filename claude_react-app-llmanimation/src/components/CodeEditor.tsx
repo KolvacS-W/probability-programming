@@ -23,7 +23,7 @@ interface CodeEditorProps {
 }
 
 const API_KEY = '';
-const ngrok_url = 'https://b054-34-75-118-6.ngrok-free.app';
+const ngrok_url = 'https://772b-35-231-127-253.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
@@ -432,14 +432,14 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     //   }
     // }
 
-    if (word == 'coordauto'){
+    if (word == 'coord'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
       setCoordcompletePosition({ top: position.top + 50, left: position.left });
       setShowCoordcomplete(true);
     }
-    else if(word != 'modifyobj'&&word != 'cachedobjects'){
+    else if(word != 'modifyobj'&&word != 'useobj'&&word != 'cachedobjects'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
