@@ -18,21 +18,23 @@ interface ResultViewerProps {
   currentVersionId: string | null;
   setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
   versions: Version[];
-
+  runClassCodeTrigger: number; // Add this prop
+  runUserCodeTrigger: number; // Add this prop
 }
 
 const ngrok_url = 'https://772b-35-231-127-253.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode,activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
+const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode,activeTab, updateBackendHtml, currentVersionId, setVersions, versions, runClassCodeTrigger, runUserCodeTrigger}) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);
   var currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
   //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
-
+  const [classCodeLoaded, setClassCodeLoaded] = useState<boolean>(false);
+  // Refs to hold previous trigger values
 // Global object to store previous user-defined objects
 // const cachedobjects = {};
 
@@ -45,8 +47,6 @@ const clearSessionStorage = () => {
 };
 
 
-
-// function replaceUncloneableEntries(obj) {
 //   const cloneableObj = {};
 
 //   for (const key in obj) {
@@ -155,26 +155,6 @@ function savecachedobjects(content) {
   console.log('Serialized cachedobjects for saving:', serializedContent);
   sessionStorage.setItem('cachedobjects', JSON.stringify(serializedContent)); // Save to sessionStorage
 }
-
-
-
-
-// Function to load cachedobjects from sessionStorage
-// function loadcachedobjects() {
-//   const storedObjects = sessionStorage.getItem('cachedobjects');
-//   console.log('loadcachedobjects', storedObjects, storedObjects !== 'undefined')
-//   if (storedObjects !== 'undefined') {
-//     Object.assign(cachedobjects, JSON.parse(storedObjects));
-//     console.log('Loaded cachedobjects:', cachedobjects);
-//   } else {
-//     console.warn('No stored cachedobjects found in sessionStorage.');
-//   }
-
-//   // Always post the CACHEDOBJECT_LOADED message, whether cachedobjects were found or not
-//   iframeRef.current.contentWindow.postMessage({ type: 'CACHEDOBJECT_LOADED' }, '*');
-//   console.log('sent CACHEDOBJECT_LOADED');
-// }
-
 
 
 
@@ -562,6 +542,9 @@ function savecachedobjects(content) {
                   
                   </script>
                   <script>
+window.prevRunUserCodeTrigger = window.prevRunUserCodeTrigger || 0;
+window.prevRunClassCodeTrigger = window.prevRunClassCodeTrigger || 0;
+console.log('check triggers',window.prevRunUserCodeTrigger, window.prevRunClassCodeTrigger )
                     window.currentreuseableSVGElementList = ${JSON.stringify(currentreuseableSVGElementList)};
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
@@ -1288,12 +1271,22 @@ calculateSimilarityTransform(srcPts, dstPts, scale) {
                       }  
                       window.whole_canvas = whole_canvas;
                     }
-// Inject classcode.js before usercode.js
-                    console.log('Executing classcode.js');
-                    ${classcode.js} // Inject class-provided JS
 
+// Check if classcode.js needs to be executed
+          if (window.prevRunClassCodeTrigger != ${runClassCodeTrigger}) {
+            window.prevRunClassCodeTrigger = ${runClassCodeTrigger};
+            console.log('Executing classcode.js');
+            ${classcode.js} // Inject class-provided JS
+
+            // Optionally, save any state or objects created by classcode.js
+
+            // Since classcode.js is run independently, we might want to avoid running user.js here.
+          }
 //================user.js logic begins==============
-                    window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
+          if (window.prevRunUserCodeTrigger != ${runUserCodeTrigger}) {
+            window.prevRunUserCodeTrigger = ${runUserCodeTrigger};
+console.log('running user.js')
+window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
 function recoverClassFromClassInfo(data) {
   if (data === null || typeof data !== 'object') return data;
 
@@ -1403,39 +1396,12 @@ function isSerializedArray(obj) {
     window.addEventListener('message', messageHandler);
   });
 
-  // Function to replace promises with the string 'promise'
-// Function to replace promises with the string 'promise', while preserving class names
-// Function to replace promises with 'promise', while preserving class names
-// function replacePromisesInObject(obj) {
-//   if (obj === null || typeof obj !== 'object') return obj;
-
-//   const clonedObject = Array.isArray(obj) ? [] : { ...obj, __class__: obj.constructor.name };
-//   console.log('sending cachedobjects to window 3', clonedObject.dog1.constructor.name)
-//   for (const key in obj) {
-//     if (obj.hasOwnProperty(key)) {
-//       if (obj[key] instanceof Promise) {
-//         clonedObject[key] = 'promise';  // Replace Promises with the string 'promise'
-//       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-//         // Recursively replace promises in nested objects
-//         clonedObject[key] = replacePromisesInObject(obj[key]);
-//       } else {
-//         clonedObject[key] = obj[key];
-//       }
-//     }
-//   }
-//   console.log('sending cachedobjects to window 4', clonedObject.dog1.constructor.name)  
-
-//   return clonedObject;
-// }
-
-
-
   // // Post cachedobjects to parent for saving to cachedobjectslog
   // window.parent.postMessage({ type: 'LOG_CACHEDOBJECTS', content: window.cachedobjects }, '*');
 
 
 //   // Execute user.js only after CACHEDOBJECT_LOADED is received
-  console.log('Executing user.js');
+  // console.log('Executing user.js');
   ${usercode.js} // Inject user-provided JS
 
 // console.log('sending cachedobjects to window', window.cachedobjects.dog1.constructor.name)
@@ -1471,6 +1437,7 @@ const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
   // Send serialized cached objects back to the parent window
   window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cachedObjectsWithClassInfo }, '*');
 })();
+            }
 //================user.js logic ends==============
                   </script>
               </body>
@@ -1486,7 +1453,7 @@ const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [usercode]);
+  },  [runClassCodeTrigger, runUserCodeTrigger]);
 
   return (
     <div ref={containerRef} className="result-viewer" >

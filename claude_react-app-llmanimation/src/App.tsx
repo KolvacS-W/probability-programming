@@ -14,11 +14,28 @@ const App: React.FC = () => {
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('html');
+  const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
-    js: `// Your initial class code here`,
+    js: `console.log('class.js')`,
   });
+  const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
+  const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
+  const handleRunClassCode = () => {
+    setRunClassCodeTrigger((prev) => prev + 1);
+  };
   
+  const handleRunUserCode = (newuserCode: { js: string },) => {
+    if (currentVersionId === null) return;
+    setVersions((prevVersions) => {
+      const updatedVersions = prevVersions.map(version =>
+        version.id === currentVersionId
+          ? { ...version, usercode: newuserCode, highlightedSVGPieceList: []}
+          : version
+      );
+      return updatedVersions;
+    });
+    setRunUSerCodeTrigger((prev) => prev + 1);
+  };
   useEffect(() => {
     // Initialize the base version on load
     const baseVersion: Version = {
@@ -49,12 +66,12 @@ const App: React.FC = () => {
 </html>`},
       usercode: { js: `// Retrieve the value from cachedobjects
 console.log('check saved', window.cachedobjects);
-
-// Create canvas and rule as usual
-const canvas = new whole_canvas('azure');
-const rule = new Rule('a dog with long legs');
-rule.parameters = ['fur color']
-await rule.generateObj('dog1', ['brown'])
+console.log('user.js')
+// // Create canvas and rule as usual
+// const canvas = new whole_canvas('azure');
+// const rule = new Rule('a dog with long legs');
+// rule.parameters = ['fur color']
+// await rule.generateObj('dog1', ['brown'])
 
 ` },
       savedOldCode: { html: '', css: '', js: '' },
@@ -478,7 +495,10 @@ await rule.generateObj('dog1', ['brown'])
             /> */}
             {/* Replace DescriptionEditor with ClassEditor */}
             <div className="class-editor-container">
-              <ClassEditor classcode={classcode} setClassCode={setClassCode} />
+              <ClassEditor classcode={classcode} 
+              setClassCode={setClassCode}
+              onRunClassCode={handleRunClassCode} // Pass the handler
+               />
             </div>
 
             <CustomCodeEditor
@@ -496,7 +516,8 @@ await rule.generateObj('dog1', ['brown'])
               extractKeywords={extractKeywords}
               activeTab={activeTab} // Pass activeTab
               setActiveTab={setActiveTab} // Pass setActiveTab
-            />
+              onRunUserCode={handleRunUserCode} // Pass the handler
+              />
             <ResultViewer  
             activeTab={activeTab} 
             usercode={versions.find(version => version.id === currentVersionId)!.usercode}
@@ -505,7 +526,10 @@ await rule.generateObj('dog1', ['brown'])
             updateBackendHtml={handleUpdateBackendHtml}
             currentVersionId={currentVersionId}
             versions={versions}
-            setVersions={setVersions} />
+            setVersions={setVersions}
+            runClassCodeTrigger={runClassCodeTrigger} // Pass the trigger
+            runUserCodeTrigger= {runUserCodeTrigger}
+            />
             <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}

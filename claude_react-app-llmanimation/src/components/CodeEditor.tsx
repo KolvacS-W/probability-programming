@@ -20,6 +20,7 @@ interface CodeEditorProps {
   extractKeywords: (description: string) => KeywordTree[];
   activeTab: string;
   setActiveTab: (tab: string) => void; // Passed from parent (App component)
+  onRunUserCode: (usercode: { js: string }) => void; // Add this prop
 }
 
 const API_KEY = '';
@@ -42,6 +43,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   extractKeywords,
   activeTab,
   setActiveTab, // Received from parent
+  onRunUserCode
 }) => {
   const [backendhtml, setbackendHtml] = useState(backendcode.html);
   const [userjs, setuserJs] = useState(usercode.js);
@@ -1838,6 +1840,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
         <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
           Run
         </button>
+        <button onClick={() => onRunUserCode({ js: userjs })}>Run User Code</button>
       </div>
     </div>
   );

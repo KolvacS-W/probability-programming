@@ -6,18 +6,21 @@ interface ClassEditorProps {
     js: string;
   };
   setClassCode: React.Dispatch<React.SetStateAction<{ js: string }>>;
+  onRunClassCode: () => void; // Add this prop
 }
 
-const ClassEditor: React.FC<ClassEditorProps> = ({ classcode, setClassCode }) => {
+const ClassEditor: React.FC<ClassEditorProps> = ({ classcode, setClassCode, onRunClassCode }) => {
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   return (
-    <div className="class-editor"
-    style={{ 
-      height: '600px', 
-      width: '400px', 
-      overflow: 'auto',
-     }}>
+    <div
+      className="class-editor"
+      style={{
+        height: '600px',
+        width: '400px',
+        overflow: 'auto',
+      }}
+    >
       <CodeEditor
         value={classcode.js}
         language="js"
@@ -31,6 +34,8 @@ const ClassEditor: React.FC<ClassEditorProps> = ({ classcode, setClassCode }) =>
         ref={editorRef}
         onChange={(evn) => setClassCode({ js: evn.target.value })}
       />
+      {/* Add Run Button */}
+      <button onClick={onRunClassCode}>Run Class Code</button>
     </div>
   );
 };
