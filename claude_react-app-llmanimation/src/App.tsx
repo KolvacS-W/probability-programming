@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DescriptionEditor from './components/DescriptionEditor';
 import CustomCodeEditor from './components/CodeEditor';
 import ResultViewer from './components/ResultViewer';
+import ClassEditor from './components/ClassEditor';
+
 import './App.css';
 import { KeywordTree, Version } from './types';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +15,10 @@ const App: React.FC = () => {
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('html');
-
+  const [classcode, setClassCode] = useState<{ js: string }>({
+    js: `// Your initial class code here`,
+  });
+  
   useEffect(() => {
     // Initialize the base version on load
     const baseVersion: Version = {
@@ -462,7 +467,7 @@ await rule.generateObj('dog1', ['brown'])
       <div className="editor-section">
         {currentVersionId !== null && versions.find(version => version.id === currentVersionId) && (
           <>
-            <DescriptionEditor
+            {/* <DescriptionEditor
               onApply={handleDescriptionApply}
               savedOldCode={versions.find(version => version.id === currentVersionId)!.savedOldCode}
               onWordSelected={handleWordSelected}
@@ -470,7 +475,12 @@ await rule.generateObj('dog1', ['brown'])
               versions={versions}
               setVersions={setVersions}
               extractKeywords={extractKeywords}
-            />
+            /> */}
+            {/* Replace DescriptionEditor with ClassEditor */}
+            <div className="class-editor-container">
+              <ClassEditor classcode={classcode} setClassCode={setClassCode} />
+            </div>
+
             <CustomCodeEditor
               usercode={versions.find(version => version.id === currentVersionId)!.usercode}
               backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
@@ -489,7 +499,8 @@ await rule.generateObj('dog1', ['brown'])
             />
             <ResultViewer  
             activeTab={activeTab} 
-            usercode={versions.find(version => version.id === currentVersionId)!.usercode} 
+            usercode={versions.find(version => version.id === currentVersionId)!.usercode}
+            classcode={classcode} // Pass classcode to ResultViewer 
             backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
             updateBackendHtml={handleUpdateBackendHtml}
             currentVersionId={currentVersionId}

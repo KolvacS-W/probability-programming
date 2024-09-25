@@ -9,6 +9,9 @@ interface ResultViewerProps {
   backendcode: {
     html: string;
   };
+  classcode: {
+    js: string;
+  };
   activeTab: string;
   updateBackendHtml: (newHtml: string) => void;
 
@@ -22,7 +25,7 @@ const ngrok_url = 'https://772b-35-231-127-253.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
+const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode,activeTab, updateBackendHtml, currentVersionId, setVersions, versions, }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1285,11 +1288,12 @@ calculateSimilarityTransform(srcPts, dstPts, scale) {
                       }  
                       window.whole_canvas = whole_canvas;
                     }
+// Inject classcode.js before usercode.js
+                    console.log('Executing classcode.js');
+                    ${classcode.js} // Inject class-provided JS
+
+//================user.js logic begins==============
                     window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
-
-
-
-
 function recoverClassFromClassInfo(data) {
   if (data === null || typeof data !== 'object') return data;
 
@@ -1377,7 +1381,7 @@ function isSerializedArray(obj) {
 
 
 
-                    // No timeout, keep waiting for CACHEDOBJECT_LOADED indefinitely before executing user.js
+// No timeout, keep waiting for CACHEDOBJECT_LOADED indefinitely before executing user.js
 (async function () {
   console.log('Waiting for CACHEDOBJECT_LOADED event...');
   
@@ -1467,6 +1471,7 @@ const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
   // Send serialized cached objects back to the parent window
   window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cachedObjectsWithClassInfo }, '*');
 })();
+//================user.js logic ends==============
                   </script>
               </body>
               </html>

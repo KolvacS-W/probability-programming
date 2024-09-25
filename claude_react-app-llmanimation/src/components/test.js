@@ -1,90 +1,175 @@
-class GeneratedObject {
-  constructor(objname, svgcode, templatecode, rule) {
-    this.objname = objname
-    this.svgcode = svgcode
-    this.template = new ObjectTemplate(templatecode, rule)
-    this.rule = rule
+async draw() {
+  console.log('object draw called', this.basic_prompt);
 
-    // Automatically save the generated object into cachedobjects using codename
-    window.cachedobjects[objname] = this;
-  }
-  
-  placeObj(canvas, coord, scale = 1) {
-      const content = this.svgcode
-      const svgElement = this.createSVGElement(content, coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale);
-      console.log('svgelement placing', coord, canvas.canvasContainer.offsetWidth, canvas.canvasContainer.offsetHeight, scale, svgElement)
-      canvas.canvasContainer.appendChild(svgElement);
-  }
-                          createSVGElement(svgContent, coord, canvasWidth, canvasHeight, scale) {
-const svgWrapper = document.createElement('div');
-svgWrapper.innerHTML = svgContent.trim();
-const svgElement = svgWrapper.firstElementChild;
+  if (!(this.useobj.objname)){
+    var APIprompt = '';
 
-// Get the original dimensions of the SVG
-const viewBox = svgElement.viewBox.baseVal;
-const originalWidth = viewBox.width;
-const originalHeight = viewBox.height;
+    if(this.modifyobj.objname){
+      console.log('modify obj')
+      const codename = this.modifyobj.objname
+      const codelist = window.currentreuseableSVGElementList
+      console.log('check codelist in ref', codelist)
+      var existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+      console.log('draw with ref code:', existingcode)
 
-// Calculate the scaled dimensions
-const scaledWidth = originalWidth * scale;
-const scaledHeight = originalHeight * scale;
-
-// Calculate the percentage-based coordinates
-const leftPercent = (coord.x );
-const topPercent = (coord.y );
-
-// Position the SVG so that it is centered at the given coordinates
-svgElement.style.position = 'absolute';
-// svgElement.style.left = \`\${leftPercent}%\`;
-// svgElement.style.top = \`\${topPercent}%\`;
-svgElement.style.transform = `translate(`+`${leftPercent}%`+`, `+`${topPercent}%`+`) translate(-50%, -50%) scale(${scale})`; // Center the SVG element
-
-return svgElement;
-}
-}  
-
-//another class
-class ObjectTemplate {
-  constructor(templatecode, rule) {
-    this.templatecode = templatecode
-    this.rule = rule
-  }
-  async createObj(name, parameterContents = []){
-      var obj;
-      // need to parameterize
-      const parameters = this.rule.parameters;
-    
-      // Replace the placeholders in the SVG string with actual parameter contents
-      var svgHTML = this.templatecode
-      // const svgString = svgElement.outerHTML;
-
-      parameters.forEach((param, index) => {
-          const placeholder = '{' + param + '}';
-          svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
-      });
-
-      //save the new obj to app
-      const codename = name;
-      // Send the message to update the reusable element list
-      window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
-      console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
-
-      // Wait for the confirmation after sending the message
+      if ((this.modifyobj.piecenames.length)>0) {
+      //get svgpiecelist from react app
+      console.log('modify obj and modify pieces')
+      window.parent.postMessage({ type: 'GET_SVGPIECELIST'}, '*');
+      let currenthighlightedSVGPieceList = []
       await new Promise((resolve) => {
           const messageHandler = (event) => {
-              if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                  window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
-                  console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+              if (event.data.type === 'RETURN_SVGPIECELIST') {
+                  console.log('get returned svglist', event.data.currenthighlightedSVGPieceList)
+                  currenthighlightedSVGPieceList = event.data.currenthighlightedSVGPieceList
                   window.removeEventListener('message', messageHandler);
                   resolve(); // Resolve the promise to continue execution
               }
           };
           window.addEventListener('message', messageHandler);
       });
-      //create obj instance
-      //console.log('creating obj in template.createobj', this.rule)
-      obj = new GeneratedObject(name, svgHTML, this.templatecode, this.rule)
-      //console.log('returning obj:', obj)
-      return obj; // Return the codename
+
+
+
+          // Create a new list: piececode by getting codeText using this.piecemodify elements as codeName from window.currentreuseablesvgpieces
+          let piececode = this.modifyobj.piecenames.map(codeName => {
+              const piece = currenthighlightedSVGPieceList.find(item => item.codeName === codeName);
+              return piece ? piece.codeText : null;
+          }).filter(codeText => codeText !== null);
+
+          // Initialize the APIprompt
+          let modifyprompt = '';
+
+          // For each element A in piececode and element B in piecemodify, create a prompt
+          piececode.forEach((codePiece, index) => {
+              const modification = this.modifyobj.pieceprompts[index];
+              modifyprompt += `Make modification:` +  modification + ` to svg code piece:` + codePiece+`. `;
+          });
+
+          //have params
+          if(this.parameters.length >0){
+          existingcode = window.cachedobjects[codename].template.templatecode
+            APIprompt = `you are giving an svg template code generated by this rule: write me svg code to create a svg image of ` + this.basic_prompt +`. Make the svg image as detailed as possible and as close to the description as possible.  
+        Furthermore, process the generated svg code into a svg code template, with the given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
+        For example, parameter list: roof height, window color; resulting svg template:
+        <svg viewBox="0 0 200 200">
+        <rect x="50" y="70" width="100" height="80" fill="brown" /> <!-- House body -->
+        <polygon points="50,70 100,{roof height} 150,70" fill="red" /> <!-- Roof -->
+        <rect x="65" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 1 -->
+        <rect x="115" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 2 -->
+        <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
+        </svg>.
+        
+        Notice that only one parameter name and nothing else can be inside {}. Replace the whole parameter (e.g., fill = "#e0d0c0" to fill = "{parameter name}") instead of just part of it (e.g., fill = "#e0d0c0" to fill = "#{parameter name}"). Return svg code template for this parameter list:` + this.parameters.join(', ')+`. Do not include any background in generated svg. 
+        The svg code template must be able to satify the requirements of the parameters by simply replacing the placeholders, instead of other manual modifications (e.g., 'window number' can be modified by simply replacing {window number} to some data, instead of needing to repeat window element manually)
+        Make sure donot include anything other than the final svg code template in your response.
+        This is the svg template code generated by the above rule: `+ existingcode
+      
+        +`Now, you are going to make these modifications to the given svg template: `+ modifyprompt +`
+        As long as the svg follows the description, make as little change as possible other than the specific svg elements mentioned above. Make no changes to the placeholder part. Make sure donot include anything other than the svg template code in your response
+        `
+          }
+          //no params
+          else{
+            APIprompt = 'Modify an existing svg code: '+existingcode+ ', to create a ' + this.basic_prompt +'. Make these modifications on specific svg elements: ' + modifyprompt +'. Do not include any background in generated svg. As long as the svg follows the description, make as little change as possible other than the specific svg elements mentioned above. Make sure donot include anything other than the svg code in your response.';                                
+          }
+      }
+
+        else{
+            console.log('modifyobj-no pieces')
+            if(this.parameters.length >0){
+              existingcode = window.cachedobjects[codename].template.templatecode
+                APIprompt = `you are giving an svg template code generated by this rule: write me svg code to create a svg image of ` + this.basic_prompt +`. Make the svg image as detailed as possible and as close to the description as possible.  
+            Furthermore, process the generated svg code into a svg code template, with the given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
+            For example, parameter list: roof height, window color; resulting svg template:
+            <svg viewBox="0 0 200 200">
+            <rect x="50" y="70" width="100" height="80" fill="brown" /> <!-- House body -->
+            <polygon points="50,70 100,{roof height} 150,70" fill="red" /> <!-- Roof -->
+            <rect x="65" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 1 -->
+            <rect x="115" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 2 -->
+            <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
+            </svg>.
+            
+            Notice that only one parameter name and nothing else can be inside {}. Replace the whole parameter (e.g., fill = "#e0d0c0" to fill = "{parameter name}") instead of just part of it (e.g., fill = "#e0d0c0" to fill = "#{parameter name}"). Return svg code template for this parameter list:` + this.parameters.join(', ')+`. Do not include any background in generated svg. 
+            The svg code template must be able to satify the requirements of the parameters by simply replacing the placeholders, instead of other manual modifications (e.g., 'window number' can be modified by simply replacing {window number} to some data, instead of needing to repeat window element manually)
+            Make sure donot include anything other than the final svg code template in your response.
+            This is the svg template code generated by the above rule: `+ existingcode
+          
+            +`Now, you are going to make these modifications to the given svg template: `+ modifyprompt +`
+            As long as the svg follows the description, make as little change as possible other than the specific svg elements mentioned above. Make no changes to the placeholder part. Make sure donot include anything other than the svg template code in your response
+            `
+              }
+            else{
+              //there are no params
+              APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '. If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+            }
+        }
+      }
+
+    else{
+      console.log('no existing code', this.parameters)
+      if(this.parameters.length >0){
+        APIprompt = `write me svg code to create a svg image of ` + this.basic_prompt +`. Make the svg image as detailed as possible and as close to the description as possible.  
+        Furthermore, process the generated svg code into a svg code template, with the given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
+        For example, parameter list: roof height, window color; resulting svg template:
+        <svg viewBox="0 0 200 200">
+        <rect x="50" y="70" width="100" height="80" fill="brown" /> <!-- House body -->
+        <polygon points="50,70 100,{roof height} 150,70" fill="red" /> <!-- Roof -->
+        <rect x="65" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 1 -->
+        <rect x="115" y="90" width="20" height="20" fill="{window color}" /> <!-- Window 2 -->
+        <rect x="90" y="120" width="20" height="30" fill="black" /> <!-- Door -->
+        </svg>.
+        
+        Notice that only one parameter name and nothing else can be inside {}. Replace the whole parameter (e.g., fill = "#e0d0c0" to fill = "{parameter name}") instead of just part of it (e.g., fill = "#e0d0c0" to fill = "#{parameter name}"). Return svg code template for this parameter list:` + this.parameters.join(', ')+`. Do not include any background in generated svg. 
+        The svg code template must be able to satify the requirements of the parameters by simply replacing the placeholders, instead of other manual modifications (e.g., 'window number' can be modified by simply replacing {window number} to some data, instead of needing to repeat window element manually)
+        Make sure donot include anything other than the final svg code template in your response.`;
+      }
+      else{
+        APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+      }
+    }
+
+    console.log('api prompt', APIprompt);
+    console.log(this.ngrok_url_sonnet);
+
+    try {
+      const response = await axios.post(this.ngrok_url_sonnet, {
+        prompt: APIprompt
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = response.data;
+      const content = data?.content;
+      console.log('Content from API call:', content);
+
+      if (content) {
+        // const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+        // canvas.appendChild(svgElement);
+        // console.log('svgElement is', svgElement);
+        // return svgElement;
+        return content
+      }
+    } catch (error) {
+      console.error('Error drawing the shape:', error);
+    }                          
   }
-}  
+
+else{
+    const codelist = window.currentreuseableSVGElementList
+    const codename = this.useobj.objname
+    const existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
+    console.log('draw with fixed code:', existingcode)
+    const content = existingcode;
+
+    if (content) {
+      // const svgElement = this.createSVGElement(content, coord, canvas.offsetWidth, canvas.offsetHeight, scale);
+      // canvas.appendChild(svgElement);
+      // console.log('svgElement is', svgElement);
+      // return svgElement;
+      return content
+    }                            
+  }                          
+}
