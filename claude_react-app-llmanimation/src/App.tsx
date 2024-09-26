@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import DescriptionEditor from './components/DescriptionEditor';
 import CustomCodeEditor from './components/CodeEditor';
 import ResultViewer from './components/ResultViewer';
@@ -16,13 +16,29 @@ const App: React.FC = () => {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
-    js: `console.log('class.js')`,
+    js: `console.log('class.js')
+
+const c = 11
+
+console.log(c)`,
   });
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
+  
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const handleRunClassCode = () => {
-    setRunClassCodeTrigger((prev) => prev + 1);
+    console.log('posting msg EXECUTE_CLASSCODE')
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: 'EXECUTE_CLASSCODE',
+          classcode: classcode.js,
+        },
+        '*'
+      );
+    }
   };
+  
   
   const handleRunUserCode = (newuserCode: { js: string },) => {
     if (currentVersionId === null) return;
@@ -34,7 +50,15 @@ const App: React.FC = () => {
       );
       return updatedVersions;
     });
-    setRunUSerCodeTrigger((prev) => prev + 1);
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: 'EXECUTE_USERCODE',
+          usercode: newuserCode.js,
+        },
+        '*'
+      );
+    }
   };
   useEffect(() => {
     // Initialize the base version on load
@@ -66,7 +90,7 @@ const App: React.FC = () => {
 </html>`},
       usercode: { js: `// Retrieve the value from cachedobjects
 console.log('check saved', window.cachedobjects);
-console.log('user.js')
+console.log('user.js??', c)
 // // Create canvas and rule as usual
 // const canvas = new whole_canvas('azure');
 // const rule = new Rule('a dog with long legs');
@@ -527,8 +551,7 @@ console.log('user.js')
             currentVersionId={currentVersionId}
             versions={versions}
             setVersions={setVersions}
-            runClassCodeTrigger={runClassCodeTrigger} // Pass the trigger
-            runUserCodeTrigger= {runUserCodeTrigger}
+            iframeRef={iframeRef}
             />
             <ReusableElementToolbar
               currentVersionId={currentVersionId}

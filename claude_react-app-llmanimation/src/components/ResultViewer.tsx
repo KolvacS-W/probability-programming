@@ -12,22 +12,21 @@ interface ResultViewerProps {
   classcode: {
     js: string;
   };
+  iframeRef: React.RefObject<HTMLIFrameElement>;
   activeTab: string;
   updateBackendHtml: (newHtml: string) => void;
 
   currentVersionId: string | null;
   setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
   versions: Version[];
-  runClassCodeTrigger: number; // Add this prop
-  runUserCodeTrigger: number; // Add this prop
 }
 
 const ngrok_url = 'https://772b-35-231-127-253.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode,activeTab, updateBackendHtml, currentVersionId, setVersions, versions, runClassCodeTrigger, runUserCodeTrigger}) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, iframeRef}) => {
+  // const iframeRef = useRef<HTMLIFrameElement>(null);
   // console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);
   var currentreuseableSVGElementList = versions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
@@ -187,297 +186,302 @@ function savecachedobjects(content) {
   
   useEffect(() => {
 
+
+    
+
+  },  []);
+  const handleIframeLoad = () => {
+    console.log('handleIframeLoad called')
     const handleIframeMessage = (event: MessageEvent) => {
 
-        // NEW: Handle saving cachedobjects to sessionStorage
-  if (event.data.type === 'SAVE_CACHEDOBJECTS') {
-    // console.log('Saving window object', event.data.content.dog1.constructor.name);
-    savecachedobjects(event.data.content);
-  }
+      // NEW: Handle saving cachedobjects to sessionStorage
+if (event.data.type === 'SAVE_CACHEDOBJECTS') {
+  // console.log('Saving window object', event.data.content.dog1.constructor.name);
+  savecachedobjects(event.data.content);
+}
 
-  // NEW: Handle loading cachedobjects from sessionStorage
-  if (event.data.type === 'LOAD_CACHEDOBJECT') {
-    console.log('Loading window object');
-    // loadcachedobjects();
-    sendcachedobjectsToIframe();
-  }
-  //to log cachedobjects in version, for usage in widgets
-  if (event.data.type === 'LOG_CACHEDOBJECTS') {
-    setVersions(prevVersions => {
-      const updatedVersions = prevVersions.map(version => {
-        if (version.id === currentVersionId) {
-          return { ...version, cachedobjectslog: event.data.content  };
-        }
-        return version;
-      });
-
-      console.log('logging cachedobjects into version version:', currentVersionId);
-      return updatedVersions;
+// NEW: Handle loading cachedobjects from sessionStorage
+if (event.data.type === 'LOAD_CACHEDOBJECT') {
+  console.log('Loading window object');
+  // loadcachedobjects();
+  sendcachedobjectsToIframe();
+}
+//to log cachedobjects in version, for usage in widgets
+if (event.data.type === 'LOG_CACHEDOBJECTS') {
+  setVersions(prevVersions => {
+    const updatedVersions = prevVersions.map(version => {
+      if (version.id === currentVersionId) {
+        return { ...version, cachedobjectslog: event.data.content  };
+      }
+      return version;
     });
-  }
 
-  
-      
-      if (event.data.type === 'UPDATE_HTML') {
-        updateBackendHtml(event.data.html); // Update the backend HTML in the React app
-        console.log('backendhtml updated to app', event.data.html);
-      }
-  
-      if (event.data.type === 'UPDATE_REUSEABLE') {
-        const newElement = {
-          codeName: event.data.codename,
-          codeText: event.data.codetext,
-          selected: false,
-        };
-  
-        // Update the reusable element list and then check the updated list
-        setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version => {
-            if (version.id === currentVersionId) {
-              const updatedreuseableSVGElementList = version.reuseableSVGElementList.map(element =>
-                element.codeName === newElement.codeName ? newElement : element
-              );
-  
-              if (!updatedreuseableSVGElementList.some(element => element.codeName === newElement.codeName)) {
-                updatedreuseableSVGElementList.push(newElement);
-              }
-  
-              return { ...version, reuseableSVGElementList: updatedreuseableSVGElementList };
-            }
-            return version;
-          });
-  
-          // Now check if the `currentreuseableSVGElementList` has been updated correctly
-          const currentreuseableSVGElementList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
-  
-          console.log('check currentreuseableSVGElementList', currentreuseableSVGElementList, updatedVersions);
-  
-          if (currentreuseableSVGElementList && currentreuseableSVGElementList.some(element => element.codeName === event.data.codename)) {
-            iframeRef.current.contentWindow.postMessage(
-              {
-                type: 'UPDATE_REUSEABLE_CONFIRMED',
-                codename: event.data.codename,
-                reuseableSVGElementList: currentreuseableSVGElementList,
-              },
-              '*'
-            );
-            console.log(
-              'posted UPDATE_REUSEABLE_CONFIRMED to iframe',
-              currentreuseableSVGElementList,
-              updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList
-            );
-          }
-  
-          return updatedVersions;
-        });
-      }
+    console.log('logging cachedobjects into version version:', currentVersionId);
+    return updatedVersions;
+  });
+}
 
-      if (event.data.type === 'EMPTY_SVGPIECE') {
-        // Empty the highlightedSVGPieceList of the current version
-        setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version => {
-            if (version.id === currentVersionId) {
-              return { ...version, highlightedSVGPieceList: [] };
-            }
-            return version;
-          });
-  
-          console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
-          return updatedVersions;
-        });
-      }
 
-      if (event.data.type === 'REMOVE_SVGPIECE') {
-        console.log('removing svg:', event.data.codetext)
-        // Remove a specific SVG piece from the highlightedSVGPieceList by matching codeText
-        setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version => {
-            if (version.id === currentVersionId) {
-              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.filter(
-                element => element.codeText !== event.data.codetext
-              ) || [];
-  
-              return { ...version, highlightedSVGPieceList: updatedhighlightedSVGPieceList };
-            }
-            return version;
-          });
-          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
-          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList;
-              
-          console.log('check currenthighlightedSVGPieceList', currenthighlightedSVGPieceList, updatedVersions);
+    
+    if (event.data.type === 'UPDATE_HTML') {
+      updateBackendHtml(event.data.html); // Update the backend HTML in the React app
+      console.log('backendhtml updated to app', event.data.html);
+    }
 
-          return updatedVersions;
-        });
-        
-      }
+    if (event.data.type === 'UPDATE_REUSEABLE') {
+      const newElement = {
+        codeName: event.data.codename,
+        codeText: event.data.codetext,
+        selected: false,
+      };
 
-      if (event.data.type === 'GET_SVGPIECELIST') {
-        console.log('GET_SVGPIECELIST returning', versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList)
-        const currenthighlightedSVGPieceList = versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
-        if (currenthighlightedSVGPieceList) {
-          iframeRef.current.contentWindow.postMessage(
-            {
-              type: 'RETURN_SVGPIECELIST',
-              currenthighlightedSVGPieceList: currenthighlightedSVGPieceList,
-            },
-            '*'
-          );
-          console.log('GET_SVGPIECELIST returned')
-        }
-      }
-  
-      if (event.data.type === 'UPDATE_SVGPIECE') {
-        console.log('added svg:', event.data.codetext);
-        const newElementBaseName = event.data.codename;
-        let newElementName = newElementBaseName;
-        const newElement = {
-          codeName: newElementName,
-          codeText: event.data.codetext,
-          selected: false,
-        };
-      
-        // Update the reusable SVG piece list and then check the updated list
-        setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version => {
-            if (version.id === currentVersionId) {
-              const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.slice() || [];
-              const updatedpreviousSelectedSVGPieceList = version.previousSelectedSVGPieceList ? [...version.previousSelectedSVGPieceList] : []; 
-      
-              // Check if there are already elements with the same base name
-              // the naming index is defined by previousSelectedSVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
-              const existingElements = updatedpreviousSelectedSVGPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
-      
-              if (existingElements.length > 0) {
-                // Find the biggest index after the underscore in the existing elements
-                const maxIndex = existingElements
-                  .map(element => {
-                    const parts = element.codeName.split('_');
-                    return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : 0;
-                  })
-                  .reduce((max, current) => Math.max(max, current), -1);
-      
-                // Set the new codename with the incremented index
-                newElementName = `${newElementBaseName}_${maxIndex + 1}`;
-                newElement.codeName = newElementName;
-              } else {
-                // No elements with the same base name, use basename_0
-                newElementName = `${newElementBaseName}_0`;
-                newElement.codeName = newElementName;
-              }
-      
-              updatedhighlightedSVGPieceList.push(newElement);
-              updatedpreviousSelectedSVGPieceList.push(newElement);
-      
-              return { 
-                ...version, 
-                highlightedSVGPieceList: updatedhighlightedSVGPieceList, 
-                previousSelectedSVGPieceList: updatedpreviousSelectedSVGPieceList 
-              };
-            }
-            return version;
-          });
-      
-          // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
-          const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
-      
-          console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList);
-          console.log('check all previously selected SvgPieceList in update', currenthighlightedSVGPieceList);
-      
-          return updatedVersions;
-        });
-      }
-      
-      
-      if (event.data.type === 'CODE2DESC') {
-        handleCode2Desc(currentVersionId, event.data.code);
-        console.log('code2desc called');
-      }
-    };
-
-    const saveVersionToHistory = (currentVersionId: string) => {
-      setVersions((prevVersions) => {
-        const updatedVersions = prevVersions.map((version) => {
+      // Update the reusable element list and then check the updated list
+      setVersions(prevVersions => {
+        const updatedVersions = prevVersions.map(version => {
           if (version.id === currentVersionId) {
-            const historyVersion = { ...version, id: `${currentVersionId}-history` };
-            return { ...version, history: historyVersion };
+            const updatedreuseableSVGElementList = version.reuseableSVGElementList.map(element =>
+              element.codeName === newElement.codeName ? newElement : element
+            );
+
+            if (!updatedreuseableSVGElementList.some(element => element.codeName === newElement.codeName)) {
+              updatedreuseableSVGElementList.push(newElement);
+            }
+
+            return { ...version, reuseableSVGElementList: updatedreuseableSVGElementList };
           }
           return version;
         });
-        return updatedVersions;
-      });
-    };
 
-    const handleCode2Desc = async (versionId: string, code: string) => {
-      saveVersionToHistory(versionId);
-      if (!versionId) return;
-  
-      setVersions((prevVersions) => {
-        const updatedVersions = prevVersions.map(version =>
-          version.id === versionId
-            ? { ...version, loading: true }
-            : version
-        );
+        // Now check if the `currentreuseableSVGElementList` has been updated correctly
+        const currentreuseableSVGElementList = updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList;
+
+        console.log('check currentreuseableSVGElementList', currentreuseableSVGElementList, updatedVersions);
+
+        if (currentreuseableSVGElementList && currentreuseableSVGElementList.some(element => element.codeName === event.data.codename)) {
+          iframeRef.current.contentWindow.postMessage(
+            {
+              type: 'UPDATE_REUSEABLE_CONFIRMED',
+              codename: event.data.codename,
+              reuseableSVGElementList: currentreuseableSVGElementList,
+            },
+            '*'
+          );
+          console.log(
+            'posted UPDATE_REUSEABLE_CONFIRMED to iframe',
+            currentreuseableSVGElementList,
+            updatedVersions.find(version => version.id === currentVersionId)?.reuseableSVGElementList
+          );
+        }
+
         return updatedVersions;
       });
-  
-      const prompt = `Based on the following code with annotations, provide an updated description. Code:`+ code +
-      `Create the description by:
-      1): create a backbone description with the annotations
-      2): finding important entities in the backbone description (for example, 'planet', 'shape', 'color', and 'move' are all entities) and inserting [] around them 
-      3): inserting a detail wrapped in {} behind each entity according to the code (make sure to add all the details about the entity in the code, including all the variable names, numbers, specific svg path coordinates, and parameters. For example, add the number of planets and each planet's dom element type, class, style features, and name to entity 'planet').\\
-      New description format:\\
-      xxxxx[entity1]{detail for entity1}xxxx[entity2]{detail for entity2}... \\ 
-      Important: The entities must be within the old description already instead of being newly created. Find as many entities in the old description as possible. Each entity and each detail are wrapped in a [] and {} respectively. Other than the two symbols ([], {}) and added details, the updated description should be exactly the same as the old description. Include nothing but the new description in the response.\\
-      If there are svg paths or customized polygons in the code, the coordinates and points must be included in details.
-      Example: 
-      old description: Polygons moving and growing
-      output updated description:
-      [polygons]{two different polygon elements, polygon1 and polygon2 colored red and blue respectively, each defined by three points to form a triangle shape} [moving]{motion defined along path1-transparent fill and black stroke, and path2 -transparent fill and black stroke} and [growing]{size oscillates between 1 and 2 over a duration of 2000ms with easing}`;
-  ;
-      console.log('code2desc prompt', prompt)
-  
-      try {
-        const response = await axios.post(ngrok_url_sonnet, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ prompt: prompt })
+    }
+
+    if (event.data.type === 'EMPTY_SVGPIECE') {
+      // Empty the highlightedSVGPieceList of the current version
+      setVersions(prevVersions => {
+        const updatedVersions = prevVersions.map(version => {
+          if (version.id === currentVersionId) {
+            return { ...version, highlightedSVGPieceList: [] };
+          }
+          return version;
         });
-  
-        const data = await response.data;
-        const content = data?.content;
-        console.log('content from code2text:', content);
-  
-        if (content) {
-          const updatedDescription = content.replace('] {', ']{').replace(']\n{', ']{');
-          setVersions((prevVersions) => {
-            const updatedVersions = prevVersions.map(version =>
-              version.id === versionId
-                ? {
-                    ...version,
-                    description: updatedDescription,
-                    savedOldDescription: updatedDescription,
-                  }
-                : version
-            );
-            return updatedVersions;
-          });
+
+        console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
+        return updatedVersions;
+      });
+    }
+
+    if (event.data.type === 'REMOVE_SVGPIECE') {
+      console.log('removing svg:', event.data.codetext)
+      // Remove a specific SVG piece from the highlightedSVGPieceList by matching codeText
+      setVersions(prevVersions => {
+        const updatedVersions = prevVersions.map(version => {
+          if (version.id === currentVersionId) {
+            const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.filter(
+              element => element.codeText !== event.data.codetext
+            ) || [];
+
+            return { ...version, highlightedSVGPieceList: updatedhighlightedSVGPieceList };
+          }
+          return version;
+        });
+        // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+        const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList;
+            
+        console.log('check currenthighlightedSVGPieceList', currenthighlightedSVGPieceList, updatedVersions);
+
+        return updatedVersions;
+      });
+      
+    }
+
+    if (event.data.type === 'GET_SVGPIECELIST') {
+      console.log('GET_SVGPIECELIST returning', versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList)
+      const currenthighlightedSVGPieceList = versions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
+      if (currenthighlightedSVGPieceList) {
+        iframeRef.current.contentWindow.postMessage(
+          {
+            type: 'RETURN_SVGPIECELIST',
+            currenthighlightedSVGPieceList: currenthighlightedSVGPieceList,
+          },
+          '*'
+        );
+        console.log('GET_SVGPIECELIST returned')
+      }
+    }
+
+    if (event.data.type === 'UPDATE_SVGPIECE') {
+      console.log('added svg:', event.data.codetext);
+      const newElementBaseName = event.data.codename;
+      let newElementName = newElementBaseName;
+      const newElement = {
+        codeName: newElementName,
+        codeText: event.data.codetext,
+        selected: false,
+      };
+    
+      // Update the reusable SVG piece list and then check the updated list
+      setVersions(prevVersions => {
+        const updatedVersions = prevVersions.map(version => {
+          if (version.id === currentVersionId) {
+            const updatedhighlightedSVGPieceList = version.highlightedSVGPieceList?.slice() || [];
+            const updatedpreviousSelectedSVGPieceList = version.previousSelectedSVGPieceList ? [...version.previousSelectedSVGPieceList] : []; 
+    
+            // Check if there are already elements with the same base name
+            // the naming index is defined by previousSelectedSVGPieceList, which stores all the elements needed to be modified and not removed when user de-highlight
+            const existingElements = updatedpreviousSelectedSVGPieceList.filter(element => element.codeName.startsWith(newElementBaseName));
+    
+            if (existingElements.length > 0) {
+              // Find the biggest index after the underscore in the existing elements
+              const maxIndex = existingElements
+                .map(element => {
+                  const parts = element.codeName.split('_');
+                  return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : 0;
+                })
+                .reduce((max, current) => Math.max(max, current), -1);
+    
+              // Set the new codename with the incremented index
+              newElementName = `${newElementBaseName}_${maxIndex + 1}`;
+              newElement.codeName = newElementName;
+            } else {
+              // No elements with the same base name, use basename_0
+              newElementName = `${newElementBaseName}_0`;
+              newElement.codeName = newElementName;
+            }
+    
+            updatedhighlightedSVGPieceList.push(newElement);
+            updatedpreviousSelectedSVGPieceList.push(newElement);
+    
+            return { 
+              ...version, 
+              highlightedSVGPieceList: updatedhighlightedSVGPieceList, 
+              previousSelectedSVGPieceList: updatedpreviousSelectedSVGPieceList 
+            };
+          }
+          return version;
+        });
+    
+        // Now check if the `currenthighlightedSVGPieceList` has been updated correctly
+        const currenthighlightedSVGPieceList = updatedVersions.find(version => version.id === currentVersionId)?.previousSelectedSVGPieceList;
+    
+        console.log('check highlighted SvgPieceList in update', updatedVersions.find(version => version.id === currentVersionId)?.highlightedSVGPieceList);
+        console.log('check all previously selected SvgPieceList in update', currenthighlightedSVGPieceList);
+    
+        return updatedVersions;
+      });
+    }
+    
+    
+    if (event.data.type === 'CODE2DESC') {
+      handleCode2Desc(currentVersionId, event.data.code);
+      console.log('code2desc called');
+    }
+  };
+
+  const saveVersionToHistory = (currentVersionId: string) => {
+    setVersions((prevVersions) => {
+      const updatedVersions = prevVersions.map((version) => {
+        if (version.id === currentVersionId) {
+          const historyVersion = { ...version, id: `${currentVersionId}-history` };
+          return { ...version, history: historyVersion };
         }
-      } catch (error) {
-        console.error("Error processing update code request:", error);
-      } finally {
+        return version;
+      });
+      return updatedVersions;
+    });
+  };
+
+  const handleCode2Desc = async (versionId: string, code: string) => {
+    saveVersionToHistory(versionId);
+    if (!versionId) return;
+
+    setVersions((prevVersions) => {
+      const updatedVersions = prevVersions.map(version =>
+        version.id === versionId
+          ? { ...version, loading: true }
+          : version
+      );
+      return updatedVersions;
+    });
+
+    const prompt = `Based on the following code with annotations, provide an updated description. Code:`+ code +
+    `Create the description by:
+    1): create a backbone description with the annotations
+    2): finding important entities in the backbone description (for example, 'planet', 'shape', 'color', and 'move' are all entities) and inserting [] around them 
+    3): inserting a detail wrapped in {} behind each entity according to the code (make sure to add all the details about the entity in the code, including all the variable names, numbers, specific svg path coordinates, and parameters. For example, add the number of planets and each planet's dom element type, class, style features, and name to entity 'planet').\\
+    New description format:\\
+    xxxxx[entity1]{detail for entity1}xxxx[entity2]{detail for entity2}... \\ 
+    Important: The entities must be within the old description already instead of being newly created. Find as many entities in the old description as possible. Each entity and each detail are wrapped in a [] and {} respectively. Other than the two symbols ([], {}) and added details, the updated description should be exactly the same as the old description. Include nothing but the new description in the response.\\
+    If there are svg paths or customized polygons in the code, the coordinates and points must be included in details.
+    Example: 
+    old description: Polygons moving and growing
+    output updated description:
+    [polygons]{two different polygon elements, polygon1 and polygon2 colored red and blue respectively, each defined by three points to form a triangle shape} [moving]{motion defined along path1-transparent fill and black stroke, and path2 -transparent fill and black stroke} and [growing]{size oscillates between 1 and 2 over a duration of 2000ms with easing}`;
+;
+    console.log('code2desc prompt', prompt)
+
+    try {
+      const response = await axios.post(ngrok_url_sonnet, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: prompt })
+      });
+
+      const data = await response.data;
+      const content = data?.content;
+      console.log('content from code2text:', content);
+
+      if (content) {
+        const updatedDescription = content.replace('] {', ']{').replace(']\n{', ']{');
         setVersions((prevVersions) => {
           const updatedVersions = prevVersions.map(version =>
             version.id === versionId
-              ? { ...version, loading: false }
+              ? {
+                  ...version,
+                  description: updatedDescription,
+                  savedOldDescription: updatedDescription,
+                }
               : version
           );
           return updatedVersions;
         });
       }
-    };
-
+    } catch (error) {
+      console.error("Error processing update code request:", error);
+    } finally {
+      setVersions((prevVersions) => {
+        const updatedVersions = prevVersions.map(version =>
+          version.id === versionId
+            ? { ...version, loading: false }
+            : version
+        );
+        return updatedVersions;
+      });
+    }
+  };
     window.addEventListener('message', handleIframeMessage);
     if (iframeRef.current) {
       const iframe = iframeRef.current;
@@ -542,9 +546,7 @@ function savecachedobjects(content) {
                   
                   </script>
                   <script>
-window.prevRunUserCodeTrigger = window.prevRunUserCodeTrigger || 0;
-window.prevRunClassCodeTrigger = window.prevRunClassCodeTrigger || 0;
-console.log('check triggers',window.prevRunUserCodeTrigger, window.prevRunClassCodeTrigger )
+
                     window.currentreuseableSVGElementList = ${JSON.stringify(currentreuseableSVGElementList)};
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
@@ -1273,18 +1275,24 @@ calculateSimilarityTransform(srcPts, dstPts, scale) {
                     }
 
 // Check if classcode.js needs to be executed
-          if (window.prevRunClassCodeTrigger != ${runClassCodeTrigger}) {
-            window.prevRunClassCodeTrigger = ${runClassCodeTrigger};
-            console.log('Executing classcode.js');
-            ${classcode.js} // Inject class-provided JS
-
-            // Optionally, save any state or objects created by classcode.js
-
-            // Since classcode.js is run independently, we might want to avoid running user.js here.
-          }
+              // Message listener to execute code
+              window.addEventListener('message', function(event) {
+                console.log('listening to execute calls??')
+                if (event.data.type === 'EXECUTE_CLASSCODE') {
+                  // Execute classcode.js
+                  console.log('Executing classcode.js');
+                  try {
+                    (0, eval)(event.data.classcode); // Executes in global scope
+                  } catch (e) {
+                    console.error('Error executing classcode.js:', e);
+                  }
+                }
+            })
+                // console.log('check variable', c)
 //================user.js logic begins==============
-          if (window.prevRunUserCodeTrigger != ${runUserCodeTrigger}) {
-            window.prevRunUserCodeTrigger = ${runUserCodeTrigger};
+window.addEventListener('message', function(event) {
+if (event.data.type === 'EXECUTE_USERCODE') {
+
 console.log('running user.js')
 window.parent.postMessage({ type: 'LOAD_CACHEDOBJECT' }, '*');
 function recoverClassFromClassInfo(data) {
@@ -1402,8 +1410,12 @@ function isSerializedArray(obj) {
 
 //   // Execute user.js only after CACHEDOBJECT_LOADED is received
   // console.log('Executing user.js');
-  ${usercode.js} // Inject user-provided JS
-
+                  try {
+                    (0, eval)(event.data.usercode);
+                  } catch (e) {
+                    console.error('Error executing usercode.js:', e);
+                  }
+                
 // console.log('sending cachedobjects to window', window.cachedobjects.dog1.constructor.name)
 
 // Replace promises with the string 'promise' before saving
@@ -1438,6 +1450,7 @@ const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
   window.parent.postMessage({ type: 'SAVE_CACHEDOBJECTS', content: cachedObjectsWithClassInfo }, '*');
 })();
             }
+            })
 //================user.js logic ends==============
                   </script>
               </body>
@@ -1453,11 +1466,15 @@ const cachedObjectsWithClassInfo = addClassInfo(window.cachedobjects);
     return () => {
       window.removeEventListener('message', handleIframeMessage);
     };
-  },  [runClassCodeTrigger, runUserCodeTrigger]);
-
+  }
   return (
     <div ref={containerRef} className="result-viewer" >
-      <iframe key={JSON.stringify(usercode)} ref={iframeRef} title="Result Viewer" style={{ width: '100%', height: '100%' }}/>
+      <iframe ref={iframeRef} 
+      title="Result Viewer" 
+      style={{ width: '100%', height: '100%' }} 
+      sandbox="allow-scripts allow-same-origin" // Add allow-same-origin
+      onLoad={handleIframeLoad} // Attach the onLoad handler
+      />
     </div>
   );
 };
