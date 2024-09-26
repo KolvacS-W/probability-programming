@@ -21,7 +21,7 @@ interface ResultViewerProps {
   versions: Version[];
 }
 
-const ngrok_url = 'https://772b-35-231-127-253.ngrok-free.app';
+const ngrok_url = 'https://89f8-35-227-20-57.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -558,26 +558,34 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
                     // Check if the Generate class has already been defined
                     if (!window.Rule) {
                       class Rule {
-                        constructor(arg1 = '', arg2 = {}) {
-                                    // If the first argument is a string, treat it as the prompt
-        if (typeof arg1 === 'string') {
-            this.basic_prompt = arg1;
-            this.useobj = arg2.useobj || {objname: ''}; // Handle useobj if passed as second argument
-        } 
-        // If the first argument is an object, handle named parameters
-        else if (typeof arg1 === 'object') {
-            this.basic_prompt = arg1.prompt || '';
-            this.useobj = arg1.useobj || {objname: ''};
-        }                          this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
-                          // this.basic_prompt = prompt;
-                          // this.useobj = {objname: ''}
-                          this.modifyobj = {objname: '', piecenames: [], pieceprompts: []}
-                          this.piecenames = [];
-                          this.piecenamemodify = [];
-                          this.parameters = [];
-                          // this.drawQueue = Promise.resolve();
-                          console.log('rule created:', prompt);
-                        }
+                            constructor(arg1 = '', arg2 = {}) {
+        // Check if the subclass has a static 'doc' property
+        if (this.constructor.doc) {
+            this.basic_prompt = this.constructor.doc;
+            this.parameters = this.constructor.parameters || [];
+        } else {
+            // Existing constructor logic
+            if (typeof arg1 === 'string') {
+                this.basic_prompt = arg1;
+                this.useobj = arg2.useobj || { objname: '' };
+            } else if (typeof arg1 === 'object') {
+                this.basic_prompt = arg1.prompt || '';
+                this.useobj = arg1.useobj || { objname: '' };
+            }
+            this.parameters = [];
+        }
+
+        // Initialize other properties
+        this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
+        this.useobj = this.useobj || { objname: '' };
+        this.modifyobj = { objname: '', piecenames: [], pieceprompts: [] };
+        this.piecenames = [];
+        this.piecenamemodify = [];
+        // Initialize drawQueue if it's used elsewhere in your code
+        // this.drawQueue = Promise.resolve();
+
+        console.log('Rule created with basic_prompt:', this.basic_prompt);
+    }
 
 async draw() {
   console.log('object draw called', this.basic_prompt);
@@ -1411,7 +1419,14 @@ function isSerializedArray(obj) {
 //   // Execute user.js only after CACHEDOBJECT_LOADED is received
   // console.log('Executing user.js');
                   try {
-                    (0, eval)(event.data.usercode);
+                    // (0, eval)(event.data.usercode);
+                          const asyncUserFunction = new Function(\`
+                          return (async () => {
+                            \${event.data.usercode}
+                          })();
+                        \`);
+
+      await asyncUserFunction();
                   } catch (e) {
                     console.error('Error executing usercode.js:', e);
                   }

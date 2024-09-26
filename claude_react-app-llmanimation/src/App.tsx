@@ -16,11 +16,12 @@ const App: React.FC = () => {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
-    js: `console.log('class.js')
-
-const c = 11
-
-console.log(c)`,
+    js: `window.Car = class extends window.Rule {
+    static doc = "a sports car";
+    static parameters = ['door size', 'wheel color'];
+    // No constructor needed
+}
+`,
   });
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
@@ -88,9 +89,16 @@ console.log(c)`,
 <body>
 </body>
 </html>`},
-      usercode: { js: `// Retrieve the value from cachedobjects
-console.log('check saved', window.cachedobjects);
-console.log('user.js??', c)
+      usercode: { js: `
+
+const myCarRule = new window.Car();
+
+// Generate an object with specific parameter values
+const myCarObject = await myCarRule.generateObj('mySportsCar', ['20', 'brown']);
+console.log(myCarRule)
+// Retrieve the value from cachedobjects
+// console.log('check saved', window.cachedobjects);
+// console.log('user.js??', c)
 // // Create canvas and rule as usual
 // const canvas = new whole_canvas('azure');
 // const rule = new Rule('a dog with long legs');
