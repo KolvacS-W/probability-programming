@@ -21,7 +21,7 @@ interface ResultViewerProps {
   versions: Version[];
 }
 
-const ngrok_url = 'https://89f8-35-227-20-57.ngrok-free.app';
+const ngrok_url = 'https://e41e-34-91-163-217.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -551,6 +551,10 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
                     // Define create_canvas and make it globally accessible
                     window.create_canvas = function create_canvas(canvas_color) {
                         const canvasContainer = document.getElementById('canvasContainer');
+                        // Clear all contents of canvasContainer
+                        while (canvasContainer.firstChild) {
+                            canvasContainer.removeChild(canvasContainer.firstChild);
+                        }
                         canvasContainer.style.backgroundColor = canvas_color;
                         return canvasContainer;
                     }
@@ -765,7 +769,13 @@ else{
   }                          
 }
 
-async generateObj(name, parameterContents = []) {
+async generateObj(name, parameterContents = [], context = {}) {
+
+if (Object.keys(context).length !== 0) {
+  console.log('have context')
+  this.modifyobj = context
+}
+
 let obj;
 
 // Add the draw operation to the queue

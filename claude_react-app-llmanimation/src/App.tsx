@@ -18,10 +18,15 @@ const App: React.FC = () => {
   const [classcode, setClassCode] = useState<{ js: string }>({
     js: `window.Car = class extends window.Rule {
     static doc = "a sports car";
-    static parameters = ['door size', 'wheel color'];
+    static parameters = ['wheel size', 'car color'];
     // No constructor needed
 }
-`,
+
+window.DrivingCar = class extends window.Rule {
+    static doc = "a sports car with huge tail flame";
+    static parameters = ['wheel size', 'car color'];
+    // No constructor needed
+}`,
   });
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
@@ -90,20 +95,25 @@ const App: React.FC = () => {
 </body>
 </html>`},
       usercode: { js: `
-
+const canvas = new whole_canvas('azure');
 const myCarRule = new window.Car();
 
 // Generate an object with specific parameter values
-const myCarObject = await myCarRule.generateObj('mySportsCar', ['20', 'brown']);
-console.log(myCarRule)
-// Retrieve the value from cachedobjects
-// console.log('check saved', window.cachedobjects);
-// console.log('user.js??', c)
-// // Create canvas and rule as usual
-// const canvas = new whole_canvas('azure');
-// const rule = new Rule('a dog with long legs');
-// rule.parameters = ['fur color']
-// await rule.generateObj('dog1', ['brown'])
+const myCarObject = await myCarRule.generateObj('myCarObject', ['20', 'grey']);
+
+const myCarObject_bigwheel = await myCarObject.template.createObj('myCarObject_bigwheel', ['80', 'red'])
+
+const myDriveCarRule = new window.DrivingCar();
+
+// Generate an object with specific parameter values
+const myDrivingCarObject = await myDriveCarRule.generateObj('myDrivingCarObject', ['80', 'red'], context = { objname: 'myCarObject_bigwheel', piecenames: [], pieceprompts: [] });
+
+myCarObject.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
+
+myCarObject_bigwheel.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
+
+myDrivingCarObject.placeObj(canvas, {x: 90-20, y: 50+20}, scale = 0.2)
+
 
 ` },
       savedOldCode: { html: '', css: '', js: '' },
