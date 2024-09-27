@@ -23,8 +23,8 @@ const App: React.FC = () => {
 }
 
 window.DrivingCar = class extends window.Rule {
-    static doc = "a sports car with huge tail flame";
-    static parameters = ['wheel size', 'car color'];
+    static doc = "a sports car with huge tail flame at the back of car";
+    static parameters = ['wheel size', 'car color', 'flame size'];
     // No constructor needed
 }`,
   });
@@ -99,14 +99,16 @@ const canvas = new whole_canvas('azure');
 const myCarRule = new window.Car();
 
 // Generate an object with specific parameter values
-const myCarObject = await myCarRule.generateObj('myCarObject', ['20', 'grey']);
+const myCarObject = await myCarRule.generateObj('myCarObject', [20, 'grey']);
 
-const myCarObject_bigwheel = await myCarObject.template.createObj('myCarObject_bigwheel', ['80', 'red'])
+const myCarObject_bigwheel = await myCarObject.template.createObj('myCarObject_bigwheel', [80, 'red'])
 
 const myDriveCarRule = new window.DrivingCar();
 
 // Generate an object with specific parameter values
-const myDrivingCarObject = await myDriveCarRule.generateObj('myDrivingCarObject', ['80', 'red'], context = { objname: 'myCarObject_bigwheel', piecenames: [], pieceprompts: [] });
+const myDrivingCarObject = await myDriveCarRule.generateObj('myDrivingCarObject', [80, 'red', 100], context = { objname: 'myCarObject_bigwheel', piecenames: [], pieceprompts: [] });
+
+const myDrivingCarObject_largeflame = await myDrivingCarObject.template.createObj('myDrivingCarObject_largeflame', [80, 'red', 200])
 
 myCarObject.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
 
@@ -114,7 +116,7 @@ myCarObject_bigwheel.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
 
 myDrivingCarObject.placeObj(canvas, {x: 90-20, y: 50+20}, scale = 0.2)
 
-
+myDrivingCarObject_largeflame.placeObj(canvas, {x: 90-40, y: 50+40}, scale = 0.2)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
@@ -537,7 +539,11 @@ myDrivingCarObject.placeObj(canvas, {x: 90-20, y: 50+20}, scale = 0.2)
             /> */}
             {/* Replace DescriptionEditor with ClassEditor */}
             <div className="class-editor-container">
-              <ClassEditor classcode={classcode} 
+              <ClassEditor 
+              currentVersionId={currentVersionId}
+              versions={versions}
+              setVersions={setVersions}
+              classcode={classcode} 
               setClassCode={setClassCode}
               onRunClassCode={handleRunClassCode} // Pass the handler
                />
