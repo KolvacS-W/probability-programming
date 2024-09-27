@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Version } from '../types';
 
@@ -12,6 +12,10 @@ interface ReusableElementToolbarProps {
 
 const ngrok_url = 'https://5c75-34-44-206-208.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
+
+const sanitizeSVG = (svgString: string) => {
+  return svgString.trim(); // Add more sanitization logic here if needed
+};
 
 const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
   currentVersionId,
@@ -128,9 +132,62 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
     });
   };
 
-  const sanitizeSVG = (svgString: string) => {
-    // Sanitize the SVG string if necessary here
-    return svgString.trim().replace('\n', ''); // Just a simple trim for now, more sanitization can be added if needed
+  const ReusableElementItem: React.FC<{ codeText: string }> = ({ codeText }) => {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    useEffect(() => {
+      const iframe = iframeRef.current;
+
+      if (iframe) {
+        const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDocument) {
+          iframeDocument.open(); // Open the document for writing
+          iframeDocument.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>SVG Render</title>
+                <style>
+                    html, body {
+                      margin: 0;
+                      padding: 0;
+                      width: 100%;
+                      height: 100%;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      overflow: hidden;
+                    }
+                    svg {
+                      width: 100%;
+                      height: 100%;
+                    }
+                </style>
+            </head>
+            <body>
+                ${sanitizeSVG(codeText)}
+            </body>
+            </html>
+          `);
+          iframeDocument.close(); // Ensure the document is closed after writing
+        }
+      }
+    }, [codeText]);
+
+    return (
+      <iframe
+        ref={iframeRef}
+        title="SVG Render"
+        style={{
+          width: '50px', // Matching the .svg-preview size
+          height: '50px',
+          border: 'none',
+          overflow: 'hidden',
+        }}
+      />
+    );
   };
 
   return (
@@ -152,26 +209,25 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
           </button>
         </div>
         {currentVersionId !== null && versions.find(version => version.id === currentVersionId)!.reuseableSVGElementList.map((element, index) => (
-        <div
-          key={index}
-          className={`reusable-element-item ${element.selected ? 'selected' : ''}`}
-          onClick={() => handleElementClick(currentVersionId, element.codeName)}
-          onMouseEnter={() => setHoveredElement(element.codeText)}
-          onMouseLeave={() => setHoveredElement(null)}
-        >
-          <span>{element.codeName}</span>
           <div
-            className="svg-preview"
-            dangerouslySetInnerHTML={{ __html: sanitizeSVG(element.codeText) }} 
-          />
-          <button className="delete-icon" onClick={() => handleDeleteReusableElement(currentVersionId, element.codeName)}>🆇</button>
-          {hoveredElement === element.codeText && (
-            <div className="hovered-element-text">
-              <pre>{element.codeText}</pre>
+            key={index}
+            className={`reusable-element-item ${element.selected ? 'selected' : ''}`}
+            onClick={() => handleElementClick(currentVersionId, element.codeName)}
+            onMouseEnter={() => setHoveredElement(element.codeText)}
+            onMouseLeave={() => setHoveredElement(null)}
+          >
+            <span>{element.codeName}</span>
+            <div className="svg-preview">
+              <ReusableElementItem codeText={element.codeText} />
             </div>
-          )}
-        </div>
-      ))}
+            <button className="delete-icon" onClick={() => handleDeleteReusableElement(currentVersionId, element.codeName)}>🆇</button>
+            {hoveredElement === element.codeText && (
+              <div className="hovered-element-text">
+                <pre>{element.codeText}</pre>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
