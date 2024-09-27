@@ -17,7 +17,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
     js: `window.Tree = class extends window.Rule {
-    static doc = "a coniferous tree with irregularly spaced branches";
+    static doc = "a dense tree with random shape";
     static parameters = ['size of the leaves', 'number of the branches', 'leave color'];
     // No constructor needed
 }
@@ -173,7 +173,7 @@ async function placeObjects() {
     const specifictreeobj = await treeobj.template.createObj('specifictreeobj' + idx.toString(), [
       Math.random() * (100 - 20) + 20,
       Math.random() * (100 - 20) + 20,
-    treeColors[Math.floor(Math.random() * colors.length)]
+    treeColors[Math.floor(Math.random() * treeColors.length)]
     ]);
     
     specifictreeobj.placeObj(canvas, null, 1, block.topLeft, block.topRight, block.bottomLeft, block.bottomRight);
@@ -183,8 +183,7 @@ async function placeObjects() {
 
 // Call the async function
 placeObjects().catch(error => console.error('Error:', error));
-
-modifyobj` },
+` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },

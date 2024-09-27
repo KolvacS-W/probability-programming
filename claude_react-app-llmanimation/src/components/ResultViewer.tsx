@@ -930,10 +930,52 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               window.cachedobjects[objname] = this;
                             }
 // priority: tl..br + scale first, if conflict, drop scale; coord last                            
+// placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
+//     const content = this.svgcode;
+//     const svgElement = this.createSVGElement(
+//         content,
+//         coord,
+//         canvas.canvasContainer.offsetWidth,
+//         canvas.canvasContainer.offsetHeight,
+//         scale,
+//         tl,
+//         tr,
+//         bl,
+//         br
+//     );
+//     console.log(
+//         'svgelement placing',
+//         coord,
+//         canvas.canvasContainer.offsetWidth,
+//         canvas.canvasContainer.offsetHeight,
+//         scale,
+//         svgElement
+//     );
+//     canvas.canvasContainer.appendChild(svgElement);
+// }
+
 placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
     const content = this.svgcode;
+    
+    // Create a DOMParser to parse the SVG content
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(content, 'image/svg+xml');
+
+    // Extract and remove any <script> tag inside the SVG
+    const scriptElements = svgDoc.getElementsByTagName('script');
+    let scriptContent = '';
+    if (scriptElements.length > 0) {
+        scriptContent = scriptElements[0].textContent;  // Extract script content
+        scriptElements[0].parentNode.removeChild(scriptElements[0]);  // Remove the script from the SVG
+    }
+
+    // Serialize the updated SVG without <script> and add to the canvas
+    const serializer = new XMLSerializer();
+    const svgElementStr = serializer.serializeToString(svgDoc.documentElement);
+    
+    // Create an element from the parsed SVG
     const svgElement = this.createSVGElement(
-        content,
+        svgElementStr,
         coord,
         canvas.canvasContainer.offsetWidth,
         canvas.canvasContainer.offsetHeight,
@@ -943,6 +985,7 @@ placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl =
         bl,
         br
     );
+    
     console.log(
         'svgelement placing',
         coord,
@@ -951,8 +994,20 @@ placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl =
         scale,
         svgElement
     );
+    
+    // Append the SVG element to the canvas container
     canvas.canvasContainer.appendChild(svgElement);
+
+    // Execute the script content manually, if any
+    if (scriptContent) {
+        try {
+            eval(scriptContent);  // Use eval to execute the extracted script
+        } catch (e) {
+            console.error('Error executing SVG script:', e);
+        }
+    }
 }
+
 
 createSVGElement(
     svgContent,
