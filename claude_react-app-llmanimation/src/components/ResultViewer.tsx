@@ -1132,6 +1132,85 @@ createSVGElement(
 
 // Helper functions remain the same but with slight modifications
 
+// Helper function to calculate the projective transformation matrix
+calculateProjectiveTransform(srcPts, dstPts) {
+    // Calculates a 4x4 matrix for a projective transformation from srcPts to dstPts
+    // srcPts and dstPts are arrays of [x, y] coordinates
+
+    // Set up the linear system: Ah = b
+    const A = [];
+    const b = [];
+
+    for (let i = 0; i < 4; i++) {
+        const [x, y] = srcPts[i];
+        const [X, Y] = dstPts[i];
+
+        A.push([x, y, 1, 0, 0, 0, -x * X, -y * X]);
+        A.push([0, 0, 0, x, y, 1, -x * Y, -y * Y]);
+        b.push(X);
+        b.push(Y);
+    }
+
+    // Solve for h using least squares (A * h ≈ b)
+    const h = this.solveLinearSystem(A, b);
+
+    // Construct the 3x3 homography matrix
+    const H = [
+        h[0], h[1], h[2],
+        h[3], h[4], h[5],
+        h[6], h[7], 1
+    ];
+
+    // Convert the 3x3 homography matrix to a 4x4 matrix3d for CSS
+    const matrix3d = [
+        H[0], H[3], 0, H[6],
+        H[1], H[4], 0, H[7],
+        0,    0,    1, 0,
+        H[2], H[5], 0, 1
+    ];
+
+    return matrix3d;
+}
+// Helper function to solve a linear system (A * x = b)
+solveLinearSystem(A, b) {
+    // Use the Gaussian elimination method to solve the system
+    const matrixSize = A.length;
+    const augmentedMatrix = A.map((row, i) => [...row, b[i]]);
+
+    // Forward elimination
+    for (let i = 0; i < matrixSize; i++) {
+        // Find the pivot row
+        let maxRow = i;
+        for (let k = i + 1; k < matrixSize; k++) {
+            if (Math.abs(augmentedMatrix[k][i]) > Math.abs(augmentedMatrix[maxRow][i])) {
+                maxRow = k;
+            }
+        }
+
+        // Swap the pivot row with the current row
+        [augmentedMatrix[i], augmentedMatrix[maxRow]] = [augmentedMatrix[maxRow], augmentedMatrix[i]];
+
+        // Eliminate entries below the pivot
+        for (let k = i + 1; k < matrixSize; k++) {
+            const factor = augmentedMatrix[k][i] / augmentedMatrix[i][i];
+            for (let j = i; j <= matrixSize; j++) {
+                augmentedMatrix[k][j] -= factor * augmentedMatrix[i][j];
+            }
+        }
+    }
+
+    // Back substitution
+    const x = new Array(matrixSize).fill(0);
+    for (let i = matrixSize - 1; i >= 0; i--) {
+        let sum = augmentedMatrix[i][matrixSize];
+        for (let j = i + 1; j < matrixSize; j++) {
+            sum -= augmentedMatrix[i][j] * x[j];
+        }
+        x[i] = sum / augmentedMatrix[i][i];
+    }
+
+    return x;
+}
 calculateSimilarityTransform(srcPts, dstPts, scale) {
   // srcPts and dstPts are arrays of 2D points: [[x1, y1], [x2, y2]]
 

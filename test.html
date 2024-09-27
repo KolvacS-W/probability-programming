@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Block Divider</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="100" height="100"></canvas>
+
+    <script>
+        // Function to randomly divide the canvas into blocks
+        function divideCanvas(width, height, blockCount) {
+            let verticalLines = [0, width];
+            let horizontalLines = [0, height];
+
+            // Randomly create vertical and horizontal divisions
+            while (verticalLines.length + horizontalLines.length - 2 < blockCount) {
+                if (Math.random() > 0.5 && verticalLines.length < blockCount / 2) {
+                    let newX = Math.floor(Math.random() * width);
+                    if (!verticalLines.includes(newX)) verticalLines.push(newX);
+                } else if (horizontalLines.length < blockCount / 2) {
+                    let newY = Math.floor(Math.random() * height);
+                    if (!horizontalLines.includes(newY)) horizontalLines.push(newY);
+                }
+            }
+
+            // Sort and remove duplicates
+            verticalLines = [...new Set(verticalLines)].sort((a, b) => a - b);
+            horizontalLines = [...new Set(horizontalLines)].sort((a, b) => a - b);
+
+            // Create blocks from the divisions
+            let blocks = [];
+            for (let i = 0; i < verticalLines.length - 1; i++) {
+                for (let j = 0; j < horizontalLines.length - 1; j++) {
+                    let block = {
+                        x: verticalLines[i],
+                        y: horizontalLines[j],
+                        width: verticalLines[i + 1] - verticalLines[i],
+                        height: horizontalLines[j + 1] - horizontalLines[j]
+                    };
+                    blocks.push(block);
+                }
+            }
+
+            return blocks.slice(0, blockCount); // Limit to blockCount
+        }
+
+        // Function to draw blocks and log their coordinates
+        function drawBlocks(blocks) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            blocks.forEach(block => {
+                ctx.strokeRect(block.x, block.y, block.width, block.height);
+                console.log(`Block coordinates: {x: ${block.x}, y: ${block.y}}`);
+            });
+        }
+
+        // Initialize
+        const blocks = divideCanvas(100, 100, 15);
+        console.log('List of block coordinates:', blocks);
+        drawBlocks(blocks);
+    </script>
+</body>
+</html>

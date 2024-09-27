@@ -16,17 +16,12 @@ const App: React.FC = () => {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
-    js: `window.Car = class extends window.Rule {
-    static doc = "a sports car";
-    static parameters = ['wheel size', 'car color'];
+    js: `window.Tree = class extends window.Rule {
+    static doc = "a coniferous tree with irregularly spaced branches";
+    static parameters = ['size of the leaves', 'number of the branches', 'leave color'];
     // No constructor needed
 }
-
-window.DrivingCar = class extends window.Rule {
-    static doc = "a sports car with huge tail flame at the back of car";
-    static parameters = ['wheel size', 'car color', 'flame size'];
-    // No constructor needed
-}`,
+`,
   });
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
@@ -94,30 +89,102 @@ window.DrivingCar = class extends window.Rule {
 <body>
 </body>
 </html>`},
-      usercode: { js: `
+      usercode: { js: `function divideCanvasIntoBlocks(canvasWidth = 100, canvasHeight = 100, numBlocks = 7) {
+  // Create arrays to store the x and y coordinates of the dividing lines
+  let xLines = [0, canvasWidth];
+  let yLines = [0, canvasHeight];
+
+  // Generate random dividing lines
+  for (let i = 0; i < numBlocks - 2; i++) {
+    if (i % 2 === 0) {
+      xLines.push(Math.floor(Math.random() * canvasWidth));
+    } else {
+      yLines.push(Math.floor(Math.random() * canvasHeight));
+    }
+  }
+
+  // Sort the lines
+  xLines.sort((a, b) => a - b);
+  yLines.sort((a, b) => a - b);
+
+  // Generate blocks with four corner coordinates
+  let blocks = [];
+  for (let i = 0; i < xLines.length - 1; i++) {
+    for (let j = 0; j < yLines.length - 1; j++) {
+      blocks.push({
+        topLeft: { x: xLines[i], y: yLines[j] },
+        topRight: { x: xLines[i+1], y: yLines[j] },
+        bottomLeft: { x: xLines[i], y: yLines[j+1] },
+        bottomRight: { x: xLines[i+1], y: yLines[j+1] }
+      });
+    }
+  }
+
+  // Convert block coordinates to the requested format (0-100 range)
+  let coordinates = blocks.map(block => ({
+    topLeft: { 
+      x: Math.floor(block.topLeft.x / canvasWidth * 100),
+      y: Math.floor(block.topLeft.y / canvasHeight * 100)
+    },
+    topRight: { 
+      x: Math.floor(block.topRight.x / canvasWidth * 100),
+      y: Math.floor(block.topRight.y / canvasHeight * 100)
+    },
+    bottomLeft: { 
+      x: Math.floor(block.bottomLeft.x / canvasWidth * 100),
+      y: Math.floor(block.bottomLeft.y / canvasHeight * 100)
+    },
+    bottomRight: { 
+      x: Math.floor(block.bottomRight.x / canvasWidth * 100),
+      y: Math.floor(block.bottomRight.y / canvasHeight * 100)
+    }
+  }));
+
+  return coordinates;
+}
+
+// Usage
+let blockCoordinates = divideCanvasIntoBlocks();
+
+// Array of colors to choose from
+const treeColors = [
+  "#228B22", // ForestGreen
+  "#006400", // DarkGreen
+  "#8B4513", // SaddleBrown
+  "#556B2F", // DarkOliveGreen
+  "#6B8E23", // OliveDrab
+  "#2E8B57", // SeaGreen
+  "#8FBC8F", // DarkSeaGreen
+  "#A0522D", // Sienna
+  "#8B7765", // RosyBrown
+  "#D2691E", // Chocolate
+];
+
 const canvas = new whole_canvas('azure');
-const myCarRule = new window.Car();
+const tree = new window.Tree();
 
-// Generate an object with specific parameter values
-const myCarObject = await myCarRule.generateObj('myCarObject', [20, 'grey']);
+// Wrap the asynchronous operations in an async function
+async function placeObjects() {
+  // Generate an object with specific parameter values
+  const treeobj = await tree.generateObj('treeobj', [50, 50, 'green']);
+  
+  for (let idx = 0; idx < blockCoordinates.length; idx++) {
+    const block = blockCoordinates[idx];
+    const specifictreeobj = await treeobj.template.createObj('specifictreeobj' + idx.toString(), [
+      Math.random() * (100 - 20) + 20,
+      Math.random() * (100 - 20) + 20,
+    treeColors[Math.floor(Math.random() * colors.length)]
+    ]);
+    
+    specifictreeobj.placeObj(canvas, null, 1, block.topLeft, block.topRight, block.bottomLeft, block.bottomRight);
+  }
 
-const myCarObject_bigwheel = await myCarObject.template.createObj('myCarObject_bigwheel', [80, 'red'])
+}
 
-const myDriveCarRule = new window.DrivingCar();
+// Call the async function
+placeObjects().catch(error => console.error('Error:', error));
 
-// Generate an object with specific parameter values
-const myDrivingCarObject = await myDriveCarRule.generateObj('myDrivingCarObject', [80, 'red', 100], context = { objname: 'myCarObject_bigwheel', piecenames: [], pieceprompts: [] });
-
-const myDrivingCarObject_largeflame = await myDrivingCarObject.template.createObj('myDrivingCarObject_largeflame', [80, 'red', 200])
-
-myCarObject.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
-
-myCarObject_bigwheel.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
-
-myDrivingCarObject.placeObj(canvas, {x: 90-20, y: 50+20}, scale = 0.2)
-
-myDrivingCarObject_largeflame.placeObj(canvas, {x: 90-40, y: 50+40}, scale = 0.2)
-` },
+modifyobj` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
