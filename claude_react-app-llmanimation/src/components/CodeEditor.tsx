@@ -52,6 +52,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [showGenerateOption, setShowGenerateOption] = useState(false);
   const [showCoordcomplete, setShowCoordcomplete] = useState(false);
   const [autocompletePosition, setAutocompletePosition] = useState({ top: 0, left: 0 });
+  const [autocompletePositionbackup, setAutocompletePositionbackup] = useState({ top: 0, left: 0 });
   const [CoordcompletePosition, setCoordcompletePosition] = useState({ top: 0, left: 0 });
   const [hintKeywords, setHintKeywords] = useState('');
   const [generatedOptions, setGeneratedOptions] = useState<string[]>([]);
@@ -859,14 +860,25 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       }, [svgCodeText]);
 
       const handlePieceClick = (pieceCodeName: string) => {
-        const piece = currentVersion?.previousSelectedSVGPieceList.find(item => item.codeName === pieceCodeName);
-        if (piece) {
-          const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
-          setCurrentPieceName(pieceCodeName); // Track the name of the current piece
-          setSavedSvgCodeText(svgCodeText)
-          setSvgCodeText(highlightPiece(parentSVG.codeText, pieceCodeName));
-          console.log('setSvgCodeText updated due to piecebuttonclick', currentVersion?.highlightedSVGPieceList)
-        }
+      
+      //for showing the svg piece with widgets
+    const piece = currentVersion.previousSelectedSVGPieceList?.find(item => item.codeName === pieceCodeName);
+    //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+
+    if (piece) {
+      const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
+      //console.log('parent svg:', parentSVG)
+      if (parentSVG) {
+        const cursorPosition = editorRef.current?.selectionStart || 0;
+        const position = getCaretCoordinates(editorRef.current, cursorPosition);
+        setAutocompletePositionbackup({ top: 600, left: 0 });
+        console.log('check position', position)
+        setSvgCodeText_checkpiece(parentSVG.codeText);
+        setCurrentSelectedSVG(piece.codeName);
+        setShowCheckSVGPieceWidget(true); // Show the CheckSVGPieceWidget
+        return;
+      }
+    }
       };
 
   
@@ -1514,8 +1526,8 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
           className="check-svg-piece-widget"
           style={{
               position: 'absolute',
-              top: autocompletePosition.top,
-              left: autocompletePosition.left,
+              top: autocompletePositionbackup.top,
+              left: autocompletePositionbackup.left,
               zIndex: 1000,
               backgroundColor: 'white',
               border: '1px solid #ccc',
