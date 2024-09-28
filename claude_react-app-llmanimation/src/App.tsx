@@ -100,9 +100,9 @@ const house = new window.House();
 
 
 // Usage directly with the constructor
-const houseobj = await window.House.generateObj('houseobj', [50, 'grey']);
+const houseobj = await window.House.generateObj([50, 'grey']);
 
-const houseobj2 = await houseobj.createObj('houseobj2', [100, 'red'])
+const houseobj2 = await houseobj.createObj([100, 'red'])
 
 
 houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)

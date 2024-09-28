@@ -311,8 +311,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         return;
     }
     
-      if (word === 'modifyobj') {
-        console.log('double-clicked on modifyobjhh');
+      if (word === 'context') {
+        console.log('double-clicked on context');
         setShowModifyObjButton(true)
         const currentVersion = versions.find(version => version.id === currentVersionId);
         if (!currentVersion) {
@@ -329,7 +329,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           setAutocompletePosition({ top: position.top + 50, left: position.left });
           setShowModifyObjWidget(true); // Show the widget
           //setSelectedCodeText(''); // Reset the selected code text
-          console.log('clicked on modifyobj', showModifyObjWidget)
         } else {
           console.log('reuseableSVGElementList is undefined or empty');
         }
@@ -343,26 +342,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
         setAutocompletePosition({ top: position.top + 50, left: position.left });
         setShowCachedObjWidget(true); // Show the widget
-
-        // const currentVersion = versions.find(version => version.id === currentVersionId);
-        // if (!currentVersion) {
-        //   console.log('No current version found');
-        //   return;
-        // }
-    
-        // const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
-        // console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
-    
-        // if (currentreuseableSVGElementList) {
-        //   const cursorPosition = editorRef.current?.selectionStart || 0;
-        //   const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-        //   setAutocompletePosition({ top: position.top + 50, left: position.left });
-        //   setShowModifyObjWidget(true); // Show the widget
-        //   //setSelectedCodeText(''); // Reset the selected code text
-        //   console.log('clicked on modifyobj', showModifyObjWidget)
-        // } else {
-        //   console.log('reuseableSVGElementList is undefined or empty');
-        // }
       }
 
       if (word === 'useobj') {
@@ -388,51 +367,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
       }
 
-    // if (word === 'modifyauto') {
-    //   console.log('double-clicked on piece');
-    //   const currentVersion = versions.find(version => version.id === currentVersionId);
-    //   if (!currentVersion) {
-    //     console.log('No current version found');
-    //     return;
-    //   }
-  
-    //   const currenthighlightedSVGPieceList = currentVersion.highlightedSVGPieceList;
-    //   console.log('svgpieces', currentVersion, currenthighlightedSVGPieceList);
-  
-    //   if (currenthighlightedSVGPieceList) {
-    //     const codeNames = currenthighlightedSVGPieceList.map(item => item.codeName).join('\', \'');
-    //     const cursorPosition = editorRef.current?.selectionStart || 0;
-    //     const textBeforeCursor = userjs.slice(0, cursorPosition);
-    //     const textAfterCursor = userjs.slice(cursorPosition+word.length);
-    //     const newText = textBeforeCursor + '\''+ codeNames + '\''+ textAfterCursor;
-    //     setuserJs(newText);
-    //   } else {
-    //     console.log('highlightedSVGPieceList is undefined or empty');
-    //   }
-    // }
-
-    // if (word === 'refauto') {
-    //   console.log('double-clicked on ref');
-    //   const currentVersion = versions.find(version => version.id === currentVersionId);
-    //   if (!currentVersion) {
-    //     console.log('No current version found');
-    //     return;
-    //   }
-  
-    //   const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
-    //   console.log('svgpieces', currentVersion, currentreuseableSVGElementList);
-  
-    //   if (currentreuseableSVGElementList) {
-    //     const codeName = currentreuseableSVGElementList.find(item => item.selected === true).codeName;;
-    //     const cursorPosition = editorRef.current?.selectionStart || 0;
-    //     const textBeforeCursor = userjs.slice(0, cursorPosition);
-    //     const textAfterCursor = userjs.slice(cursorPosition+word.length);
-    //     const newText = textBeforeCursor + '\''+ codeName + '\''+ textAfterCursor;
-    //     setuserJs(newText);
-    //   } else {
-    //     console.log('highlightedSVGPieceList is undefined or empty');
-    //   }
-    // }
 
     if (word == 'coord'){
       setHintKeywords(word);
@@ -441,7 +375,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       setCoordcompletePosition({ top: position.top + 50, left: position.left });
       setShowCoordcomplete(true);
     }
-    else if(word != 'modifyobj'&&word != 'useobj'&&word != 'cachedobjects'){
+    else if(word != 'context'&&word != 'useobj'&&word != 'cachedobjects'){
       setHintKeywords(word);
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);

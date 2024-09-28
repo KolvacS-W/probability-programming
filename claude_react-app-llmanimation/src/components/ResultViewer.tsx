@@ -33,6 +33,8 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, clas
   //console.log('check svglist', currentreuseableSVGElementList)
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
   const [classCodeLoaded, setClassCodeLoaded] = useState<boolean>(false);
+  // const [newobjID, setNewobjID] = useState(1); // Initialize the newobjID state starting from 1
+
   // Refs to hold previous trigger values
 // Global object to store previous user-defined objects
 // const cachedobjects = {};
@@ -467,6 +469,7 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
                   
                   </script>
                   <script>
+                  window.newobjID = 1;
 
                     window.currentreuseableSVGElementList = ${JSON.stringify(currentreuseableSVGElementList)};
                     // Define create_canvas and make it globally accessible
@@ -690,9 +693,15 @@ else{
   }                          
 }
 
-static async generateObj(name, parameterContents = [], context = {}) {
+static async generateObj(parameterContents = [], context = {}, name='') {
 // Create an instance of the class to initialize instance properties
         const instance = new this(); // This will refer to the class that calls it, like House or Rule
+
+  // If the name is not provided, generate a default name
+  if (!name) {
+    name = 'newobj' + window.newobjID.toString(); // Default to "newobj" + newobjID
+    window.newobjID = window.newobjID+1; // Increment the newobjID for the next object
+  }
 
 if (Object.keys(context).length !== 0) {
   console.log('have context')
@@ -826,7 +835,13 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               window.cachedobjects[objname] = this;
                             }
 
-async createObj(name, parameterContents = []){
+async createObj(parameterContents = [], name = ''){
+
+                                // If the name is not provided, generate a default name
+                                if (!name) {
+                                  name = 'newobj' + window.newobjID.toString(); // Default to "newobj" + newobjID
+                                  window.newobjID = window.newobjID+1; // Increment the newobjID for the next object
+                                }
                                 var obj;
                                 // need to parameterize
                                 const parameters = this.parameters;
