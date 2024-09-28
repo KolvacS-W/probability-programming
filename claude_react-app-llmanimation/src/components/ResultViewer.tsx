@@ -21,7 +21,7 @@ interface ResultViewerProps {
   versions: Version[];
 }
 
-const ngrok_url = 'https://1135-34-106-186-116.ngrok-free.app';
+const ngrok_url = 'https://72cd-104-196-195-165.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -44,85 +44,6 @@ const clearSessionStorage = () => {
   console.log('Clearing sessionStorage on refresh');
   sessionStorage.clear(); // Clear all session storage data
 };
-
-
-//   const cloneableObj = {};
-
-//   for (const key in obj) {
-//     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-//       const value = obj[key];
-//       console.log('value need to save', value)
-//       if (typeof value === 'function') {
-//         console.warn(`Skipping function value: ${key}`);
-//       } else if (value instanceof Promise) {
-//         cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
-//       } else {
-//         cloneableObj[key] = value;
-//       }
-//     }
-//   }
-
-//   return cloneableObj;
-// }
-
-// Helper function to serialize objects with their class type
-// Helper function to serialize objects with their class type
-// function serializeForStorage(obj) {
-//   if (obj === null || typeof obj !== 'object') return obj;
-
-//   const cloneableObj = Array.isArray(obj) ? [] : { ...obj, __class__: obj.constructor.name };
-
-//   for (const key in obj) {
-//     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-//       const value = obj[key];
-//       if (typeof value === 'function') {
-//         console.warn(`Skipping function value: ${key}`);
-//       } else if (value instanceof Promise) {
-//         cloneableObj[key] = 'promise'; // Replace Promises with the string 'promise'
-//       } else {
-//         cloneableObj[key] = serializeForStorage(value); // Recursively serialize
-//       }
-//     }
-//   }
-
-//   return cloneableObj;
-// }
-
-// Helper function to deserialize objects, restoring them to their original class
-// Deserialize objects by referring to their classinfo property
-// function recoverClassFromClassInfo(data) {
-//   if (data === null || typeof data !== 'object') return data;
-
-//   // Handle arrays recursively
-//   if (Array.isArray(data)) {
-//     return data.map(item => recoverClassFromClassInfo(item));
-//   }
-
-//   if (data.classinfo) {
-//     // Check the classinfo property and restore the corresponding class
-//     switch (data.classinfo) {
-//       case 'Rule':
-//         return Object.assign(new Rule(), data);
-//       case 'GeneratedObject':
-//         return Object.assign(new GeneratedObject(), data);
-//       case 'ObjectTemplate':
-//         return Object.assign(new ObjectTemplate(), data);
-//       case 'whole_canvas':
-//         return Object.assign(new whole_canvas(), data);
-//       default:
-//         break;
-//     }
-//   }
-
-//   // Recursively process the object properties
-//   for (const key in data) {
-//     if (data.hasOwnProperty(key) && typeof data[key] === 'object') {
-//       data[key] = recoverClassFromClassInfo(data[key]);
-//     }
-//   }
-
-//   return data;
-// }
 
 // Modify sendcachedobjectsToIframe to deserialize objects when loading from storage
 // Load cachedobjects from sessionStorage and recover class instances
@@ -591,8 +512,8 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
         console.log('Rule created with basic_prompt:', this.basic_prompt);
     }
 
-async draw() {
-  console.log('object draw called', this.basic_prompt);
+ async draw() {
+  console.log('object draw called, check rule', this);
 
   if (!(this.useobj.objname)){
     var APIprompt = '';
@@ -769,11 +690,13 @@ else{
   }                          
 }
 
-async generateObj(name, parameterContents = [], context = {}) {
+static async generateObj(name, parameterContents = [], context = {}) {
+// Create an instance of the class to initialize instance properties
+        const instance = new this(); // This will refer to the class that calls it, like House or Rule
 
 if (Object.keys(context).length !== 0) {
   console.log('have context')
-  this.modifyobj = context
+  instance.modifyobj = context
 }
 
 let obj;
@@ -789,7 +712,7 @@ let obj;
     const parameters = this.parameters;
   
     // Replace the placeholders in the SVG string with actual parameter contents
-    svgHTML = await this.draw();
+    svgHTML = await instance.draw();
     // const svgString = svgElement.outerHTML;
 
     svgHTMLtemplate = svgHTML
@@ -804,7 +727,7 @@ let obj;
   }
   else{
     //no parameter needed
-    svgHTML = await this.draw();
+    svgHTML = await instance.draw();
     console.log('no param', svgHTML)
   }
   
@@ -828,7 +751,11 @@ let obj;
       window.addEventListener('message', messageHandler);
   });
     
-    obj = new GeneratedObject(codename, svgHTML, svgHTMLtemplate, this)
+    obj = new GeneratedObject(codename, svgHTML, svgHTMLtemplate, instance.modifyobj,
+                              instance.piecenames,
+                              instance.piecenamemodify,
+                              instance.parameters ,
+                              instance.basic_prompt)
     console.log('returning obj:', obj)
     return obj; // Return the codename
   }
@@ -840,47 +767,6 @@ let obj;
 
 }
 
-
-async generateandDrawObj(name, canvas, coord, scale = 1, ifcode2desc = false) {
-  console.log('generateandDrawObj called', ifcode2desc);
-  // Define obj at the function scope
-  let obj;
-
-  // Add the draw operation to the queue
-  this.drawQueue = this.drawQueue.then(async () => {
-    const svgElement = await this.draw(coord, canvas.canvasContainer, canvas.reuseablecodelist, scale);
-    if (svgElement) {
-      console.log('SVG content added to canvasContainer');
-      this.updateHTMLString(canvas, svgElement, this.basic_prompt, coord, scale, ifcode2desc); // Pass the codename and code
-      const svgHTML = svgElement.outerHTML;
-      const codename = name;
-    // Send the message to update the reusable element list
-    window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
-    console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
-
-    // Wait for the confirmation after sending the message
-    await new Promise((resolve) => {
-        const messageHandler = (event) => {
-            if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
-                console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
-                window.removeEventListener('message', messageHandler);
-                resolve(); // Resolve the promise to continue execution
-            }
-        };
-        window.addEventListener('message', messageHandler);
-    });
-      
-      obj = {objname: codename, rule: this}
-      console.log('returning obj:', obj.objname, obj.rule)
-      return obj; // Return the codename
-    }
-  }).catch(error => {
-    console.error('Error in canvas draw sequence:', error);
-  });
-  
-  return this.drawQueue.then(() => obj); // Ensure the codename is returned
-}
 
 updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
   console.log('in updatedhtmlstring', ifcode2desc)
@@ -920,39 +806,68 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                     //another class
                     if (!window.GeneratedObject) {
                       class GeneratedObject {
-                            constructor(objname, svgcode, templatecode, rule) {
-                              this.objname = objname
-                              this.svgcode = svgcode
-                              this.template = new ObjectTemplate(templatecode, rule)
-                              this.rule = rule
+                            constructor(objname, svgcode, templatecode, modifyobj,
+                             piecenames,
+                             piecenamemodify,
+                             parameters ,
+                             basic_prompt) {
+                             this.objname = objname
+                             this.svgcode = svgcode
+                              // this.template = new ObjectTemplate(templatecode, rule)
+                              this.templatecode = templatecode
+                              //this.rule = rule
+                              this.modifyobj = modifyobj;
+                              this.piecenames = piecenames;
+                              this.piecenamemodify = piecenamemodify;
+                              this.parameters = parameters
+                              this.basic_prompt = basic_prompt
 
                               // Automatically save the generated object into cachedobjects using codename
                               window.cachedobjects[objname] = this;
                             }
-// priority: tl..br + scale first, if conflict, drop scale; coord last                            
-// placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
-//     const content = this.svgcode;
-//     const svgElement = this.createSVGElement(
-//         content,
-//         coord,
-//         canvas.canvasContainer.offsetWidth,
-//         canvas.canvasContainer.offsetHeight,
-//         scale,
-//         tl,
-//         tr,
-//         bl,
-//         br
-//     );
-//     console.log(
-//         'svgelement placing',
-//         coord,
-//         canvas.canvasContainer.offsetWidth,
-//         canvas.canvasContainer.offsetHeight,
-//         scale,
-//         svgElement
-//     );
-//     canvas.canvasContainer.appendChild(svgElement);
-// }
+
+async createObj(name, parameterContents = []){
+                                var obj;
+                                // need to parameterize
+                                const parameters = this.parameters;
+                              
+                                // Replace the placeholders in the SVG string with actual parameter contents
+                                var svgHTML = this.templatecode
+                                // const svgString = svgElement.outerHTML;
+
+                                parameters.forEach((param, index) => {
+                                    const placeholder = '{' + param + '}';
+                                    svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
+                                });
+
+                                //save the new obj to app
+                                const codename = name;
+                                // Send the message to update the reusable element list
+                                window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+                                console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+                                // Wait for the confirmation after sending the message
+                                await new Promise((resolve) => {
+                                    const messageHandler = (event) => {
+                                        if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                                            window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                                            console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+                                            window.removeEventListener('message', messageHandler);
+                                            resolve(); // Resolve the promise to continue execution
+                                        }
+                                    };
+                                    window.addEventListener('message', messageHandler);
+                                });
+                                //create obj instance
+                                //console.log('creating obj in template.createobj', this.rule)
+                                obj = new GeneratedObject(name, svgHTML, this.templatecode, this.modifyobj,
+                              this.piecenames,
+                              this.piecenamemodify,
+                              this.parameters ,
+                              this.basic_prompt)
+                                //console.log('returning obj:', obj)
+                                return obj; // Return the codename
+                            }
 
 placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
     const content = this.svgcode;
@@ -1329,54 +1244,7 @@ calculateSimilarityTransform(srcPts, dstPts, scale) {
                       }  
                       window.GeneratedObject = GeneratedObject;
                     }
-                    //another class
-                    if (!window.ObjectTemplate) {
-                      class ObjectTemplate {
-                            constructor(templatecode, rule) {
-                              this.templatecode = templatecode
-                              this.rule = rule
-                            }
-                            async createObj(name, parameterContents = []){
-                                var obj;
-                                // need to parameterize
-                                const parameters = this.rule.parameters;
-                              
-                                // Replace the placeholders in the SVG string with actual parameter contents
-                                var svgHTML = this.templatecode
-                                // const svgString = svgElement.outerHTML;
-
-                                parameters.forEach((param, index) => {
-                                    const placeholder = '{' + param + '}';
-                                    svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
-                                });
-
-                                //save the new obj to app
-                                const codename = name;
-                                // Send the message to update the reusable element list
-                                window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
-                                console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
-
-                                // Wait for the confirmation after sending the message
-                                await new Promise((resolve) => {
-                                    const messageHandler = (event) => {
-                                        if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                                            window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
-                                            console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
-                                            window.removeEventListener('message', messageHandler);
-                                            resolve(); // Resolve the promise to continue execution
-                                        }
-                                    };
-                                    window.addEventListener('message', messageHandler);
-                                });
-                                //create obj instance
-                                //console.log('creating obj in template.createobj', this.rule)
-                                obj = new GeneratedObject(name, svgHTML, this.templatecode, this.rule)
-                                //console.log('returning obj:', obj)
-                                return obj; // Return the codename
-                            }
-                      }  
-                      window.ObjectTemplate = ObjectTemplate;
-                    }                    
+                    //another class                    
 
                     // Another class
                     if (!window.whole_canvas) {
@@ -1473,21 +1341,17 @@ function recoverClassFromClassInfo(data) {
         break;
       }
       case 'GeneratedObject': {
-        const { objname = '', svgcode = '', templatecode = '', rule = {} } = data;
-        const template = recoverClassFromClassInfo(data.template); // Recover the template properly
-        const ruleInstance = recoverClassFromClassInfo(rule); // Recover the rule as well
-        recoveredInstance = new GeneratedObject(objname, svgcode, template.templatecode, ruleInstance);
+        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' ,basic_prompt = ''} = data;
+        const templatecodeInstance = recoverClassFromClassInfo(templatecode); // Recover the template properly
+        const piecenamesInstance = recoverClassFromClassInfo(piecenames); // Recover the rule as well
+        const piecenamemodifyInstance = recoverClassFromClassInfo(piecenamemodify); // Recover the rule as well
+        const parametersInstance = recoverClassFromClassInfo(parameters); // Recover the rule as well
+        const basic_promptInstance = recoverClassFromClassInfo(basic_prompt); // Recover the rule as well
+        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, basic_promptInstance);
         Object.assign(recoveredInstance, data); // Assign any additional properties
         break;
       }
-      case 'ObjectTemplate': {
-        console.log('ObjectTemplate, data:', data);
-        const { templatecode = '', rule = {} } = data;
-        const ruleInstance = recoverClassFromClassInfo(rule); // Recover the rule object
-        recoveredInstance = new ObjectTemplate(templatecode, ruleInstance);
-        Object.assign(recoveredInstance, data); // Assign additional properties if any
-        break;
-      }
+      
       case 'whole_canvas': {
         const canvas = new whole_canvas(data.canvas_color || '#FFFFFF');
         Object.assign(canvas, data);

@@ -16,7 +16,7 @@ interface ClassEditorProps {
   onRunClassCode: () => void; // Add this prop
 }
 
-const ngrok_url = 'https://1135-34-106-186-116.ngrok-free.app';
+const ngrok_url = 'https://72cd-104-196-195-165.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
