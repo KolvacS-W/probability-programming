@@ -796,12 +796,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const ModifyObjWidget = () => {
     const currentVersion = versions.find((version) => version.id === currentVersionId);
     const currentreuseableSVGElementList = currentVersion?.reuseableSVGElementList || [];
-
-
+    const [objNameInput, setObjNameInput] = useState(currentSelectedSVG); // State for the object name input
+    const [currentPieceName, setCurrentPieceName] = useState(''); // Track the currently clicked piece name
+    const [savedSvgCodeText, setSavedSvgCodeText] = useState('')
     const iframeRef = useRef<HTMLIFrameElement>(null);
-
     useEffect(() => {
-        //console.log('in useeffect', svgCodeText, iframeRef.current)
+        // console.log('ModifyObjWidget useeffect called', svgCodeText)
         const iframe = iframeRef.current;
         const sanitizeSVG = (svgString) => {
           // Sanitize the SVG string if necessary here
@@ -858,6 +858,18 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
       }, [svgCodeText]);
 
+      const handlePieceClick = (pieceCodeName: string) => {
+        const piece = currentVersion?.previousSelectedSVGPieceList.find(item => item.codeName === pieceCodeName);
+        if (piece) {
+          const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
+          setCurrentPieceName(pieceCodeName); // Track the name of the current piece
+          setSavedSvgCodeText(svgCodeText)
+          setSvgCodeText(highlightPiece(parentSVG.codeText, pieceCodeName));
+          console.log('setSvgCodeText updated due to piecebuttonclick', currentVersion?.highlightedSVGPieceList)
+        }
+      };
+
+  
     const appendSVGToContainer = (container: HTMLElement, svgCode: string) => {
         const svgElement = new DOMParser().parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
         if (svgElement) {
@@ -934,21 +946,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           return updatedVersions;
         });
     }
-
-    // const empty_svgpiece = () =>{
-    //     // Empty the highlightedSVGPieceList of the current version
-    //     setVersions(prevVersions => {
-    //       const updatedVersions = prevVersions.map(version => {
-    //         if (version.id === currentVersionId) {
-    //           return { ...version, highlightedSVGPieceList: [] };
-    //         }
-    //         return version;
-    //       });
-  
-    //       console.log('highlightedSVGPieceList emptied for version:', currentVersionId);
-    //       return updatedVersions;
-    //     });      
-    // }
 
     const remove_svgpiece = (codetext:string) => {
         console.log('removing svg:', codetext)
@@ -1063,7 +1060,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const handleApplyClick = () => {
         console.log("Apply button clicked for:", currentSelectedSVG);
         //deal with highlight
-        //empty_svgpiece();
+        //empty_svgpiece();]
+        setSvgCodeText(savedSvgCodeText)
         removeAllHighlights();
         setSvgCodeText('');
 
@@ -1099,108 +1097,271 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         }
     };
 
+    const handleRenameObject = () => {
+      if (!objNameInput) return;
+    
+      setVersions((prevVersions) => {
+        const updatedVersions = prevVersions.map((version) => {
+          if (version.id === currentVersionId) {
+            const updatedReusableSVGList = version.reuseableSVGElementList.map((element) => {
+              if (element.codeName === currentSelectedSVG) {
+                return { ...element, codeName: objNameInput }; // Update the object name
+              }
+              return element;
+            });
+    
+            // Also update the cachedobjectslog if it exists in sessionStorage
+            const cachedObjectsLog = JSON.parse(sessionStorage.getItem('cachedobjects'));
+            if (cachedObjectsLog) {
+              const updatedCachedObjectsLog = JSON.parse(JSON.stringify(cachedObjectsLog));
+              if (updatedCachedObjectsLog[currentSelectedSVG]) {
+                updatedCachedObjectsLog[objNameInput] = {
+                  ...updatedCachedObjectsLog[currentSelectedSVG],
+                  objname: objNameInput, // Update the objname property
+                };
+                delete updatedCachedObjectsLog[currentSelectedSVG];
+                sessionStorage.setItem('cachedobjects', JSON.stringify(updatedCachedObjectsLog));
+              }
+            }
+    
+            return { ...version, reuseableSVGElementList: updatedReusableSVGList };
+          }
+          return version;
+        });
+    
+        return updatedVersions;
+      });
+    };
+
+    //for showing pieces
+    function toggleSvgElementClosure(svgString: string) {
+      // First, check if it's a self-closing tag
+      if (svgString.endsWith('/>')) {
+        // If it's self-closing, change it to an open-and-close tag
+        return svgString.replace('/>', `></${svgString.match(/^<(\w+)/)[1]}>`);
+      } else {
+        // If it's not self-closing, make it self-closing
+        return svgString.replace(/><\/\w+>$/, '/>');
+      }
+    }
+  
+    function highlightAndReplaceSVG(svgText: string, pieceText: string): string {
+      // Step 1: Find the matching piece in svgText
+      const placeholder = '[placeholder]';
+  
+      //incase the difference of self-closing or not, check both
+      const pieceText2 = toggleSvgElementClosure(pieceText);
+  
+      // Step 3: Determine which version (pieceText or pieceText_alternative) contains the self-closing `/>`
+      var pieceText3 = pieceText2.includes('/>') ? pieceText2 : pieceText;
+  
+      // Step 4: Check if it contains ` />` (a space before the self-closing tag)
+      if (pieceText3.includes('/>')) {
+          // Replace ` />` with `/>` (remove the space)
+          pieceText3 = pieceText3.replace('/>', ' />');
+      }
+  
+      const matchedPiece1 = svgText.includes(pieceText) ? pieceText : '';
+      const matchedPiece2 = svgText.includes(pieceText2) ? pieceText2 : '';
+      const matchedPiece3 = svgText.includes(pieceText3) ? pieceText3 : '';
+  
+      const matchedPiece = matchedPiece1 || matchedPiece2 || matchedPiece3;
+  
+      console.log('3 piece choices', pieceText, pieceText2, pieceText3)
+  
+      if (!matchedPiece) {
+          console.log('No matching piece found in the SVG.', 'svgtext\n', svgText, 'piecetext\n', pieceText);
+          return svgText;
+      }
+  
+      // Step 2: Replace the match string with [placeholder]
+      const updatedSVGText = svgText.replace(matchedPiece, placeholder);
+  
+      // Step 3: Turn pieceText into a DOM element (pieceElement)
+      const parser = new DOMParser();
+      const pieceDoc = parser.parseFromString(pieceText, 'image/svg+xml');
+      const pieceElement = pieceDoc.querySelector('*');  // Adjust selector if pieceText could be something other than a path
+  
+      if (pieceElement) {
+          // Step 4: Highlight the piece
+          const originalStroke = pieceElement.getAttribute('stroke') || 'none';
+          const originalStrokeWidth = pieceElement.getAttribute('stroke-width') || '0';
+          pieceElement.setAttribute('data-original-stroke', originalStroke);
+          pieceElement.setAttribute('data-original-stroke-width', originalStrokeWidth);
+          pieceElement.setAttribute('stroke', 'yellow');
+          pieceElement.setAttribute('stroke-width', (parseFloat(originalStrokeWidth) + 10).toString());
+          pieceElement.setAttribute('data-highlighted', 'true');
+  
+          // Step 5: Get the updated piece text
+          const updatedPieceText = pieceElement.outerHTML;
+  
+          // Step 6: Replace the placeholder with updatedPieceText
+          const finalSVGText = updatedSVGText.replace(placeholder, updatedPieceText);
+  
+          return finalSVGText;
+      }
+  
+      console.log('Failed to parse the piece element.');
+      return svgText;
+  }
+    const highlightPiece = (svgCode: string, pieceCodeName: string) => {
+        // Find the matching SVG element by comparing codeText with the pieceName
+        const currentVersion = versions.find(version => version.id === currentVersionId);
+        const pieceText = currentVersion?.previousSelectedSVGPieceList.find(item => item.codeName === pieceCodeName)?.codeText;
+        const updatedSvgCode = highlightAndReplaceSVG(svgCode, pieceText)
+        return updatedSvgCode
+    };
+    
     return (
+      <div
+        className="modify-obj-widget"
+        style={{
+          position: 'absolute',
+          top: autocompletePosition.top,
+          left: autocompletePosition.left,
+          zIndex: 1000,
+          backgroundColor: 'white',
+          border: '1px solid #ccc',
+          padding: '10px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          fontSize: '14px',
+        }}
+      >
         <div
-            className="modify-obj-widget"
-            style={{
-                position: 'absolute',
-                top: autocompletePosition.top,
-                left: autocompletePosition.left,
-                zIndex: 1000,
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                padding: '10px',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                display: 'flex',
-                fontSize: '14px',
-            }}
+          className="code-name-list"
+          style={{
+            marginRight: '10px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+          }}
         >
-            <div
-                className="code-name-list"
+          <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+            {currentreuseableSVGElementList.map((item, index) => (
+              <li
+                key={index}
+                className="autocomplete-option"
                 style={{
-                    marginRight: '10px',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
+                  padding: '5px',
+                  cursor: 'pointer',
+                  whiteSpace: 'pre-wrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  wordWrap: 'break-word',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
-            >
-                <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
-                    {currentreuseableSVGElementList.map((item, index) => (
-                        <li
-                            key={index}
-                            className="autocomplete-option"
-                            style={{
-                                padding: '5px',
-                                cursor: 'pointer',
-                                whiteSpace: 'pre-wrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                wordWrap: 'break-word',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
-                        >
-                        <span 
-                            onClick={() => {
-                                if (showmodifyobjbutton) {
-                                    handleModifyobjOptionClick(item.codeName, '');
-                                } else {
-                                  handleUseobjOptionClick(item.codeName, '');
-                                }
-                            }}
-                            style={{ flexGrow: 1 }}
-                        >
-                                {item.codeName}
-                            </span>
-                            {showmodifyobjbutton && <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRenderSVGClick(item.codeName, item.codeText);
-                                }}
-                                style={{
-                                    marginLeft: '10px',
-                                    padding: '2px 5px',
-                                    fontSize: '10px',
-                                }}
-                            >
-                                ...
-                            </button>}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            {svgCodeText &&<div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div
-                    style={{
-                        width: '200px',
-                        height: '200px',
-                        border: '1px solid #ccc',
-                        marginBottom: '10px',
-                    }}
+              >
+                <span
+                  onClick={() => {
+                    if (showmodifyobjbutton) {
+                      handleModifyobjOptionClick(item.codeName, '');
+                    } else {
+                      handleUseobjOptionClick(item.codeName, '');
+                    }
+                  }}
+                  style={{ flexGrow: 1 }}
                 >
-                    {svgCodeText && (
-                        <iframe
-                            ref={iframeRef}
-                            style={{ width: '100%', height: '100%', border: 'none' }}
-                        />
-                    )}
-                </div>
-                <button
-                    onClick={handleApplyClick}
-                    style={{
-                        padding: '5px 10px',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
+                  {item.codeName}
+                </span>
+                {showmodifyobjbutton && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRenderSVGClick(item.codeName, item.codeText);
                     }}
-                >
-                    Apply
-                </button>
-            </div>}
+                    style={{
+                      marginLeft: '10px',
+                      padding: '2px 5px',
+                      fontSize: '10px',
+                    }}
+                  >
+                    ...
+                  </button>
+                )}
+                
+              </li>
+            ))}
+          </ul>
         </div>
+
+        {svgCodeText && (
+          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '200px',
+                height: '200px',
+                border: '1px solid #ccc',
+                marginBottom: '10px',
+              }}
+            >
+              {svgCodeText && (
+                <iframe
+                  ref={iframeRef}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+        <div style={{ marginLeft: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={objNameInput}
+            onChange={(e) => setObjNameInput(e.target.value)}
+            placeholder=""
+            style={{ marginBottom: '10px', width: '150px' }}
+          />
+          <button
+            onClick={handleRenameObject}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              marginBottom: '10px',
+            }}
+          >
+            Rename Object
+          </button>
+                  {/* Displaying buttons for highlighted SVG pieces */}
+      <div style={{ marginTop: '10px' }}>
+        {currentVersion?.highlightedSVGPieceList?.map((piece) => (
+          <button
+            key={piece.codeName}
+            onClick={() => handlePieceClick(piece.codeName)}
+            style={{
+              backgroundColor: currentPieceName === piece.codeName ? '#ccc' : '#f0f0f0',
+              border: '1px solid #ccc',
+              padding: '5px',
+              margin: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            {piece.codeName}
+          </button>
+        ))}
+      </div>
+          
+          <button
+            onClick={handleApplyClick}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
     );
-};
+  };
 
 
   
