@@ -1219,8 +1219,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
 
 
     const handleModifyPieces = () => {
+      
       setVersions(prevVersions => {
         const updatedVersions = prevVersions.map(version => {
+          const updatedHighlightedSVGPieceList = [];
+          
           if (version.id === currentVersionId) {
             const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
               codeName: piece.codeName,
@@ -1244,7 +1247,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             console.log('check moedifypiece prompts', modifiedEntry)
             const cachedObjects = JSON.parse((sessionStorage.getItem('cachedobjects')))
             updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
-            return { ...version, modifyPieceList: updatedModifyPieceList };
+            return { ...version, modifyPieceList: updatedModifyPieceList, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
           }
           return version;
         });
@@ -1342,13 +1345,13 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           if (content) {
             //have params
             if(Object.values(currentobject.parameters).slice(0, -1).length >0){
-              var updatedcontent = '';
+              var updatedcontent = content.slice();
               Object.values(currentobject.parameters).slice(0, -1).forEach((param, index) => {
                   const placeholder = '{' + param + '}';
-                  updatedcontent = content.replace(new RegExp(placeholder, 'g'), Object.values(currentobject.parametercontents).slice(0, -1)[index]);
+                  updatedcontent = updatedcontent.replace(new RegExp(placeholder, 'g'), Object.values(currentobject.parametercontents).slice(0, -1)[index]);
               });
-              console.log('adding params', Object.values(currentobject.parametercontents).slice(0, -1), updatedcontent)
-                // Update the cloned object with the new SVG code
+
+              // Update the cloned object with the new SVG code
                 clonedObject_reuseableSVGElementList.codeText = updatedcontent;
 
                 // Replace or add the cloned object back to the reuseableSVGElementList
@@ -1359,9 +1362,11 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                     clonedObject_reuseableSVGElementList
                   ]
                 };
+                const newKey = `${currentSelectedSVG}_variation`;
+
                 const updatedCachedObjectsLog = {
                   ...cachedObjectsLog,
-                  newvariation: { ...OriginalObject_cachedObjectsLog } // Add or replace the 'newvariation' entry
+                  [newKey]: { ...OriginalObject_cachedObjectsLog, objname: newKey, svgcode: updatedcontent, templatecode: content } // Add or replace the 'newvariation' entry
                 };                
                 
                 // Update cachedobjectslog and reuseableSVGElementList again if necessary
@@ -1390,7 +1395,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                   // Return the updated versions array
                   return updatedVersions;
                 });
-                removeAllHighlights()
               }
             //no params
             else{
@@ -1432,7 +1436,6 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 // Return the updated versions array
                 return updatedVersions;
               });
-              removeAllHighlights()
 
             }
           }
