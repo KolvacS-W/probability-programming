@@ -800,6 +800,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const [objNameInput, setObjNameInput] = useState(currentSelectedSVG); // State for the object name input
     const [currentPieceName, setCurrentPieceName] = useState(''); // Track the currently clicked piece name
     const [savedSvgCodeText, setSavedSvgCodeText] = useState('')
+    const [piecePrompts, setPiecePrompts] = useState({}); // Store prompts for each piece
     const iframeRef = useRef<HTMLIFrameElement>(null);
     useEffect(() => {
         // console.log('ModifyObjWidget useeffect called', svgCodeText)
@@ -1223,6 +1224,47 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         const updatedSvgCode = highlightAndReplaceSVG(svgCode, pieceText)
         return updatedSvgCode
     };
+
+
+    const handleModifyPieces = () => {
+      setVersions(prevVersions => {
+        const updatedVersions = prevVersions.map(version => {
+          if (version.id === currentVersionId) {
+            const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
+              codeName: piece.codeName,
+              prompt: piecePrompts[piece.codeName] || '', // Get the corresponding prompt
+            }));
+    
+            const modifiedEntry = {
+              codeText: currentSelectedSVG,
+              pieces: modifiedPieces.map(item => item.codeName),
+              pieceprompts: modifiedPieces.map(item => item.prompt),
+            };
+    
+            // Check if there's already an entry with the same codeText and update it, or append a new one
+            const existingModifyPieceList = version.modifyPieceList || [];
+            const updatedModifyPieceList = existingModifyPieceList.filter(
+              entry => entry.codeText !== modifiedEntry.codeText
+            );
+    
+            // Add the modified entry (which overwrites any existing entry with the same codeText)
+            updatedModifyPieceList.push(modifiedEntry);
+    
+            return { ...version, modifyPieceList: updatedModifyPieceList };
+          }
+          return version;
+        });
+        return updatedVersions;
+      });
+    };
+    
+
+  const handlePromptChange = (pieceCodeName, prompt) => {
+    setPiecePrompts(prevPrompts => ({
+      ...prevPrompts,
+      [pieceCodeName]: prompt,
+    }));
+  };
     
     return (
       <div
@@ -1338,24 +1380,47 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           >
             Rename Object
           </button>
-                  {/* Displaying buttons for highlighted SVG pieces */}
-      <div style={{ marginTop: '10px' }}>
-        {currentVersion?.highlightedSVGPieceList?.map((piece) => (
-          <button
-            key={piece.codeName}
-            onClick={() => handlePieceClick(piece.codeName)}
-            style={{
-              backgroundColor: currentPieceName === piece.codeName ? '#ccc' : '#f0f0f0',
-              border: '1px solid #ccc',
-              padding: '5px',
-              margin: '5px',
-              cursor: 'pointer',
-            }}
-          >
-            {piece.codeName}
-          </button>
-        ))}
-      </div>
+        {/* Displaying buttons for highlighted SVG pieces */}
+        <div style={{ marginTop: '10px', width: '100%' }}>
+          {currentVersion?.highlightedSVGPieceList?.map((piece) => (
+            <div key={piece.codeName} style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
+              <button
+                onClick={() => handlePieceClick(piece.codeName)}
+                style={{
+                  backgroundColor: currentPieceName === piece.codeName ? '#ccc' : '#f0f0f0',
+                  border: '1px solid #ccc',
+                  padding: '5px',
+                  marginRight: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                {piece.codeName}
+              </button>
+              <input
+                type="text"
+                value={piecePrompts[piece.codeName] || ''}
+                onChange={(e) => handlePromptChange(piece.codeName, e.target.value)}
+                placeholder="Prompt"
+                style={{ flexGrow: 1, padding: '5px' }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleModifyPieces}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            marginTop: '10px',
+          }}
+        >
+          Modify Pieces
+        </button>
           
           <button
             onClick={handleApplyClick}
