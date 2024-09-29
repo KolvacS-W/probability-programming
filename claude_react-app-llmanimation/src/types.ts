@@ -35,10 +35,11 @@ export interface KeywordNode {
     history?: Version;  // Added for undo functionality
     detailtargetext?: string[],
     reuseableSVGElementList: { codeName: string, codeText: string, selected: boolean }[];
-    highlightedSVGPieceList: { codeName: string, codeText: string, selected: boolean }[];//only highlighted, use to maintain highlight info
+    modifyPieceList: { codeText: string, pieces: [], pieceprompts: []};
+    highlightedSVGPieceList?: { codeName: string, codeText: string, selected: boolean }[];//only highlighted, use to maintain highlight info
     previousSelectedSVGPieceList: { codeName: string, codeText: string, selected: boolean, parentSVG: string }[];//all ever selected, use to query when modifying 
     storedcoordinate?: { x: number, y: number };
-    cachedobjectslog: object;
+    cachedobjectslog: Record<string, any>;
   }
   
   

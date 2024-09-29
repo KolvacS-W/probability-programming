@@ -21,7 +21,7 @@ interface ResultViewerProps {
   versions: Version[];
 }
 
-const ngrok_url = 'https://72cd-104-196-195-165.ngrok-free.app';
+const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
 const ngrok_url_sonnet = ngrok_url + '/api/message';
 //for future use in draw()
 
@@ -764,6 +764,7 @@ let obj;
                               instance.piecenames,
                               instance.piecenamemodify,
                               instance.parameters ,
+                              parameterContents,
                               instance.basic_prompt)
     console.log('returning obj:', obj)
     return obj; // Return the codename
@@ -819,6 +820,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                              piecenames,
                              piecenamemodify,
                              parameters ,
+                             parametercontents,
                              basic_prompt) {
                              this.objname = objname
                              this.svgcode = svgcode
@@ -828,7 +830,8 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               this.modifyobj = modifyobj;
                               this.piecenames = piecenames;
                               this.piecenamemodify = piecenamemodify;
-                              this.parameters = parameters
+                              this.parameters = parameters,
+                              this.parametercontents = parametercontents,
                               this.basic_prompt = basic_prompt
 
                               // Automatically save the generated object into cachedobjects using codename
@@ -879,6 +882,7 @@ async createObj(parameterContents = [], name = ''){
                               this.piecenames,
                               this.piecenamemodify,
                               this.parameters ,
+                              parameterContents,
                               this.basic_prompt)
                                 //console.log('returning obj:', obj)
                                 return obj; // Return the codename
@@ -1356,13 +1360,14 @@ function recoverClassFromClassInfo(data) {
         break;
       }
       case 'GeneratedObject': {
-        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' ,basic_prompt = ''} = data;
+        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' , parametercontents = '', basic_prompt = ''} = data;
         const templatecodeInstance = recoverClassFromClassInfo(templatecode); // Recover the template properly
         const piecenamesInstance = recoverClassFromClassInfo(piecenames); // Recover the rule as well
         const piecenamemodifyInstance = recoverClassFromClassInfo(piecenamemodify); // Recover the rule as well
         const parametersInstance = recoverClassFromClassInfo(parameters); // Recover the rule as well
+        const parametercontentsInstance = recoverClassFromClassInfo(parametercontents); // Recover the rule as well
         const basic_promptInstance = recoverClassFromClassInfo(basic_prompt); // Recover the rule as well
-        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, basic_promptInstance);
+        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, parametercontentsInstance, basic_promptInstance);
         Object.assign(recoveredInstance, data); // Assign any additional properties
         break;
       }
