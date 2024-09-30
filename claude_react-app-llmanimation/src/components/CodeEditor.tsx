@@ -1511,88 +1511,93 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         maxWidth: '500px',
       }}
     >
-      {/* Left side for autocomplete options */}
+      {/* Left side for autocomplete options and large iframe preview */}
       <div
-        className="code-name-list"
         style={{
+          display: 'flex',
+          flexDirection: 'column',
           marginRight: '10px',
-          maxHeight: '200px',
-          overflowY: 'auto',
-          flexGrow: 1,
+          width: '50%',
         }}
       >
-        <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
-          {currentreuseableSVGElementList.map((item, index) => (
-            <li
-              key={index}
-              className="autocomplete-option"
-              style={{
-                padding: '5px',
-                cursor: 'pointer',
-                whiteSpace: 'pre-wrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                wordWrap: 'break-word',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              <span
-                onClick={() => {
-                  if (showModifyObjButton) {
-                    handleModifyobjOptionClick(item.codeName, '');
-                  } else {
-                    handleUseobjOptionClick(item.codeName, '');
-                  }
-                }}
-                style={{ flexGrow: 1 }}
-              >
-                {item.codeName}
-              </span>
-
-              {/* Render the small SVG preview */}
-              <iframe
-                srcDoc={renderSVGPreview(item.codeText)}
+        {/* Autocomplete options */}
+        <div
+          className="code-name-list"
+          style={{
+            maxHeight: '200px',
+            overflowY: 'auto',
+            flexGrow: 1,
+          }}
+        >
+          <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+            {currentreuseableSVGElementList.map((item, index) => (
+              <li
+                key={index}
+                className="autocomplete-option"
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  border: '1px solid #ccc',
-                  marginLeft: '10px',
-                }}
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRenderSVGClick(item.codeName, item.codeText);
-                }}
-                style={{
-                  marginLeft: '10px',
-                  padding: '2px 5px',
-                  fontSize: '10px',
-                  backgroundColor: '#f0f0f0',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
+                  padding: '5px',
                   cursor: 'pointer',
+                  whiteSpace: 'pre-wrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  wordWrap: 'break-word',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               >
-                ...
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                <span
+                  onClick={() => {
+                    if (showModifyObjButton) {
+                      handleModifyobjOptionClick(item.codeName, '');
+                    } else {
+                      handleUseobjOptionClick(item.codeName, '');
+                    }
+                  }}
+                  style={{ flexGrow: 1 }}
+                >
+                  {item.codeName}
+                </span>
 
-      {/* Right side for SVG preview and inputs */}
-      <div className="svg-preview-container" style={{ flexGrow: 2, marginLeft: '10px' }}>
-        {/* Render the SVG content */}
+                {/* Render the small SVG preview */}
+                <iframe
+                  srcDoc={renderSVGPreview(item.codeText)}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '1px solid #ccc',
+                    marginLeft: '10px',
+                  }}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRenderSVGClick(item.codeName, item.codeText);
+                  }}
+                  style={{
+                    marginLeft: '10px',
+                    padding: '2px 5px',
+                    fontSize: '10px',
+                    backgroundColor: '#f0f0f0',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ...
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Large SVG preview iframe at the bottom */}
         {svgCodeText && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ marginTop: '10px' }}>
             <div
               style={{
-                width: '200px',
+                width: '100%',
                 height: '200px',
                 border: '1px solid #ccc',
-                marginBottom: '10px',
               }}
             >
               {svgCodeText && (
@@ -1604,7 +1609,10 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             </div>
           </div>
         )}
-        
+      </div>
+
+      {/* Right side for SVG preview and inputs */}
+      <div className="svg-preview-container" style={{ flexGrow: 2, marginLeft: '10px' }}>
         {/* Input for object name and buttons */}
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
           <input
@@ -1690,7 +1698,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       </div>
     </div>
   );
-  };
+};
 
 
   
@@ -1854,7 +1862,7 @@ const CheckSVGPieceWidget = ({ svgCode, pieceCodeName }: { svgCode: string, piec
               fontSize: '14px',
           }}
       >
-          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div className="inputsandbuttons-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div
                   style={{
                       width: '200px',
