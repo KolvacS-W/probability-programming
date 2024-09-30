@@ -1518,6 +1518,43 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       return updatedVersions;
     });
   };
+  const handleAnnotateGroup = () => {
+      
+    setVersions(prevVersions => {
+      const updatedVersions = prevVersions.map(version => {
+        const updatedHighlightedSVGPieceList = [];
+
+        if (version.id === currentVersionId) {
+          const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
+            codeName: piece.codeName,
+            prompt: piecePrompts[piece.codeName] || '', // Get the corresponding prompt
+          }));
+  
+          const modifiedEntry = {
+            codeName: currentSelectedSVG,
+            pieces: modifiedPieces.map(item => item.codeName),
+            pieceprompts: modifiedPieces.map(item => item.prompt),
+          };
+  
+          // Check if there's already an entry with the same codeText and update it, or append a new one
+          const existingModifyPieceList = version.modifyPieceList || [];
+          const updatedModifyPieceList = existingModifyPieceList.filter(
+            entry => entry.codeText !== modifiedEntry.codeText
+          );
+  
+          // Add the modified entry (which overwrites any existing entry with the same codeText)
+          updatedModifyPieceList.push(modifiedEntry);
+          console.log('check moedifypiece prompts', modifiedEntry)
+          const cachedObjects = JSON.parse((sessionStorage.getItem('cachedobjects')))
+          // updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
+          return { ...version, modifyPieceList: updatedModifyPieceList, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
+        }
+        return version;
+      });
+      return updatedVersions;
+    });
+    
+  };
     
   return (
     <div
@@ -1705,7 +1742,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                   type="text"
                   value={piecePrompts[piece.codeName] || ''}
                   onChange={(e) => handlePromptChange(piece.codeName, e.target.value)}
-                  placeholder="Prompt"
+                  placeholder="modify selected pieces"
                   style={{
                     marginBottom: '10px',
                     padding: '5px',
@@ -1732,6 +1769,32 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             }}
           >
             Modify Pieces
+          </button>
+          <input
+            type="text"
+            // value={objNameInput}
+            placeholder="annotate selected pieces"
+            style={{
+              marginBottom: '10px',
+              padding: '5px',
+              width: '100%',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+            }}
+          />
+          <button
+            onClick={handleAnnotateGroup}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#f0f0f0',
+              border: '1px solid #ccc',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              marginBottom: '10px',
+              width: '100%',
+            }}
+          >
+            Annotate group
           </button>
         </div>
       </div>
