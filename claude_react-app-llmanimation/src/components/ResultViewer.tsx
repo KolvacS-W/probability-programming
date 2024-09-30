@@ -851,8 +851,8 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               this.abstract_params = abstract_params;
                               this.parametercontents = parametercontents,
                               this.abstractparametercontents = abstractparametercontents,
-                              this.basic_prompt = basic_prompt
-
+                              this.basic_prompt = basic_prompt,
+                              this.annotated_pieces = {}
                               // Automatically save the generated object into cachedobjects using codename
                               window.cachedobjects[objname] = this;
                             }
@@ -1381,7 +1381,7 @@ function recoverClassFromClassInfo(data) {
         break;
       }
       case 'GeneratedObject': {
-        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' , abstract_params, parametercontents = '', abstractparametercontents = '', basic_prompt = ''} = data;
+        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' , abstract_params, parametercontents = '', abstractparametercontents = '', basic_prompt = '', annotated_pieces = ''} = data;
         const templatecodeInstance = recoverClassFromClassInfo(templatecode); // Recover the template properly
         const piecenamesInstance = recoverClassFromClassInfo(piecenames); // Recover the rule as well
         const piecenamemodifyInstance = recoverClassFromClassInfo(piecenamemodify); // Recover the rule as well
@@ -1391,7 +1391,8 @@ function recoverClassFromClassInfo(data) {
         const parametercontentsInstance = recoverClassFromClassInfo(parametercontents); // Recover the rule as well
 
         const basic_promptInstance = recoverClassFromClassInfo(basic_prompt); // Recover the rule as well
-        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, abstract_paramsInstance, parametercontentsInstance, abstractparametercontentsInstance, basic_promptInstance);
+        const annotated_piecesInstance = recoverClassFromClassInfo(annotated_pieces);
+        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, abstract_paramsInstance, parametercontentsInstance, abstractparametercontentsInstance, basic_promptInstance, annotated_piecesInstance);
         Object.assign(recoveredInstance, data); // Assign any additional properties
         break;
       }

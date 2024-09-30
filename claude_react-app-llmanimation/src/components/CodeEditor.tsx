@@ -816,6 +816,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     const [currentPieceName, setCurrentPieceName] = useState(''); // Track the currently clicked piece name
     const [savedSvgCodeText, setSavedSvgCodeText] = useState('')
     const [piecePrompts, setPiecePrompts] = useState({}); // Store prompts for each piece
+    const [groupNameInput, setGroupNameInput] = useState('');
     const iframeRef = useRef<HTMLIFrameElement>(null);
     useEffect(() => {
         // console.log('ModifyObjWidget useeffect called', svgCodeText)
@@ -1260,7 +1261,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             // Check if there's already an entry with the same codeText and update it, or append a new one
             const existingModifyPieceList = version.modifyPieceList || [];
             const updatedModifyPieceList = existingModifyPieceList.filter(
-              entry => entry.codeText !== modifiedEntry.codeText
+              entry => entry.codeName !== modifiedEntry.codeName
             );
     
             // Add the modified entry (which overwrites any existing entry with the same codeText)
@@ -1518,43 +1519,43 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       return updatedVersions;
     });
   };
-  const handleAnnotateGroup = () => {
+  // const handleAnnotateGroup = (groupNameInput: string) => {
       
-    setVersions(prevVersions => {
-      const updatedVersions = prevVersions.map(version => {
-        const updatedHighlightedSVGPieceList = [];
+  //   setVersions(prevVersions => {
+  //     const updatedVersions = prevVersions.map(version => {
+  //       const updatedHighlightedSVGPieceList = [];
 
-        if (version.id === currentVersionId) {
-          const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
-            codeName: piece.codeName,
-            prompt: piecePrompts[piece.codeName] || '', // Get the corresponding prompt
-          }));
+  //       if (version.id === currentVersionId) {
+  //         // var currentVersion = versions.find(version => version.id === currentVersionId);
+  //         // console.log('check version', currentVersion)
+  //         const AnnotatedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
+  //           codeName: piece.codeName,
+  //         }));
   
-          const modifiedEntry = {
-            codeName: currentSelectedSVG,
-            pieces: modifiedPieces.map(item => item.codeName),
-            pieceprompts: modifiedPieces.map(item => item.prompt),
-          };
-  
-          // Check if there's already an entry with the same codeText and update it, or append a new one
-          const existingModifyPieceList = version.modifyPieceList || [];
-          const updatedModifyPieceList = existingModifyPieceList.filter(
-            entry => entry.codeText !== modifiedEntry.codeText
-          );
-  
-          // Add the modified entry (which overwrites any existing entry with the same codeText)
-          updatedModifyPieceList.push(modifiedEntry);
-          console.log('check moedifypiece prompts', modifiedEntry)
-          const cachedObjects = JSON.parse((sessionStorage.getItem('cachedobjects')))
-          // updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
-          return { ...version, modifyPieceList: updatedModifyPieceList, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
-        }
-        return version;
-      });
-      return updatedVersions;
-    });
+  //         const AnnotatedEntry = {
+  //           codeName: currentSelectedSVG,
+  //           pieces: AnnotatedPieces.map(item => item.codeName),
+  //           groupname: groupNameInput
+  //         };
+
+  //         // Check if there's already an entry with the same codeName and groupname, and update or append a new one
+  //         const existingAnnotatedPieceList = version.AnnotatedPieceList || [];
+  //         const updatedAnnotatedPieceList = existingAnnotatedPieceList.filter(
+  //           entry => !(entry.codeName === AnnotatedEntry.codeName && entry.groupname === AnnotatedEntry.groupname)
+  //         );
+
+  //         // Add the new AnnotatedEntry to the filtered list (overwriting any existing matching entry)
+  //         updatedAnnotatedPieceList.push(AnnotatedEntry);        
+  //         console.log('updating updatedAnnotatedPieceList', updatedAnnotatedPieceList)
+  //         // updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
+  //         return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, AnnotatedPieceList: updatedAnnotatedPieceList};
+  //       }
+  //       return version;
+  //     });
+  //     return updatedVersions;
+  //   });
     
-  };
+  // };
     
   return (
     <div
@@ -1773,6 +1774,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           <input
             type="text"
             // value={objNameInput}
+            onChange={(e) => setGroupNameInput(e.target.value)}
             placeholder="annotate selected pieces"
             style={{
               marginBottom: '10px',
@@ -1783,7 +1785,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             }}
           />
           <button
-            onClick={handleAnnotateGroup}
+            // onClick={handleAnnotateGroup(groupNameInput)}
             style={{
               padding: '5px 10px',
               backgroundColor: '#f0f0f0',

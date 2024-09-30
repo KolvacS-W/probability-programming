@@ -128,6 +128,9 @@ houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
       reuseableSVGElementList: [], // Added
+      highlightedSVGPieceList: [],
+      AnnotatedPieceList: [],
+      modifyPieceList: []
     };
   
     setVersions([baseVersion]);
@@ -484,7 +487,9 @@ houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
       specificParamList: [], // Added
       paramCheckEnabled: false, // Added
       reuseableSVGElementList: currentVersion.reuseableSVGElementList, // Added
-      cachedobjectslog: {}
+      cachedobjectslog: {},
+      modifyPieceList: [],
+      AnnotatedPieceList:[]
     };
   
     setVersions([...versions, newVersion]);
