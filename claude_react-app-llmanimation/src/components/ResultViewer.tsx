@@ -3,6 +3,7 @@ import { Version, KeywordTree } from '../types';
 import axios from 'axios';
 
 interface ResultViewerProps {
+  ngrok_url_sonnet: string;
   usercode: {
     js: string;
   };
@@ -21,11 +22,11 @@ interface ResultViewerProps {
   versions: Version[];
 }
 
-const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
-const ngrok_url_sonnet = ngrok_url + '/api/message';
-//for future use in draw()
+// const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
+// const ngrok_url_sonnet = ngrok_url + '/api/message';
+// //for future use in draw()
 
-const ResultViewer: React.FC<ResultViewerProps> = ({ usercode, backendcode, classcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, iframeRef}) => {
+const ResultViewer: React.FC<ResultViewerProps> = ({ ngrok_url_sonnet, usercode, backendcode, classcode, activeTab, updateBackendHtml, currentVersionId, setVersions, versions, iframeRef}) => {
   // const iframeRef = useRef<HTMLIFrameElement>(null);
   // console.log('iframeref', iframeRef)
   const containerRef = useRef<HTMLDivElement>(null);

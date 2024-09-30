@@ -11,6 +11,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import ReusableElementToolbar from './components/ReusableElementToolbar';
 
 const App: React.FC = () => {
+  const ngrok_url_sonnet = 'https://e5a9-34-75-19-224.ngrok-free.app/'+ '/api/message'
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
@@ -531,6 +532,7 @@ houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
             {/* Replace DescriptionEditor with ClassEditor */}
             <div className="class-editor-container">
               <ClassEditor 
+              ngrok_url_sonnet = {ngrok_url_sonnet}
               currentVersionId={currentVersionId}
               versions={versions}
               setVersions={setVersions}
@@ -541,6 +543,7 @@ houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
             </div>
 
             <CustomCodeEditor
+              ngrok_url_sonnet = {ngrok_url_sonnet}
               usercode={versions.find(version => version.id === currentVersionId)!.usercode}
               backendcode={versions.find(version => version.id === currentVersionId)!.backendcode}
               onApplyjs={handlejsCodeInitialize}
@@ -557,7 +560,8 @@ houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
               setActiveTab={setActiveTab} // Pass setActiveTab
               onRunUserCode={handleRunUserCode} // Pass the handler
               />
-            <ResultViewer  
+            <ResultViewer 
+            ngrok_url_sonnet = {ngrok_url_sonnet} 
             activeTab={activeTab} 
             usercode={versions.find(version => version.id === currentVersionId)!.usercode}
             classcode={classcode} // Pass classcode to ResultViewer 

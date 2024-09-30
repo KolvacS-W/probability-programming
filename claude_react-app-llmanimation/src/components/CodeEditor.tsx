@@ -21,14 +21,16 @@ interface CodeEditorProps {
   activeTab: string;
   setActiveTab: (tab: string) => void; // Passed from parent (App component)
   onRunUserCode: (usercode: { js: string }) => void; // Add this prop
+  ngrok_url_sonnet: string
 }
 
-const API_KEY = '';
-const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
-const ngrok_url_sonnet = ngrok_url + '/api/message';
-const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
+// const API_KEY = '';
+// const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
+// const ngrok_url_sonnet = ngrok_url + '/api/message';
+// const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
 const CustomCodeEditor: React.FC<CodeEditorProps> = ({
+  ngrok_url_sonnet,
   usercode,
   backendcode,
   onApplyjs,
@@ -65,7 +67,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   const [buttonchoice, setButtonchoice] = useState('');
   //for modifyobjwidget
   const [svgCodeText, setSvgCodeText] = useState('');
-  const [showModifyObjWidget, setShowModifyObjWidget] = useState(false);
+  const [showModifyObjWidget, setShowModifyObjWidget] = useState(true);
   const [currentSelectedSVG, setCurrentSelectedSVG] = useState(''); // State to store the current codeName
   const [showmodifyobjbutton, setShowModifyObjButton] = useState(false);
   //for checksvgpiecewidget
@@ -199,7 +201,20 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         setShowAutocomplete(false);
         setShowGenerateOption(false);
         setShowCoordcomplete(false);
-        setShowModifyObjWidget(false);
+        // setShowModifyObjWidget(false);
+        setVersions(prevVersions => {
+          const updatedVersions = prevVersions.map(version => {
+            const updatedHighlightedSVGPieceList = [];
+  
+            if (version.id === currentVersionId) {
+              // Check if there's already an entry with the same codeText and update it, or append a new one
+              return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
+            }
+            return version;
+          });
+          return updatedVersions;
+        });
+        setSvgCodeText('');
         setShowCheckSVGPieceWidget(false);
         setShowCheckWholeSVGWidget(false);
         setShowModifyObjButton(false);
@@ -1223,7 +1238,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       setVersions(prevVersions => {
         const updatedVersions = prevVersions.map(version => {
           const updatedHighlightedSVGPieceList = [];
-          
+
           if (version.id === currentVersionId) {
             const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
               codeName: piece.codeName,
@@ -1450,82 +1465,128 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       [pieceCodeName]: prompt,
     }));
   };
+  // Function to render the small SVG in an iframe for each autocomplete option
+  const renderSVGPreview = (svgCode: string) => {
+    const svgDocument = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <style>
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+          }
+          svg {
+            width: 100%;
+            height: 100%;
+          }
+        </style>
+      </head>
+      <body>
+        ${svgCode}
+      </body>
+      </html>
+    `;
+    return svgDocument;
+  };
     
-    return (
+  return (
+    <div
+      className="modify-obj-widget"
+      style={{
+        position: 'absolute',
+        top: 450,
+        left: 820,
+        zIndex: 1000,
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        padding: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        flexDirection: 'row',
+        fontSize: '14px',
+        width: '100%',
+        maxWidth: '500px',
+      }}
+    >
+      {/* Left side for autocomplete options */}
       <div
-        className="modify-obj-widget"
+        className="code-name-list"
         style={{
-          position: 'absolute',
-          top: autocompletePosition.top,
-          left: autocompletePosition.left,
-          zIndex: 1000,
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
-          padding: '10px',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          display: 'flex',
-          fontSize: '14px',
+          marginRight: '10px',
+          maxHeight: '200px',
+          overflowY: 'auto',
+          flexGrow: 1,
         }}
       >
-        <div
-          className="code-name-list"
-          style={{
-            marginRight: '10px',
-            maxHeight: '200px',
-            overflowY: 'auto',
-          }}
-        >
-          <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
-            {currentreuseableSVGElementList.map((item, index) => (
-              <li
-                key={index}
-                className="autocomplete-option"
+        <ul className="autocomplete-options" style={{ margin: 0, padding: 0, listStyleType: 'none' }}>
+          {currentreuseableSVGElementList.map((item, index) => (
+            <li
+              key={index}
+              className="autocomplete-option"
+              style={{
+                padding: '5px',
+                cursor: 'pointer',
+                whiteSpace: 'pre-wrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                wordWrap: 'break-word',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <span
+                onClick={() => {
+                  if (showModifyObjButton) {
+                    handleModifyobjOptionClick(item.codeName, '');
+                  } else {
+                    handleUseobjOptionClick(item.codeName, '');
+                  }
+                }}
+                style={{ flexGrow: 1 }}
+              >
+                {item.codeName}
+              </span>
+
+              {/* Render the small SVG preview */}
+              <iframe
+                srcDoc={renderSVGPreview(item.codeText)}
                 style={{
-                  padding: '5px',
+                  width: '40px',
+                  height: '40px',
+                  border: '1px solid #ccc',
+                  marginLeft: '10px',
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRenderSVGClick(item.codeName, item.codeText);
+                }}
+                style={{
+                  marginLeft: '10px',
+                  padding: '2px 5px',
+                  fontSize: '10px',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
                   cursor: 'pointer',
-                  whiteSpace: 'pre-wrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  wordWrap: 'break-word',
-                  display: 'flex',
-                  alignItems: 'center',
                 }}
               >
-                <span
-                  onClick={() => {
-                    if (showmodifyobjbutton) {
-                      handleModifyobjOptionClick(item.codeName, '');
-                    } else {
-                      handleUseobjOptionClick(item.codeName, '');
-                    }
-                  }}
-                  style={{ flexGrow: 1 }}
-                >
-                  {item.codeName}
-                </span>
-                {showmodifyobjbutton && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRenderSVGClick(item.codeName, item.codeText);
-                    }}
-                    style={{
-                      marginLeft: '10px',
-                      padding: '2px 5px',
-                      fontSize: '10px',
-                    }}
-                  >
-                    ...
-                  </button>
-                )}
-                
-              </li>
-            ))}
-          </ul>
-        </div>
+                ...
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
 
+      {/* Right side for SVG preview and inputs */}
+      <div className="svg-preview-container" style={{ flexGrow: 2, marginLeft: '10px' }}>
+        {/* Render the SVG content */}
         {svgCodeText && (
-          <div className="svg-preview-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div
               style={{
                 width: '200px',
@@ -1543,13 +1604,21 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             </div>
           </div>
         )}
-        <div style={{ marginLeft: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        
+        {/* Input for object name and buttons */}
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
           <input
             type="text"
             value={objNameInput}
             onChange={(e) => setObjNameInput(e.target.value)}
-            placeholder=""
-            style={{ marginBottom: '10px', width: '150px' }}
+            placeholder="Object Name"
+            style={{
+              marginBottom: '10px',
+              padding: '5px',
+              width: '100%',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+            }}
           />
           <button
             onClick={handleRenameObject}
@@ -1561,54 +1630,49 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
               borderRadius: '5px',
               cursor: 'pointer',
               marginBottom: '10px',
+              width: '100%',
             }}
           >
             Rename Object
           </button>
-        {/* Displaying buttons for highlighted SVG pieces */}
-        <div style={{ marginTop: '10px', width: '100%' }}>
-          {currentVersion?.highlightedSVGPieceList?.map((piece) => (
-            <div key={piece.codeName} style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
-              <button
-                onClick={() => handlePieceClick(piece.codeName)}
-                style={{
-                  backgroundColor: currentPieceName === piece.codeName ? '#ccc' : '#f0f0f0',
-                  border: '1px solid #ccc',
-                  padding: '5px',
-                  marginRight: '10px',
-                  cursor: 'pointer',
-                }}
-              >
-                {piece.codeName}
-              </button>
-              <input
-                type="text"
-                value={piecePrompts[piece.codeName] || ''}
-                onChange={(e) => handlePromptChange(piece.codeName, e.target.value)}
-                placeholder="Prompt"
-                style={{ flexGrow: 1, padding: '5px' }}
-              />
-            </div>
-          ))}
-        </div>
 
-        <button
-          onClick={handleModifyPieces}
-          style={{
-            padding: '5px 10px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            marginTop: '10px',
-          }}
-        >
-          Modify Pieces
-        </button>
-          
+          {/* Displaying buttons for highlighted SVG pieces */}
+          <div style={{ marginTop: '10px', width: '100%' }}>
+            {currentVersion?.highlightedSVGPieceList?.map((piece) => (
+              <div key={piece.codeName} style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
+                <button
+                  onClick={() => handlePieceClick(piece.codeName)}
+                  style={{
+                    backgroundColor: currentPieceName === piece.codeName ? '#ccc' : '#f0f0f0',
+                    border: '1px solid #ccc',
+                    padding: '5px',
+                    marginRight: '10px',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {piece.codeName}
+                </button>
+                <input
+                  type="text"
+                  value={piecePrompts[piece.codeName] || ''}
+                  onChange={(e) => handlePromptChange(piece.codeName, e.target.value)}
+                  placeholder="Prompt"
+                  style={{
+                    marginBottom: '10px',
+                    padding: '5px',
+                    width: '100%',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Unified Modify and Apply buttons */}
           <button
-            onClick={handleApplyClick}
+            onClick={handleModifyPieces}
             style={{
               padding: '5px 10px',
               backgroundColor: '#007bff',
@@ -1616,13 +1680,16 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
               border: 'none',
               borderRadius: '5px',
               cursor: 'pointer',
+              marginBottom: '10px',
+              width: '100%',
             }}
           >
-            Apply
+            Modify Pieces
           </button>
         </div>
       </div>
-    );
+    </div>
+  );
   };
 
 

@@ -6,6 +6,7 @@ import axios from 'axios';
 import ResultViewer from './ResultViewer'; // Import the ResultViewer component
 
 interface ClassEditorProps {
+  ngrok_url_sonnet: string;
   currentVersionId: string | null;
   setVersions: React.Dispatch<React.SetStateAction<Version[]>>;
   versions: Version[];
@@ -16,11 +17,12 @@ interface ClassEditorProps {
   onRunClassCode: () => void; // Add this prop
 }
 
-const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
-const ngrok_url_sonnet = ngrok_url + '/api/message';
-const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
+// const ngrok_url = 'https://82b7-34-46-65-154.ngrok-free.app';
+// const ngrok_url_sonnet = ngrok_url + '/api/message';
+// const ngrok_url_haiku = ngrok_url + '/api/message-haiku';
 
 const ClassEditor: React.FC<ClassEditorProps> = ({
+  ngrok_url_sonnet,
   currentVersionId,
   versions,
   classcode, setClassCode, onRunClassCode
