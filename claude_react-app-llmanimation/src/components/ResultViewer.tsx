@@ -717,6 +717,7 @@ let obj;
   var svgHTML;
   var svgHTMLtemplate;
   // const coord = null;
+  console.log('debugnow',parameterContents, parameterContents.length )
   if(parameterContents.length >0){
     // need to parameterize
     const parameters = this.parameters;
@@ -907,7 +908,7 @@ placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl =
     // Serialize the updated SVG without <script> and add to the canvas
     const serializer = new XMLSerializer();
     const svgElementStr = serializer.serializeToString(svgDoc.documentElement);
-    
+    console.log('debugnow', content, svgElementStr)
     // Create an element from the parsed SVG
     const svgElement = this.createSVGElement(
         svgElementStr,

@@ -11,7 +11,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import ReusableElementToolbar from './components/ReusableElementToolbar';
 
 const App: React.FC = () => {
-  const ngrok_url_sonnet = 'https://e5a9-34-75-19-224.ngrok-free.app/'+ '/api/message'
+  const ngrok_url_sonnet = 'https://352e-34-90-83-17.ngrok-free.app'+ '/api/message'
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
@@ -103,12 +103,12 @@ const house = new window.House();
 // Usage directly with the constructor
 const houseobj = await window.House.generateObj([50, 'grey']);
 
-const houseobj2 = await houseobj.createObj([100, 'red'])
+// const houseobj2 = await houseobj.createObj([100, 'red'])
 
 
 houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
 
-houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
+// houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [

@@ -991,7 +991,12 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
         
     }
 
-
+    function findSVGAncestor(element) {
+      while (element && element.tagName.toLowerCase() !== 'svg') {
+          element = element.parentElement;
+      }
+      return element;
+  }
     const toggleHighlight = (event: MouseEvent) => {
         event.stopPropagation();
         const target = event.currentTarget as SVGElement;
@@ -1012,7 +1017,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             }
             const svgString = target.outerHTML;
             remove_svgpiece(svgString)
-            setSvgCodeText(target.parentElement.parentElement.outerHTML)
+            setSvgCodeText(findSVGAncestor(target).outerHTML)
+            console.log('done update', svgString, findSVGAncestor(target))
             //window.parent.postMessage({ type: 'REMOVE_SVGPIECE', codetext: svgString }, '*');
             
         } else {
@@ -1027,8 +1033,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             const svgString = clonedTarget.outerHTML;
             //console.log('before update', svgCodeText)
             update_svgpiece(svgString.split(' ')[0].split('<')[1], svgString)
-            setSvgCodeText(target.parentElement.parentElement.outerHTML) 
-            //console.log('done update', svgString, target.parentElement.parentElement)
+            setSvgCodeText(findSVGAncestor(target).outerHTML) 
+            console.log('done update', svgString, findSVGAncestor(target))
         }
     };
 
