@@ -1387,7 +1387,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                 // Update cachedobjectslog and reuseableSVGElementList again if necessary
                 updatedVersion = {
                   ...updatedVersion, // Start with the previously updated version
-                  cachedobjectslog: updatedCachedObjectsLog
+                  cachedobjectslog: updatedCachedObjectsLog,
+                  highlightedSVGPieceList: []
                 };
 
                 // Store the updated cached objects back into sessionStorage
@@ -1413,44 +1414,53 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
               }
             //no params
             else{
+              var updatedcontent = content.slice();
               // Update the cloned object with the new SVG code
-              clonedObject_reuseableSVGElementList.codeText = content;
+                clonedObject_reuseableSVGElementList.codeText = updatedcontent;
 
-              // Replace or add the cloned object back to the reuseableSVGElementList
-              const updatedVersion = {
-                ...currentVersion,
-                reuseableSVGElementList: [
-                  ...currentVersion.reuseableSVGElementList.filter(item => item.codeName !== clonedObject_reuseableSVGElementList.codeName),
-                  clonedObject_reuseableSVGElementList
-                ]
-              };
+                // Replace or add the cloned object back to the reuseableSVGElementList
+                var updatedVersion = {
+                  ...currentVersion,
+                  reuseableSVGElementList: [
+                    ...currentVersion.reuseableSVGElementList.filter(item => item.codeName !== clonedObject_reuseableSVGElementList.codeName),
+                    clonedObject_reuseableSVGElementList
+                  ]
+                };
+                const newKey = `${currentSelectedSVG}_variation`;
 
-              // Also update the cachedObjectsLog
-              // const updatedCachedObjectsLog = {
-              //   ...cachedObjectsLog,
-              //   [clonedObject.codeName]: { ...clonedObject }
-              // };
+                const updatedCachedObjectsLog = {
+                  ...cachedObjectsLog,
+                  [newKey]: { ...OriginalObject_cachedObjectsLog, objname: newKey, svgcode: updatedcontent, templatecode: content } // Add or replace the 'newvariation' entry
+                };                
+                
+                // Update cachedobjectslog and reuseableSVGElementList again if necessary
+                updatedVersion = {
+                  ...updatedVersion, // Start with the previously updated version
+                  cachedobjectslog: updatedCachedObjectsLog,
+                  highlightedSVGPieceList: []
+                };
 
-              // // Store the updated cached objects back into sessionStorage
-              // sessionStorage.setItem('cachedobjects', JSON.stringify(updatedCachedObjectsLog));
+                // Store the updated cached objects back into sessionStorage
+                sessionStorage.setItem('cachedobjects', JSON.stringify(updatedCachedObjectsLog));
 
-              setVersions(prevVersions => {
-                const updatedVersions = prevVersions.map(version => {
-                  // Ensure `id` is always defined with a default value
-                  const versionId = version.id ?? 'default-id'; // Provide a default value if `id` is undefined
-                  
-                  // If the versionId matches the currentVersionId, update the version
-                  if (versionId === currentVersionId) {
-                    return { ...updatedVersion, id: versionId }; // Use the updated version and ensure the id is set
-                  }
-
-                  // Otherwise, return the version unchanged but ensure the id is defined
-                  return { ...version, id: versionId };
+                setVersions(prevVersions => {
+                  const updatedVersions = prevVersions.map(version => {
+                    // Ensure `id` is always defined with a default value
+                    const versionId = version.id ?? 'default-id'; // Provide a default value if `id` is undefined
+                    
+                    // If the versionId matches the currentVersionId, update the version
+                    if (versionId === currentVersionId) {
+                      return { ...updatedVersion, id: versionId }; // Use the updated version and ensure the id is set
+                    }
+                
+                    // Otherwise, return the version unchanged but ensure the id is defined
+                    return { ...version, id: versionId };
+                  });
+                
+                  // Return the updated versions array
+                  return updatedVersions;
                 });
-
-                // Return the updated versions array
-                return updatedVersions;
-              });
+               
 
             }
           }
@@ -1490,6 +1500,17 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       </html>
     `;
     return svgDocument;
+  };
+
+  const handleDeleteObject = (versionId: string, codeName: string) => {
+    setVersions(prevVersions => {
+      const updatedVersions = prevVersions.map(version =>
+        version.id === versionId
+          ? { ...version, reuseableSVGElementList: version.reuseableSVGElementList.filter(element => element.codeName !== codeName) }
+          : version
+      );
+      return updatedVersions;
+    });
   };
     
   return (
@@ -1545,6 +1566,20 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
                   alignItems: 'center',
                 }}
               >
+                <button className="delete-icon"
+                  style={{
+                    marginLeft: '10px',
+                    padding: '2px 5px',
+                    fontSize: '10px',
+                    color: 'black',
+                    backgroundColor: '#f0f0f0',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                    onClick={() => handleDeleteObject(currentVersionId, item.codeName)}>-
+                </button>
+
                 <span
                   onClick={() => {
                     if (showModifyObjButton) {
@@ -1632,9 +1667,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             onClick={handleRenameObject}
             style={{
               padding: '5px 10px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
+              backgroundColor: '#f0f0f0',
+              border: '1px solid #ccc',
               borderRadius: '5px',
               cursor: 'pointer',
               marginBottom: '10px',
@@ -1683,9 +1717,8 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             onClick={handleModifyPieces}
             style={{
               padding: '5px 10px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
+              backgroundColor: '#f0f0f0',
+              border: '1px solid #ccc',
               borderRadius: '5px',
               cursor: 'pointer',
               marginBottom: '10px',
