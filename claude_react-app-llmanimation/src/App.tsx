@@ -19,7 +19,8 @@ const App: React.FC = () => {
   const [classcode, setClassCode] = useState<{ js: string }>({
     js: `window.House = class extends window.Rule {
     static doc = "a Victorian house sitting on top of a porch";
-    static parameters = ['height of the porch', 'roof color'];
+    static qualitative_params = ['height of the porch', 'roof color'];
+    static abstract_params = ['shape of windows']
     // No constructor needed
 }
 
@@ -101,7 +102,7 @@ const house = new window.House();
 
 
 // Usage directly with the constructor
-const houseobj = await window.House.generateObj([50, 'grey']);
+const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
 // const houseobj2 = await houseobj.createObj([100, 'red'])
 

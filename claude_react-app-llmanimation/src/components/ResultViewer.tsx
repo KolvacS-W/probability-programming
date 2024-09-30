@@ -491,7 +491,8 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
         // Check if the subclass has a static 'doc' property
         if (this.constructor.doc) {
             this.basic_prompt = this.constructor.doc;
-            this.parameters = this.constructor.parameters || [];
+            this.parameters = this.constructor.qualitative_params || [];
+            this.abstract_params = this.constructor.abstract_params || [];
         } else {
             // Existing constructor logic
             if (typeof arg1 === 'string') {
@@ -502,6 +503,7 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
                 this.useobj = arg1.useobj || { objname: '' };
             }
             this.parameters = [];
+            this.abstract_params = [];
         }
 
         // Initialize other properties
@@ -516,7 +518,7 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
         console.log('Rule created with basic_prompt:', this.basic_prompt);
     }
 
- async draw() {
+ async draw(abstractparameterContents = []) {
   console.log('object draw called, check rule', this);
 
   if (!(this.useobj.objname)){
@@ -627,9 +629,18 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
       }
 
     else{
-      console.log('no existing code', this.parameters)
+      console.log('no existing code', this.parameters, this.abstract_params)
+      var abstract_param_prompt = 'Also, '
+      if(this.abstract_params.length >0){
+        this.abstract_params.forEach((abstract_param, index) => {
+            const param_content = abstractparameterContents[index];
+            abstract_param_prompt += \`for \` +  abstract_param + \` , make it \` + param_content+\`; \`;
+        });
+        console.log('check abstract_param_prompt', abstract_param_prompt)
+      }
+
       if(this.parameters.length >0){
-        APIprompt = \`write me svg code to create a svg image of \` + this.basic_prompt +\`. Make the svg image as detailed as possible and as close to the description as possible.  
+        APIprompt = \`write me svg code to create a svg image of \` + this.basic_prompt +\`. \` +abstract_param_prompt+\`Make the svg image as detailed as possible and as close to the description as possible.  
         Furthermore, process the generated svg code into a svg code template, with the given a list of parameter names, make the returned svg code a template with certain parameters as text placeholders made by {parameter name}. 
         For example, parameter list: roof height, window color; resulting svg template:
         <svg viewBox="0 0 200 200">
@@ -645,7 +656,7 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
         Make sure donot include anything other than the final svg code template in your response.\`;
       }
       else{
-        APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +'. Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+        APIprompt = 'write me svg code to create a svg image of ' + this.basic_prompt +\`. \`+abstract_param_prompt+\`Make the svg image as detailed as possible and as close to the description as possible. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.\`;
       }
     }
 
@@ -694,7 +705,7 @@ else{
   }                          
 }
 
-static async generateObj(parameterContents = [], context = {}, name='') {
+static async generateObj(parameterContents = [], abstractparameterContents = [], context = {}, name='') {
 // Create an instance of the class to initialize instance properties
         const instance = new this(); // This will refer to the class that calls it, like House or Rule
 
@@ -717,13 +728,13 @@ let obj;
   var svgHTML;
   var svgHTMLtemplate;
   // const coord = null;
-  console.log('debugnow',parameterContents, parameterContents.length )
+  console.log('debugnow', instance, parameterContents, parameterContents.length )
   if(parameterContents.length >0){
     // need to parameterize
-    const parameters = this.parameters;
+    const parameters = instance.parameters;
   
     // Replace the placeholders in the SVG string with actual parameter contents
-    svgHTML = await instance.draw();
+    svgHTML = await instance.draw(abstractparameterContents);
     // const svgString = svgElement.outerHTML;
 
     svgHTMLtemplate = svgHTML
@@ -738,7 +749,7 @@ let obj;
   }
   else{
     //no parameter needed
-    svgHTML = await instance.draw();
+    svgHTML = await instance.draw(abstractparameterContents);
     console.log('no param', svgHTML)
   }
   
@@ -766,7 +777,9 @@ let obj;
                               instance.piecenames,
                               instance.piecenamemodify,
                               instance.parameters ,
+                              instance.abstract_params,
                               parameterContents,
+                              abstractparameterContents,
                               instance.basic_prompt)
     console.log('returning obj:', obj)
     return obj; // Return the codename
@@ -822,7 +835,9 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                              piecenames,
                              piecenamemodify,
                              parameters ,
+                             abstract_params,
                              parametercontents,
+                             abstractparametercontents,
                              basic_prompt) {
                              this.objname = objname
                              this.svgcode = svgcode
@@ -833,14 +848,16 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               this.piecenames = piecenames;
                               this.piecenamemodify = piecenamemodify;
                               this.parameters = parameters,
+                              this.abstract_params = abstract_params;
                               this.parametercontents = parametercontents,
+                              this.abstractparametercontents = abstractparametercontents,
                               this.basic_prompt = basic_prompt
 
                               // Automatically save the generated object into cachedobjects using codename
                               window.cachedobjects[objname] = this;
                             }
 
-async createObj(parameterContents = [], name = ''){
+async createObj(parameterContents = [], abstractparameterContents = [], name = ''){
 
                                 // If the name is not provided, generate a default name
                                 if (!name) {
@@ -884,7 +901,9 @@ async createObj(parameterContents = [], name = ''){
                               this.piecenames,
                               this.piecenamemodify,
                               this.parameters ,
+                              this.abstract_params,
                               parameterContents,
+                              abstractparameterContents,
                               this.basic_prompt)
                                 //console.log('returning obj:', obj)
                                 return obj; // Return the codename
@@ -1362,14 +1381,17 @@ function recoverClassFromClassInfo(data) {
         break;
       }
       case 'GeneratedObject': {
-        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' , parametercontents = '', basic_prompt = ''} = data;
+        const { objname = '', svgcode = '', templatecode = '', modifyobj = '', piecenames = '',piecenamemodify = '',parameters = '' , abstract_params, parametercontents = '', abstractparametercontents = '', basic_prompt = ''} = data;
         const templatecodeInstance = recoverClassFromClassInfo(templatecode); // Recover the template properly
         const piecenamesInstance = recoverClassFromClassInfo(piecenames); // Recover the rule as well
         const piecenamemodifyInstance = recoverClassFromClassInfo(piecenamemodify); // Recover the rule as well
         const parametersInstance = recoverClassFromClassInfo(parameters); // Recover the rule as well
+        const abstractparametercontentsInstance = recoverClassFromClassInfo(abstractparametercontents); // Recover the rule as well
+        const abstract_paramsInstance = recoverClassFromClassInfo(abstract_params); // Recover the rule as well
         const parametercontentsInstance = recoverClassFromClassInfo(parametercontents); // Recover the rule as well
+
         const basic_promptInstance = recoverClassFromClassInfo(basic_prompt); // Recover the rule as well
-        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, parametercontentsInstance, basic_promptInstance);
+        recoveredInstance = new GeneratedObject(objname, svgcode, templatecodeInstance, piecenamesInstance, piecenamemodifyInstance, parametersInstance, abstract_paramsInstance, parametercontentsInstance, abstractparametercontentsInstance, basic_promptInstance);
         Object.assign(recoveredInstance, data); // Assign any additional properties
         break;
       }
