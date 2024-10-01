@@ -1519,43 +1519,43 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       return updatedVersions;
     });
   };
-  // const handleAnnotateGroup = (groupNameInput: string) => {
-      
-  //   setVersions(prevVersions => {
-  //     const updatedVersions = prevVersions.map(version => {
-  //       const updatedHighlightedSVGPieceList = [];
+  const handleAnnotateGroup = (groupNameInput: string) => {
+    console.log('called handleAnnotateGroup')
+    setVersions(prevVersions => {
+      const updatedVersions = prevVersions.map(version => {
+        const updatedHighlightedSVGPieceList = [];
 
-  //       if (version.id === currentVersionId) {
-  //         // var currentVersion = versions.find(version => version.id === currentVersionId);
-  //         // console.log('check version', currentVersion)
-  //         const AnnotatedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
-  //           codeName: piece.codeName,
-  //         }));
+        if (version.id === currentVersionId) {
+          // var currentVersion = versions.find(version => version.id === currentVersionId);
+          // console.log('check version', currentVersion)
+          const AnnotatedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
+            codeName: piece.codeName,
+          }));
   
-  //         const AnnotatedEntry = {
-  //           codeName: currentSelectedSVG,
-  //           pieces: AnnotatedPieces.map(item => item.codeName),
-  //           groupname: groupNameInput
-  //         };
+          const AnnotatedEntry = {
+            codeName: currentSelectedSVG,
+            pieces: AnnotatedPieces.map(item => item.codeName),
+            groupname: groupNameInput
+          };
 
-  //         // Check if there's already an entry with the same codeName and groupname, and update or append a new one
-  //         const existingAnnotatedPieceList = version.AnnotatedPieceList || [];
-  //         const updatedAnnotatedPieceList = existingAnnotatedPieceList.filter(
-  //           entry => !(entry.codeName === AnnotatedEntry.codeName && entry.groupname === AnnotatedEntry.groupname)
-  //         );
+          // Check if there's already an entry with the same codeName and groupname, and update or append a new one
+          const existingAnnotatedPieceList = version.AnnotatedPieceList || [];
+          const updatedAnnotatedPieceList = existingAnnotatedPieceList.filter(
+            entry => !(entry.codeName === AnnotatedEntry.codeName && entry.groupname === AnnotatedEntry.groupname)
+          );
 
-  //         // Add the new AnnotatedEntry to the filtered list (overwriting any existing matching entry)
-  //         updatedAnnotatedPieceList.push(AnnotatedEntry);        
-  //         console.log('updating updatedAnnotatedPieceList', updatedAnnotatedPieceList)
-  //         // updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
-  //         return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, AnnotatedPieceList: updatedAnnotatedPieceList};
-  //       }
-  //       return version;
-  //     });
-  //     return updatedVersions;
-  //   });
+          // Add the new AnnotatedEntry to the filtered list (overwriting any existing matching entry)
+          updatedAnnotatedPieceList.push(AnnotatedEntry);        
+          console.log('updating updatedAnnotatedPieceList', updatedAnnotatedPieceList)
+          // updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
+          return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, AnnotatedPieceList: updatedAnnotatedPieceList};
+        }
+        return version;
+      });
+      return updatedVersions;
+    });
     
-  // };
+  };
     
   return (
     <div
@@ -1785,7 +1785,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
             }}
           />
           <button
-            // onClick={handleAnnotateGroup(groupNameInput)}
+            onClick={() => handleAnnotateGroup(groupNameInput)}
             style={{
               padding: '5px 10px',
               backgroundColor: '#f0f0f0',
