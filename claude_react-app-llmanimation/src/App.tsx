@@ -18,19 +18,11 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
     js: `window.House = class extends window.Rule {
-    static doc = "a Victorian house sitting on top of a porch";
-    static qualitative_params = ['height of the porch', 'roof color'];
+    static doc = "a Victorian house in front of hills";
+    static qualitative_params = ['height of hill', 'roof color'];
     static abstract_params = ['shape of windows']
     // No constructor needed
-}
-
-window.UpdatedHouse = class extends window.Rule {
-static doc = "a Victorian house sitting on top of a porch";
-    static qualitative_params = ['height of the porch', 'roof color'];
-    static abstract_params = ['shape of windows', 'frame of the house']
-    // No constructor needed
-}
-`,
+}`,
   });
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
@@ -98,21 +90,15 @@ static doc = "a Victorian house sitting on top of a porch";
 <body>
 </body>
 </html>`},
-      usercode: { js: `const canvas = new whole_canvas('azure');
-const house = new window.House();
-
-
+      usercode: { js: `setBackground('azure')
 // Usage directly with the constructor
 const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
-const houseobjvari = await houseobj.Modify([100, 'red'], ['round shape'])
-// const houseobj2 = await window.UpdatedHouse.generateObj([50, 'grey'], ['random non-rectangle shape', 'thick and red'], 'newobj1');
+const houseobj2 = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
+renderObj(houseobj, {x: 60, y: 50-20}, scale = 0.2)
 
-// houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
-
-// houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
-
+renderObj(houseobj2, {x: 60-30, y: 50}, scale = 0.2)
 ` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
@@ -581,17 +567,17 @@ const houseobjvari = await houseobj.Modify([100, 'red'], ['round shape'])
             setVersions={setVersions}
             iframeRef={iframeRef}
             />
-            <ReusableElementToolbar
+            {/* <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}
               setVersions={setVersions}
               hoveredElement={hoveredElement}
               setHoveredElement={setHoveredElement}
-            />
+            /> */}
           </>
         )}
       </div>
-      <div className="version-controls">
+      {/* <div className="version-controls">
         <button className="test-button" onClick={createTestVersion}>Test</button>
         <button className="purple-button" onClick={saveCurrentVersion}>Save</button>
         <button className="green-button" onClick={createNewVersion}>New</button>
@@ -610,7 +596,7 @@ const houseobjvari = await houseobj.Modify([100, 'red'], ['round shape'])
             </button>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

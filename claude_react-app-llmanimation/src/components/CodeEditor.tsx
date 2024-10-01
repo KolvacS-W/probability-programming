@@ -2318,6 +2318,7 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
           ref={editorRef}
           onChange={(evn) => setuserJs(evn.target.value)}
         />
+        <button onClick={() => onRunUserCode({ js: userjs })}>Run User Code</button>
         </div>
       );
     } else if (activeTab === 'html') {
@@ -2370,14 +2371,13 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
       ))}
       {showCoordcomplete && <CoordcompleteWidget />}
       {showCachedObjWidget && <CachedObjWidget currentVersionId={currentVersionId} versions={versions} />}
-
+      
+      <div>
       {renderEditor()}
-      <div className="button-group">
-        <button className="green-button" onClick={() => handleRun(currentVersionId || '')}>
-          Run
-        </button>
-        <button onClick={() => onRunUserCode({ js: userjs })}>Run User Code</button>
-      </div>
+      
+      </div>      {/* <div className="button-group">
+        
+      </div> */}
     </div>
   );
   

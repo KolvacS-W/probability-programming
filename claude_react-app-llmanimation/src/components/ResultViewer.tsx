@@ -494,7 +494,7 @@ if (event.data.type === 'GET_AnnotatedPieceList') {
 
                     window.currentreuseableSVGElementList = ${JSON.stringify(currentreuseableSVGElementList)};
                     // Define create_canvas and make it globally accessible
-                    window.create_canvas = function create_canvas(canvas_color) {
+                    function create_canvas(canvas_color) {
                         const canvasContainer = document.getElementById('canvasContainer');
                         // Clear all contents of canvasContainer
                         while (canvasContainer.firstChild) {
@@ -503,7 +503,14 @@ if (event.data.type === 'GET_AnnotatedPieceList') {
                         canvasContainer.style.backgroundColor = canvas_color;
                         return canvasContainer;
                     }
-
+                    function setBackground(color) {
+                      window.canvas = new whole_canvas(color)
+                    }
+                    function renderObj(object, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
+                      object.placeObj(window.canvas, coord, scale, tl, tr, bl, br)
+                    }
+                    </script>
+                    <script>
                     // Check if the Generate class has already been defined
                     if (!window.Rule) {
                       class Rule {
