@@ -35,7 +35,11 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ ngrok_url_sonnet, usercode,
   const [clickCoordinates, setClickCoordinates] = useState<{ x: number; y: number } | null>(null);
   const [classCodeLoaded, setClassCodeLoaded] = useState<boolean>(false);
   // const [newobjID, setNewobjID] = useState(1); // Initialize the newobjID state starting from 1
+  const versionsRef = useRef(versions); // Create a ref for versions
 
+  useEffect(() => {
+    versionsRef.current = versions; // Update the ref whenever versions change
+  }, [versions]);
   // Refs to hold previous trigger values
 // Global object to store previous user-defined objects
 // const cachedobjects = {};
@@ -324,8 +328,8 @@ if (event.data.type === 'LOG_CACHEDOBJECTS') {
 
 
 if (event.data.type === 'GET_AnnotatedPieceList') {
-  console.log('GET_AnnotatedPieceList returning??', versions.find(version => version.id === currentVersionId))
-  const currentAnnotatedPieceList = versions.find(version => version.id === currentVersionId)?.AnnotatedPieceList;
+  console.log('GET_AnnotatedPieceList returning??', versionsRef.current.find(version => version.id === currentVersionId))
+  const currentAnnotatedPieceList = versionsRef.current.find(version => version.id === currentVersionId)?.AnnotatedPieceList;
   if (currentAnnotatedPieceList) {
     iframeRef.current.contentWindow.postMessage(
       {
