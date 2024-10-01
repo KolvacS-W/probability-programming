@@ -840,56 +840,139 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               window.cachedobjects[objname] = this;
                             }
 
-async createObj(parameterContents = [], abstractparameterContents = [], name = ''){
-
-                                // If the name is not provided, generate a default name
+async Modify(parameterContents = [], abstractparameterContents = [], name = ''){
+                                var svgHTML;
                                 if (!name) {
                                   name = 'newobj' + window.newobjID.toString(); // Default to "newobj" + newobjID
                                   window.newobjID = window.newobjID+1; // Increment the newobjID for the next object
                                 }
-                                var obj;
-                                // need to parameterize
-                                const parameters = this.parameters;
-                              
-                                // Replace the placeholders in the SVG string with actual parameter contents
-                                var svgHTML = this.templatecode
-                                // const svgString = svgElement.outerHTML;
+                                if(parameterContents.length>0){
+                                    // If the name is not provided, generate a default name
 
-                                parameters.forEach((param, index) => {
-                                    const placeholder = '{' + param + '}';
-                                    svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
-                                });
+                                  var obj;
+                                  // need to parameterize
+                                  const parameters = this.parameters;
+                                
+                                  // Replace the placeholders in the SVG string with actual parameter contents
+                                  svgHTML = this.templatecode
+                                  // const svgString = svgElement.outerHTML;
 
-                                //save the new obj to app
-                                const codename = name;
-                                // Send the message to update the reusable element list
-                                window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
-                                console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+                                  parameters.forEach((param, index) => {
+                                      const placeholder = '{' + param + '}';
+                                      svgHTML = svgHTML.replace(new RegExp(placeholder, 'g'), parameterContents[index]);
+                                  });
+                                }
 
-                                // Wait for the confirmation after sending the message
-                                await new Promise((resolve) => {
+                                else{
+                                  svgHTML = this.svgcode
+                                }
+
+                                //if there is abstract params, we need to use API to update it
+                                if (abstractparameterContents.length >0){
+                                  window.parent.postMessage({ type: 'GET_AnnotatedPieceList' }, '*');
+                                  const annotatedPieceList = await new Promise((resolve) => {
                                     const messageHandler = (event) => {
-                                        if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
-                                            window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
-                                            console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
-                                            window.removeEventListener('message', messageHandler);
-                                            resolve(); // Resolve the promise to continue execution
-                                        }
+                                      if (event.data && event.data.type === 'RETURN_AnnotatedPieceList') {
+                                        console.log('Received AnnotatedPieceList from parent:', event.data.currentAnnotatedPieceList);
+                                        // Resolve the promise with the received data
+                                        resolve(event.data.currentAnnotatedPieceList);
+                                        // Remove the event listener once the data is received
+                                        window.removeEventListener('message', messageHandler);
+                                      }
                                     };
+
+                                    // Start listening for the RETURN_AnnotatedPieceList event
+                                    console.log('Waiting for RETURN_AnnotatedPieceList event...');
                                     window.addEventListener('message', messageHandler);
-                                });
-                                //create obj instance
-                                //console.log('creating obj in template.createobj', this.rule)
-                                obj = new GeneratedObject(name, svgHTML, this.templatecode, this.modifyobj,
-                              this.piecenames,
-                              this.piecenamemodify,
-                              this.parameters ,
-                              this.abstract_params,
-                              parameterContents,
-                              abstractparameterContents,
-                              this.basic_prompt)
-                                //console.log('returning obj:', obj)
-                                return obj; // Return the codename
+                                  });
+
+                                  // Use the received annotatedPieceList data
+                                  console.log('AnnotatedPieceList:', annotatedPieceList);
+                                  var annotated_prompt = 'With respect to these svg pieces of specific contents: '
+                                  // Filter the objects that match the given codeName
+                                  annotatedPieceList.forEach(obj => {
+                                    if (obj.codeName === this.objname) {
+                                      // Collect the groupname and corresponding pieces
+                                      const group = obj.groupname;
+                                      const pieces = obj.pieces.join(',');
+
+                                      // Append to the prompt
+                                      annotated_prompt += \`"\${group}" relates to these svg pieces: \${pieces}, \`;
+                                    }
+                                  });
+                                  if(annotated_prompt == 'With respect to these svg pieces of specific contents: '){
+                                      annotated_prompt = ''
+                                  }
+                                  console.log('annotated_prompt', annotated_prompt)
+                                  var abstract_param_prompt = ''
+                                  if(this.abstract_params.length >0){
+                                    abstract_param_prompt = ''
+                                    this.abstract_params.forEach((abstract_param, index) => {
+                                        const param_content = abstractparameterContents[index];
+                                        abstract_param_prompt += \`for \` +  abstract_param + \` , make it \` + param_content+\`; \`;
+                                    });
+                                    console.log('check abstract_param_prompt', abstract_param_prompt)
+                                  }
+                                  var existingcode = svgHTML
+                                                                 }
+                                
+                                else{
+                                 var annotated_prompt = ''
+                                 var abstract_prompt = ''
+                                }
+                                var APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '. '+ annotated_prompt+ abstract_param_prompt +' If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+ 
+                                var url = '${ngrok_url_sonnet}'
+                                try {
+                                      const response = await axios.post(url, {
+                                        prompt: APIprompt
+                                      }, {
+                                        headers: {
+                                          'Content-Type': 'application/json'
+                                        }
+                                      });
+
+                                      const data = response.data;
+                                      const content = data?.content;
+                                      console.log('Content from API call:', content);
+
+                                      if (content) {
+                                        //save the new obj to app
+                                        const codename = name;
+                                        // Send the message to update the reusable element list
+                                        window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: content }, '*');
+                                        console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+                                        // Wait for the confirmation after sending the message
+                                        await new Promise((resolve) => {
+                                            const messageHandler = (event) => {
+                                                if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                                                    window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                                                    console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+                                                    window.removeEventListener('message', messageHandler);
+                                                    resolve(); // Resolve the promise to continue execution
+                                                }
+                                            };
+                                            window.addEventListener('message', messageHandler);
+                                        });
+                                        //create obj instance
+                                        //console.log('creating obj in template.createobj', this.rule)
+                                        obj = new GeneratedObject(name, content, this.templatecode, this.modifyobj,
+                                        this.piecenames,
+                                        this.piecenamemodify,
+                                        this.parameters ,
+                                        this.abstract_params,
+                                        parameterContents,
+                                        abstractparameterContents,
+                                        this.basic_prompt)
+                                        //console.log('returning obj:', obj)
+                                        return obj; // Return the codename
+
+                                      }
+                                    } catch (error) {
+                                      console.error('Error drawing the shape:', error);
+                                    }
+
                             }
 
 placeObj(canvas, coord = { x: 50, y: 50 }, scale = 1, tl = null, tr = null, bl = null, br = null) {
