@@ -24,9 +24,10 @@ const App: React.FC = () => {
     // No constructor needed
 }
 
-window.SmokingHouse = class extends window.Rule {
-static doc = "a Victorian house sitting on top of a porch with smoke coming out of chimney";
-    static parameters = ['height of the porch', 'roof color', 'smoke size'];
+window.UpdatedHouse = class extends window.Rule {
+static doc = "a Victorian house sitting on top of a porch";
+    static qualitative_params = ['height of the porch', 'roof color'];
+    static abstract_params = ['shape of windows', 'frame of the house']
     // No constructor needed
 }
 `,
@@ -104,7 +105,7 @@ const house = new window.House();
 // Usage directly with the constructor
 const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
-// const houseobj2 = await houseobj.createObj([100, 'red'])
+// const houseobj2 = await window.UpdatedHouse.generateObj([50, 'grey'], ['random non-rectangle shape', 'thick and red', 'newobject1']);
 
 
 houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)

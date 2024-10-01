@@ -1520,7 +1520,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     });
   };
   const handleAnnotateGroup = (groupNameInput: string) => {
-    console.log('called handleAnnotateGroup')
+      
     setVersions(prevVersions => {
       const updatedVersions = prevVersions.map(version => {
         const updatedHighlightedSVGPieceList = [];
