@@ -525,7 +525,7 @@ if (event.data.type === 'GET_AnnotatedPieceList') {
         // Initialize other properties
         this.ngrok_url_sonnet = '${ngrok_url_sonnet}';
         this.useobj = this.useobj || { objname: '' };
-        this.modifyobj = { objname: '', piecenames: [], pieceprompts: [] };
+        this.modifyobj = '';
         this.piecenames = [];
         this.piecenamemodify = [];
         // Initialize drawQueue if it's used elsewhere in your code
@@ -545,7 +545,7 @@ if (event.data.type === 'GET_AnnotatedPieceList') {
       const codelist = window.currentreuseableSVGElementList
       console.log('check codelist in ref', codelist)
       var existingcode = codelist.find((item) => item.codeName === codename)?.codeText;
-      console.log('draw with ref code:', existingcode)
+      console.log('draw with ref code:', codename, existingcode)
       // Wait for the cachedobjectsRef to be provided by the parent (React app)
       const annotatedPieceList = await new Promise((resolve) => {
         const messageHandler = (event) => {
@@ -675,7 +675,7 @@ static async generateObj(parameterContents = [], abstractparameterContents = [],
     window.newobjID = window.newobjID+1; // Increment the newobjID for the next object
   }
 
-if (!context) {
+if (context) {
   console.log('have context')
   instance.modifyobj = context
 }

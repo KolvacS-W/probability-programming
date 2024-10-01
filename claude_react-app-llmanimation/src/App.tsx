@@ -105,10 +105,10 @@ const house = new window.House();
 // Usage directly with the constructor
 const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
-// const houseobj2 = await window.UpdatedHouse.generateObj([50, 'grey'], ['random non-rectangle shape', 'thick and red', 'newobject1']);
+// const houseobj2 = await window.UpdatedHouse.generateObj([50, 'grey'], ['random non-rectangle shape', 'thick and red'], 'newobj1');
 
 
-houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
+// houseobj.placeObj(canvas, {x: 90, y: 50-20}, scale = 0.2)
 
 // houseobj2.placeObj(canvas, {x: 90-10, y: 50}, scale = 0.2)
 ` },
