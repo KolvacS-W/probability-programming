@@ -94,12 +94,19 @@ const App: React.FC = () => {
 // Usage directly with the constructor
 const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
 
-const houseobj2 = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
+const houseobj2 = await houseobj.modify([100, 'red'], ['random non-rectangle shape'])
 
-renderObj(houseobj, {x: 60, y: 50-20}, scale = 0.2)
+const houseobj3 = await houseobj.modify([100, 'red'], ['round shape'])
 
-renderObj(houseobj2, {x: 60-30, y: 50}, scale = 0.2)
-` },
+const houseobj2 = await houseobj.modify([200, 'blue'], ['same as original svg'])
+
+renderObj(houseobj, {x: 20, y: 20}, scale = 0.3)
+
+renderObj(houseobj2, {x: 20, y: 60}, scale = 0.3)
+
+renderObj(houseobj3, {x: 60, y: 20}, scale = 0.3)
+
+renderObj(houseobj4, {x: 60, y: 60}, scale = 0.3)` },
       savedOldCode: { html: '', css: '', js: '' },
       keywordTree: [
         { level: 1, keywords: [] },
@@ -567,13 +574,13 @@ renderObj(houseobj2, {x: 60-30, y: 50}, scale = 0.2)
             setVersions={setVersions}
             iframeRef={iframeRef}
             />
-            {/* <ReusableElementToolbar
+            <ReusableElementToolbar
               currentVersionId={currentVersionId}
               versions={versions}
               setVersions={setVersions}
               hoveredElement={hoveredElement}
               setHoveredElement={setHoveredElement}
-            /> */}
+            />
           </>
         )}
       </div>

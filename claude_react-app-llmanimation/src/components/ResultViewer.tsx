@@ -705,10 +705,13 @@ static async generateObj(parameterContents = [], abstractparameterContents = [],
     window.newobjID = window.newobjID+1; // Increment the newobjID for the next object
   }
 
-if (context) {
-  console.log('have context')
-  instance.modifyobj = context
-}
+if (typeof context === 'object' && context !== null) {
+        console.log('context is an object:', context);
+        instance.modifyobj = context.objname || '';
+    } else if (typeof context === 'string') {
+        console.log('context is a string:', context);
+        instance.modifyobj = context; // Handle the case where context is a string
+    }
 
 let obj;
 
@@ -847,7 +850,7 @@ updateHTMLString(canvas, svgElement, codename, coord, scale, ifcode2desc) {
                               window.cachedobjects[objname] = this;
                             }
 
-async Modify(parameterContents = [], abstractparameterContents = [], name = ''){
+async modify(parameterContents = [], abstractparameterContents = [], name = ''){
                                 var svgHTML;
                                 if (!name) {
                                   name = 'newobj' + window.newobjID.toString(); // Default to "newobj" + newobjID
@@ -921,14 +924,8 @@ async Modify(parameterContents = [], abstractparameterContents = [], name = ''){
                                     console.log('check abstract_param_prompt', abstract_param_prompt)
                                   }
                                   var existingcode = svgHTML
-                                                                 }
-                                
-                                else{
-                                 var annotated_prompt = ''
-                                 var abstract_prompt = ''
-                                }
-                                var APIprompt = 'write me an updated svg code basing on this existing code: '+existingcode+ ' and description: ' + this.basic_prompt + '. '+ annotated_prompt+ abstract_param_prompt +' If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
- 
+                                  var APIprompt = 'Slightly update this svg code: '+existingcode+ ' with the following instructions: '+ annotated_prompt+ abstract_param_prompt +' If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
+                                console.log('modify APIprompt', APIprompt)
                                 var url = '${ngrok_url_sonnet}'
                                 try {
                                       const response = await axios.post(url, {
@@ -979,6 +976,43 @@ async Modify(parameterContents = [], abstractparameterContents = [], name = ''){
                                     } catch (error) {
                                       console.error('Error drawing the shape:', error);
                                     }
+                                }
+                                
+                                else{
+                                 var annotated_prompt = ''
+                                 var abstract_prompt = ''
+                                 //save the new obj to app
+                                  const codename = name;
+                                  // Send the message to update the reusable element list
+                                  window.parent.postMessage({ type: 'UPDATE_REUSEABLE', codename: codename, codetext: svgHTML }, '*');
+                                  console.log('Sent UPDATE_REUSEABLE message with codename:', codename);
+
+                                  // Wait for the confirmation after sending the message
+                                  await new Promise((resolve) => {
+                                      const messageHandler = (event) => {
+                                          if (event.data.type === 'UPDATE_REUSEABLE_CONFIRMED' && event.data.codename === codename) {
+                                              window.currentreuseableSVGElementList = event.data.reuseableSVGElementList;
+                                              console.log('Received UPDATE_REUSEABLE_CONFIRMED for codename:', window.currentreuseableSVGElementList);
+                                              window.removeEventListener('message', messageHandler);
+                                              resolve(); // Resolve the promise to continue execution
+                                          }
+                                      };
+                                      window.addEventListener('message', messageHandler);
+                                  });
+                                  //create obj instance
+                                  //console.log('creating obj in template.createobj', this.rule)
+                                  obj = new GeneratedObject(name, svgHTML, this.templatecode, this.modifyobj,
+                                  this.piecenames,
+                                  this.piecenamemodify,
+                                  this.parameters ,
+                                  this.abstract_params,
+                                  parameterContents,
+                                  abstractparameterContents,
+                                  this.basic_prompt)
+                                  //console.log('returning obj:', obj)
+                                  return obj; // Return the codename
+                                }
+                                
 
                             }
 
