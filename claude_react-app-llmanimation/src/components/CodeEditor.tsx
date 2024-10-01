@@ -1529,7 +1529,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
           // var currentVersion = versions.find(version => version.id === currentVersionId);
           // console.log('check version', currentVersion)
           const AnnotatedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
-            codeName: piece.codeName,
+            codeName: piece.codeText,
           }));
   
           const AnnotatedEntry = {
