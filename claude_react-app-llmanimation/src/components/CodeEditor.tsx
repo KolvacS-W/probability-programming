@@ -1554,7 +1554,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
       });
       return updatedVersions;
     });
-    
+    console.log('check version', versions.find(version => version.id === currentVersionId))
   };
     
   return (
