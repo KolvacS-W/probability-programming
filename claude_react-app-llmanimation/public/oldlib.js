@@ -430,7 +430,7 @@ if (!window.GeneratedObject) {
                 var existingcode = svgHTML
                 var APIprompt = 'Slightly update this svg code: ' + existingcode + ' with the following instructions: ' + annotated_prompt + abstract_param_prompt + ' If the existing code conforms to the description, return the same code without change; Otherwise, return the code slightly updated according to the existing description. Do not include any background in generated svg. Make sure donot include anything other than the svg code in your response.';
                 console.log('modify APIprompt', APIprompt)
-                var url = '${ngrok_url_sonnet}'
+                var url = ngrok_url_sonnet
                 try {
                     const response = await axios.post(url, {
                         prompt: APIprompt
