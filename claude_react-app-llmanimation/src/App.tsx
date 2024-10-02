@@ -11,7 +11,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import ReusableElementToolbar from './components/ReusableElementToolbar';
 
 const App: React.FC = () => {
-  const ngrok_url_sonnet = 'https://e4ab-34-125-82-134.ngrok-free.app'+ '/api/message'
+  const ngrok_url_sonnet = 'https://3ec7-34-69-17-15.ngrok-free.app'+ '/api/message'
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
