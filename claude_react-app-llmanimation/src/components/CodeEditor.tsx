@@ -124,111 +124,111 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   // }, [showModifyObjWidget]);
   
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      let clickedOutside = true;
-      console.log('handleclick outside', showModifyObjWidget)
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     var clickedOutside = true;
+  //     console.log('handleclick outside', showModifyObjWidget)
     
-      // Check if the click is inside any of the autocomplete widgets
-      optionLevels.forEach((_, levelIndex) => {
-        const widgetElement = document.getElementById(`autocomplete-widget-${levelIndex}`);
-        if (widgetElement && widgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      });
+  //     // Check if the click is inside any of the autocomplete widgets
+  //     optionLevels.forEach((_, levelIndex) => {
+  //       const widgetElement = document.getElementById(`autocomplete-widget-${levelIndex}`);
+  //       if (widgetElement && widgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     });
     
-      // Check if the click is inside the generate option widget
-      if (widgetRef.current && widgetRef.current.contains(event.target as Node)) {
-        clickedOutside = false;
-      }
+  //     // Check if the click is inside the generate option widget
+  //     if (widgetRef.current && widgetRef.current.contains(event.target as Node)) {
+  //       clickedOutside = false;
+  //     }
     
-      // Check if the click is inside any of the autocomplete widgets
-      const autocompleteWidgets = document.querySelectorAll('.autocomplete-widget');
-      autocompleteWidgets.forEach((widget) => {
-        if (widget.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      });
+  //     // Check if the click is inside any of the autocomplete widgets
+  //     const autocompleteWidgets = document.querySelectorAll('.autocomplete-widget');
+  //     autocompleteWidgets.forEach((widget) => {
+  //       if (widget.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     });
     
-      // Check if the click is inside the coordinate widget (if it's shown)
-      if (showCoordcomplete) {
-        const coordWidgetElement = widgetRef.current;
-        if (coordWidgetElement && coordWidgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      }
+  //     // Check if the click is inside the coordinate widget (if it's shown)
+  //     if (showCoordcomplete) {
+  //       const coordWidgetElement = widgetRef.current;
+  //       if (coordWidgetElement && coordWidgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     }
     
-      // Check if the click is inside the modify object widget (if it's shown)
-      if (showModifyObjWidget) {
-        console.log('check showModifyObjWidget')
-        const modifyObjWidgetElement = document.querySelector('.modify-obj-widget');
-        if (modifyObjWidgetElement && modifyObjWidgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      }
+  //     // Check if the click is inside the modify object widget (if it's shown)
+  //     if (showModifyObjWidget) {
+  //       console.log('check showModifyObjWidget')
+  //       const modifyObjWidgetElement = document.querySelector('.modify-obj-widget');
+  //       if (modifyObjWidgetElement && modifyObjWidgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     }
     
-      if (showCheckSVGPieceWidget) {
-        console.log('check showCheckSVGPieceWidget')
-        const CheckSVGPieceWidgetElement = document.querySelector('.check-svg-piece-widget');
-        if (CheckSVGPieceWidgetElement && CheckSVGPieceWidgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      }
+  //     if (showCheckSVGPieceWidget) {
+  //       console.log('check showCheckSVGPieceWidget')
+  //       const CheckSVGPieceWidgetElement = document.querySelector('.check-svg-piece-widget');
+  //       if (CheckSVGPieceWidgetElement && CheckSVGPieceWidgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     }
     
-      if (showCheckWholeSVGWidget) {
-        console.log('check showCheckWholeSVGWidget')
-        const showCheckWholeSVGWidgetElement = document.querySelector('.check-svg-piece-widget');
-        if (showCheckWholeSVGWidgetElement && showCheckWholeSVGWidgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        }
-      }
+  //     if (showCheckWholeSVGWidget) {
+  //       console.log('check showCheckWholeSVGWidget')
+  //       const showCheckWholeSVGWidgetElement = document.querySelector('.check-svg-piece-widget');
+  //       if (showCheckWholeSVGWidgetElement && showCheckWholeSVGWidgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       }
+  //     }
     
-      // Check if the click is outside the cached object widget (and only close if the click is outside)
-      if (showCachedObjWidget) {
-        console.log('check showcachedobjwidget')
-        const showCachedObjWidgetElement = document.querySelector('.cached-obj-widget');
-        if (showCachedObjWidgetElement && showCachedObjWidgetElement.contains(event.target as Node)) {
-          clickedOutside = false;
-        } else {
-          setShowCachedObjWidget(false);
-        }
-      }
+  //     // Check if the click is outside the cached object widget (and only close if the click is outside)
+  //     if (showCachedObjWidget) {
+  //       console.log('check showcachedobjwidget')
+  //       const showCachedObjWidgetElement = document.querySelector('.cached-obj-widget');
+  //       if (showCachedObjWidgetElement && showCachedObjWidgetElement.contains(event.target as Node)) {
+  //         clickedOutside = false;
+  //       } else {
+  //         setShowCachedObjWidget(false);
+  //       }
+  //     }
     
-      // If the click was outside all widgets, close the others
-      if (clickedOutside) {
-        console.log('Clicked outside');
-        setOptionLevels([]);
-        setShowAutocomplete(false);
-        setShowGenerateOption(false);
-        setShowCoordcomplete(false);
-        // setShowModifyObjWidget(false);
-        setVersions(prevVersions => {
-          const updatedVersions = prevVersions.map(version => {
-            const updatedHighlightedSVGPieceList = [];
+  //     // If the click was outside all widgets, close the others
+  //     if (clickedOutside) {
+  //       console.log('Clicked outside');
+  //       setOptionLevels([]);
+  //       setShowAutocomplete(false);
+  //       setShowGenerateOption(false);
+  //       setShowCoordcomplete(false);
+  //       // setShowModifyObjWidget(false);
+  //       setVersions(prevVersions => {
+  //         const updatedVersions = prevVersions.map(version => {
+  //           const updatedHighlightedSVGPieceList = [];
   
-            if (version.id === currentVersionId) {
-              // Check if there's already an entry with the same codeText and update it, or append a new one
-              return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
-            }
-            return version;
-          });
-          return updatedVersions;
-        });
-        setSvgCodeText('');
-        setShowCheckSVGPieceWidget(false);
-        setShowCheckWholeSVGWidget(false);
-        setShowModifyObjButton(false);
-        setButtonchoice('');
-      }
-    };
+  //           if (version.id === currentVersionId) {
+  //             // Check if there's already an entry with the same codeText and update it, or append a new one
+  //             return { ...version, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
+  //           }
+  //           return version;
+  //         });
+  //         return updatedVersions;
+  //       });
+  //       setSvgCodeText('');
+  //       setShowCheckSVGPieceWidget(false);
+  //       setShowCheckWholeSVGWidget(false);
+  //       setShowModifyObjButton(false);
+  //       setButtonchoice('');
+  //     }
+  //   };
     
     
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showModifyObjWidget, showCheckSVGPieceWidget, optionLevels, showAutocomplete, showGenerateOption, showCoordcomplete]);
+  //   document.addEventListener('mousedown', handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   };
+  // }, [showModifyObjWidget, showCheckSVGPieceWidget, optionLevels, showAutocomplete, showGenerateOption, showCoordcomplete]);
 
   // const saveVersionToHistory = (currentVersionId: string) => {
   //   setVersions((prevVersions) => {
@@ -287,138 +287,138 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
     // }
   };
 
-  const handleDoubleClick = (event: React.MouseEvent) => {
-    const selection = window.getSelection();
-    const word = selection?.toString().trim();
+  // const handleDoubleClick = (event: React.MouseEvent) => {
+  //   const selection = window.getSelection();
+  //   const word = selection?.toString().trim();
 
-    const currentVersion = versions.find(version => version.id === currentVersionId);
-    if (!currentVersion) {
-      console.log('No current version found');
-      return;
-    }
+  //   const currentVersion = versions.find(version => version.id === currentVersionId);
+  //   if (!currentVersion) {
+  //     console.log('No current version found');
+  //     return;
+  //   }
 
-    //for showing the svg piece with widgets
-    const piece = currentVersion.previousSelectedSVGPieceList?.find(item => item.codeName === word);
-    //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+  //   //for showing the svg piece with widgets
+  //   const piece = currentVersion.previousSelectedSVGPieceList?.find(item => item.codeName === word);
+  //   //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
 
-    if (piece) {
-      const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
-      //console.log('parent svg:', parentSVG)
-      if (parentSVG) {
-        const cursorPosition = editorRef.current?.selectionStart || 0;
-        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-        setAutocompletePosition({ top: position.top + 50, left: position.left });
-        setSvgCodeText_checkpiece(parentSVG.codeText);
-        setCurrentSelectedSVG(piece.codeName);
-        setShowCheckSVGPieceWidget(true); // Show the CheckSVGPieceWidget
-        return;
-      }
-    }
-    //for showing svgname with widgets
-    const svg = currentVersion.reuseableSVGElementList?.find(item => item.codeName === word)?.codeText;
-    //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
+  //   if (piece) {
+  //     const parentSVG = currentVersion.reuseableSVGElementList.find(svg => svg.codeName === piece.parentSVG);
+  //     //console.log('parent svg:', parentSVG)
+  //     if (parentSVG) {
+  //       const cursorPosition = editorRef.current?.selectionStart || 0;
+  //       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //       setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //       setSvgCodeText_checkpiece(parentSVG.codeText);
+  //       setCurrentSelectedSVG(piece.codeName);
+  //       setShowCheckSVGPieceWidget(true); // Show the CheckSVGPieceWidget
+  //       return;
+  //     }
+  //   }
+  //   //for showing svgname with widgets
+  //   const svg = currentVersion.reuseableSVGElementList?.find(item => item.codeName === word)?.codeText;
+  //   //console.log('selected piece:', word, piece, currentVersion.previousSelectedSVGPieceList)
 
-    if (svg) {
-        const cursorPosition = editorRef.current?.selectionStart || 0;
-        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-        setAutocompletePosition({ top: position.top + 50, left: position.left });
-        setSvgCodeText_checkwholesvg(svg);
-        setShowCheckWholeSVGWidget(true); // Show the CheckSVGPieceWidget
-        return;
-    }
+  //   if (svg) {
+  //       const cursorPosition = editorRef.current?.selectionStart || 0;
+  //       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //       setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //       setSvgCodeText_checkwholesvg(svg);
+  //       setShowCheckWholeSVGWidget(true); // Show the CheckSVGPieceWidget
+  //       return;
+  //   }
     
-      if (word === 'context') {
-        console.log('double-clicked on context');
-        setShowModifyObjButton(true)
-        const currentVersion = versions.find(version => version.id === currentVersionId);
-        if (!currentVersion) {
-          console.log('No current version found');
-          return;
-        }
+  //     if (word === 'context') {
+  //       console.log('double-clicked on context');
+  //       setShowModifyObjButton(true)
+  //       const currentVersion = versions.find(version => version.id === currentVersionId);
+  //       if (!currentVersion) {
+  //         console.log('No current version found');
+  //         return;
+  //       }
     
-        const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
-        console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
+  //       const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+  //       console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
     
-        if (currentreuseableSVGElementList) {
-          const cursorPosition = editorRef.current?.selectionStart || 0;
-          const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-          setAutocompletePosition({ top: position.top + 50, left: position.left });
-          setShowModifyObjWidget(true); // Show the widget
-          //setSelectedCodeText(''); // Reset the selected code text
-        } else {
-          console.log('reuseableSVGElementList is undefined or empty');
-        }
-      }
+  //       if (currentreuseableSVGElementList) {
+  //         const cursorPosition = editorRef.current?.selectionStart || 0;
+  //         const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //         setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //         setShowModifyObjWidget(true); // Show the widget
+  //         //setSelectedCodeText(''); // Reset the selected code text
+  //       } else {
+  //         console.log('reuseableSVGElementList is undefined or empty');
+  //       }
+  //     }
 
 
-      if (word === 'cachedobjects') {
-        console.log('double-clicked on cachedobjects');
+  //     if (word === 'cachedobjects') {
+  //       console.log('double-clicked on cachedobjects');
 
-        const cursorPosition = editorRef.current?.selectionStart || 0;
-        const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-        setAutocompletePosition({ top: position.top + 50, left: position.left });
-        setShowCachedObjWidget(true); // Show the widget
-      }
+  //       const cursorPosition = editorRef.current?.selectionStart || 0;
+  //       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //       setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //       setShowCachedObjWidget(true); // Show the widget
+  //     }
 
-      if (word === 'useobj') {
-        console.log('double-clicked on useobjhh');
-        const currentVersion = versions.find(version => version.id === currentVersionId);
-        if (!currentVersion) {
-          console.log('No current version found');
-          return;
-        }
+  //     if (word === 'useobj') {
+  //       console.log('double-clicked on useobjhh');
+  //       const currentVersion = versions.find(version => version.id === currentVersionId);
+  //       if (!currentVersion) {
+  //         console.log('No current version found');
+  //         return;
+  //       }
     
-        const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
-        console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
+  //       const currentreuseableSVGElementList = currentVersion.reuseableSVGElementList;
+  //       console.log('reuseableSVGElementList', currentVersion, currentreuseableSVGElementList);
     
-        if (currentreuseableSVGElementList) {
-          const cursorPosition = editorRef.current?.selectionStart || 0;
-          const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-          setAutocompletePosition({ top: position.top + 50, left: position.left });
-          setShowModifyObjWidget(true); // Show the widget
-          //setSelectedCodeText(''); // Reset the selected code text
-          console.log('clicked on modifyobj', showModifyObjWidget)
-        } else {
-          console.log('reuseableSVGElementList is undefined or empty');
-        }
-      }
+  //       if (currentreuseableSVGElementList) {
+  //         const cursorPosition = editorRef.current?.selectionStart || 0;
+  //         const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //         setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //         setShowModifyObjWidget(true); // Show the widget
+  //         //setSelectedCodeText(''); // Reset the selected code text
+  //         console.log('clicked on modifyobj', showModifyObjWidget)
+  //       } else {
+  //         console.log('reuseableSVGElementList is undefined or empty');
+  //       }
+  //     }
 
 
-    if (word == 'coord'){
-      setHintKeywords(word);
-      const cursorPosition = editorRef.current?.selectionStart || 0;
-      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-      setCoordcompletePosition({ top: position.top + 50, left: position.left });
-      setShowCoordcomplete(true);
-    }
-    else if(word != 'context'&&word != 'useobj'&&word != 'cachedobjects'){
-      setHintKeywords(word);
-      const cursorPosition = editorRef.current?.selectionStart || 0;
-      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-      setAutocompletePosition({ top: position.top + 50, left: position.left });
-      // const initialOptions = [word]; // You can replace this with an array of initial options if available
-      // setOptionLevels([{ options: initialOptions, position }]);
-      setShowGenerateOption(true);
-    }
-  };
+  //   if (word == 'coord'){
+  //     setHintKeywords(word);
+  //     const cursorPosition = editorRef.current?.selectionStart || 0;
+  //     const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //     setCoordcompletePosition({ top: position.top + 50, left: position.left });
+  //     setShowCoordcomplete(true);
+  //   }
+  //   else if(word != 'context'&&word != 'useobj'&&word != 'cachedobjects'){
+  //     setHintKeywords(word);
+  //     const cursorPosition = editorRef.current?.selectionStart || 0;
+  //     const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //     setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //     // const initialOptions = [word]; // You can replace this with an array of initial options if available
+  //     // setOptionLevels([{ options: initialOptions, position }]);
+  //     setShowGenerateOption(true);
+  //   }
+  // };
 
-  const handleRightClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    const selection = window.getSelection();
-    const word = selection?.toString().trim();
-      if (word) {
-      const cursorPosition = editorRef.current?.selectionStart || 0;
-      const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
-      setHintKeywords(word);
-      const rect = editorRef.current?.getBoundingClientRect();
-      if (rect) {
-        setAutocompletePosition({ top: position.top + 50, left: position.left });
-        // const initialOptions = [word]; // You can replace this with an array of initial options if available
-        // setOptionLevels([{ options: initialOptions, position }]);
-        setShowGenerateOption(true);
-      }
-    }
-  };
+  // const handleRightClick = (event: React.MouseEvent) => {
+  //   event.preventDefault();
+  //   const selection = window.getSelection();
+  //   const word = selection?.toString().trim();
+  //     if (word) {
+  //     const cursorPosition = editorRef.current?.selectionStart || 0;
+  //     const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
+  //     setHintKeywords(word);
+  //     const rect = editorRef.current?.getBoundingClientRect();
+  //     if (rect) {
+  //       setAutocompletePosition({ top: position.top + 50, left: position.left });
+  //       // const initialOptions = [word]; // You can replace this with an array of initial options if available
+  //       // setOptionLevels([{ options: initialOptions, position }]);
+  //       setShowGenerateOption(true);
+  //     }
+  //   }
+  // };
 
   const handleUpGenerate = async (hint: string, levelIndex = 0) => {
     setButtonchoice('up') // for ...
@@ -647,7 +647,7 @@ const CustomCodeEditor: React.FC<CodeEditorProps> = ({
   
   const GenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
     <div
-      id="generate-option-widget"
+      id="code-generate-option-widget"
       ref={widgetRef}
       className="generate-option-widget"
       style={{
@@ -2353,8 +2353,8 @@ const CachedObjWidget = ({ currentVersionId, versions }: { currentVersionId: str
     <div
       className="code-editor"
       onKeyDown={handleKeyDown}
-      onDoubleClick={handleDoubleClick}
-      onContextMenu={handleRightClick}
+      // onDoubleClick={handleDoubleClick}
+      // onContextMenu={handleRightClick}
     >
       {loading && <div className="loading-container"><ReactLoading type="spin" color="#007bff" height={50} width={50} /></div>}
       <div className="tabs">

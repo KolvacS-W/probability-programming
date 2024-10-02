@@ -11,19 +11,15 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import ReusableElementToolbar from './components/ReusableElementToolbar';
 
 const App: React.FC = () => {
-  const ngrok_url_sonnet = 'https://4ade-35-227-145-149.ngrok-free.app'+ '/api/message'
+  const ngrok_url_sonnet = 'https://e4ab-34-125-82-134.ngrok-free.app'+ '/api/message'
   const [versions, setVersions] = useState<Version[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('js');
   const [classcode, setClassCode] = useState<{ js: string }>({
-    js: `window.House = class extends window.Rule {
-    static doc = "a Victorian house in front of hills";
-    static qualitative_params = ['height of hill', 'roof color'];
-    static abstract_params = ['shape of windows']
-    // No constructor needed
-}`,
+    js: ``,
   });
+  const [usercode, setUserCode] = useState<{ js: string }>({ js: '' });   // Initialize usercode
   const [runClassCodeTrigger, setRunClassCodeTrigger] = useState<number>(0);
   const [runUserCodeTrigger, setRunUSerCodeTrigger] = useState<number>(0);
   
@@ -34,7 +30,7 @@ const App: React.FC = () => {
       iframeRef.current.contentWindow.postMessage(
         {
           type: 'EXECUTE_CLASSCODE',
-          classcode: classcode.js,
+          classcode: classcode,
         },
         '*'
       );
@@ -63,75 +59,80 @@ const App: React.FC = () => {
     }
   };
   useEffect(() => {
-    // Initialize the base version on load
-    const baseVersion: Version = {
-      id: 'init',
-      description: "set 'code2desc = true' in whole_canvas.draw() parameter to generate descriptions",
-      savedOldDescription: '', 
-      backendcode: {html: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG Example</title>
-    <style>
-        body {
-            margin: 0;
-            background-color: skyblue;
-            width: 600px;
-            height: 600px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-    </style>
-</head>
-<body>
-</body>
-</html>`},
-      usercode: { js: `setBackground('azure')
-// Usage directly with the constructor
-const houseobj = await window.House.generateObj([50, 'grey'], ['random non-rectangle shape']);
-
-const houseobj2 = await houseobj.modify([100, 'red'], ['random non-rectangle shape'])
-
-const houseobj3 = await houseobj.modify([100, 'red'], ['round shape'])
-
-const houseobj2 = await houseobj.modify([200, 'blue'], ['same as original svg'])
-
-renderObj(houseobj, {x: 20, y: 20}, scale = 0.3)
-
-renderObj(houseobj2, {x: 20, y: 60}, scale = 0.3)
-
-renderObj(houseobj3, {x: 60, y: 20}, scale = 0.3)
-
-renderObj(houseobj4, {x: 60, y: 60}, scale = 0.3)` },
-      savedOldCode: { html: '', css: '', js: '' },
-      keywordTree: [
-        { level: 1, keywords: [] },
-        { level: 2, keywords: [] },
-      ],
-      wordselected: 'ocean',
-      highlightEnabled: false,
-      loading: false,
-      piecesToHighlightLevel1: [],
-      piecesToHighlightLevel2: [],
-      showDetails: {},
-      latestDescriptionText: '', 
-      hiddenInfo: [],
-      formatDescriptionHtml:'',
-      specificParamList: [], // Added
-      paramCheckEnabled: false, // Added
-      reuseableSVGElementList: [], // Added
-      highlightedSVGPieceList: [],
-      AnnotatedPieceList: [],
-      modifyPieceList: []
+    console.log('useEffect called');
+    const fetchCode = async () => {
+      try {
+        // Fetch classcode.js
+        const classcodeResponse = await fetch('/classcode.js');
+        const classcodeData = await classcodeResponse.text();
+        setClassCode({ js: classcodeData });
+        console.log('classcode.js loaded', classcodeData);
+  
+        // Fetch usercode.js
+        const usercodeResponse = await fetch('/usercode.js');
+        const usercodeData = await usercodeResponse.text();
+        setUserCode({ js: usercodeData });
+        console.log('usercode.js loaded', usercodeData);
+  
+        // Now that both fetches are complete, create baseVersion
+        const baseVersion: Version = {
+          id: 'init',
+          description: "set 'code2desc = true' in whole_canvas.draw() parameter to generate descriptions",
+          savedOldDescription: '', 
+          backendcode: {html: `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <title>SVG Example</title>
+      <style>
+          body {
+              margin: 0;
+              background-color: skyblue;
+              width: 600px;
+              height: 600px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              position: relative;
+          }
+      </style>
+  </head>
+  <body>
+  </body>
+  </html>`},
+          usercode: { js: usercodeData }, // Use fetched data directly
+          savedOldCode: { html: '', css: '', js: '' },
+          keywordTree: [
+            { level: 1, keywords: [] },
+            { level: 2, keywords: [] },
+          ],
+          wordselected: 'ocean',
+          highlightEnabled: false,
+          loading: false,
+          piecesToHighlightLevel1: [],
+          piecesToHighlightLevel2: [],
+          showDetails: {},
+          latestDescriptionText: '', 
+          hiddenInfo: [],
+          formatDescriptionHtml:'',
+          specificParamList: [],
+          paramCheckEnabled: false,
+          reuseableSVGElementList: [],
+          highlightedSVGPieceList: [],
+          AnnotatedPieceList: [],
+          modifyPieceList: []
+        };
+  
+        setVersions([baseVersion]);
+        setCurrentVersionId(baseVersion.id);
+      } catch (error) {
+        console.error('Error loading code files:', error);
+      }
     };
   
-    setVersions([baseVersion]);
-    setCurrentVersionId(baseVersion.id);
+    fetchCode();
   }, []);
+  
   
 
   const stopwords = new Set([

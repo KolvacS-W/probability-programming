@@ -234,3 +234,41 @@ const ReusableElementToolbar: React.FC<ReusableElementToolbarProps> = ({
 };
 
 export default ReusableElementToolbar;
+
+const handleModifyPieces = () => {
+      
+  setVersions(prevVersions => {
+    const updatedVersions = prevVersions.map(version => {
+      const updatedHighlightedSVGPieceList = [];
+
+      if (version.id === currentVersionId) {
+        const modifiedPieces = currentVersion.highlightedSVGPieceList.map(piece => ({
+          codeName: piece.codeName,
+          prompt: piecePrompts[piece.codeName] || '', // Get the corresponding prompt
+        }));
+
+        const modifiedEntry = {
+          codeName: currentSelectedSVG,
+          pieces: modifiedPieces.map(item => item.codeName),
+          pieceprompts: modifiedPieces.map(item => item.prompt),
+        };
+
+        // Check if there's already an entry with the same codeText and update it, or append a new one
+        const existingModifyPieceList = version.modifyPieceList || [];
+        const updatedModifyPieceList = existingModifyPieceList.filter(
+          entry => entry.codeText !== modifiedEntry.codeText
+        );
+
+        // Add the modified entry (which overwrites any existing entry with the same codeText)
+        updatedModifyPieceList.push(modifiedEntry);
+        console.log('check moedifypiece prompts', modifiedEntry)
+        const cachedObjects = JSON.parse((sessionStorage.getItem('cachedobjects')))
+        updateobject_modifypieces(modifiedEntry, cachedObjects[currentSelectedSVG])
+        return { ...version, modifyPieceList: updatedModifyPieceList, highlightedSVGPieceList: updatedHighlightedSVGPieceList, };
+      }
+      return version;
+    });
+    return updatedVersions;
+  });
+  
+};

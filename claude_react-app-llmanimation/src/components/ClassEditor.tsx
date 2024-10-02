@@ -81,11 +81,11 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      let clickedOutside = true;
+      var clickedOutside = true;
     
       // Check if the click is inside any of the autocomplete widgets
       optionLevels.forEach((_, levelIndex) => {
-        const widgetElement = document.getElementById(`autocomplete-widget-${levelIndex}`);
+        const widgetElement = document.getElementById(`classautocomplete-widget-${levelIndex}`);
         if (widgetElement && widgetElement.contains(event.target as Node)) {
           clickedOutside = false;
         }
@@ -97,7 +97,7 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
       }
     
       // Check if the click is inside any of the autocomplete widgets
-      const autocompleteWidgets = document.querySelectorAll('.autocomplete-widget');
+      const autocompleteWidgets = document.querySelectorAll('.classautocomplete-widget');
       autocompleteWidgets.forEach((widget) => {
         if (widget.contains(event.target as Node)) {
           clickedOutside = false;
@@ -120,7 +120,7 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [optionLevels, showAutocomplete, showGenerateOption]);
+  });
 
 
 
@@ -165,6 +165,7 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
     
     else if(word != 'modifyobj'&&word != 'useobj'&&word != 'cachedobjects'){
       setHintKeywords(word);
+      console.log('hintwordset', word)
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const position = getCaretCoordinates(editorRef.current, cursorPosition - word.length);
       setAutocompletePosition({ top: position.top + 50, left: position.left });
@@ -301,6 +302,7 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
   };
 
   const handleDownGenerate = async (hint: string, levelIndex = 0) => {
+    console.log('down')
     setButtonchoice('down') // for ...
     let prompt = '';
     if (hint.includes(' ')) {
@@ -416,9 +418,9 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
     }
   };
   
-  const GenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
+  const ClassGenerateOptionWidget = ({ hintKeywords }: { hintKeywords: string }) => (
     <div
-      id="generate-option-widget"
+      id="class-generate-option-widget"
       ref={widgetRef}
       className="generate-option-widget"
       style={{
@@ -435,7 +437,7 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
       <div className="button-container">
         <button onClick={() => handleUpGenerate(hintKeywords)}>🔼</button>
         <button onClick={() => handleRightGenerate(hintKeywords)}>🔄</button>
-        <button onClick={() => handleDownGenerate(hintKeywords)}>🔽</button>
+        <button onClick={() => {console.log('Button clicked'); handleDownGenerate(hintKeywords)}}>🔽</button>
       </div>
     </div>
   );
@@ -455,12 +457,12 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
   
     const handleEqualButtonClick = () => {
       const combinedText = checkedOptions.join('\', \'');
-      const currentValue = userjs;
+      const currentValue = classcode.js;
       const cursorPosition = editorRef.current?.selectionStart || 0;
       const textBeforeCursor = currentValue.slice(0, cursorPosition);
       const textAfterCursor = currentValue.slice(cursorPosition);
       const newText = textBeforeCursor + combinedText + textAfterCursor;
-      setuserJs(newText);
+      setClassCode(newText);
       setShowAutocomplete(false);
       setShowGenerateOption(false);
       setOptionLevels([]);
@@ -476,8 +478,8 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
   
     return (
       <div
-        id={`autocomplete-widget-${levelIndex}`}
-        className="autocomplete-widget"
+        id={`classautocomplete-widget-${levelIndex}`}
+        className="classautocomplete-widget"
         style={{
           position: 'absolute',
           top: optionLevels[levelIndex]?.position.top || autocompletePosition.top,
@@ -562,17 +564,16 @@ const editorRef = useRef<HTMLTextAreaElement>(null);
 
   return (
     <div
-      className="code-editor"
+      className="class-editor"
       onKeyDown={handleKeyDown}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleRightClick}
     >
-      {showGenerateOption && optionLevels.length === 0 && <GenerateOptionWidget hintKeywords={hintKeywords} />}
+      {showGenerateOption && optionLevels.length === 0 && <ClassGenerateOptionWidget hintKeywords={hintKeywords} />}
       {showAutocomplete && optionLevels.map((level, index) => (
         <AutocompleteWidget key={index} options={level.options} levelIndex={index} />
       ))}
       <div
-      className="class-editor"
       style={{
         height: '600px',
         width: '400px',
